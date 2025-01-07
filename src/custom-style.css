@@ -1,0 +1,154 @@
+/* Import Colfax font */
+  @font-face {
+      font-family: 'Colfax';
+      src: url('./fonts/Colfax-Regular.woff2') format('woff2'),
+          url('./fonts/Colfax-Regular.woff') format('woff');
+      font-weight: norma./fonts/l;
+      font-style: normal;
+      font-display: swap;
+  }
+
+/* Relative font sizes */
+:root {
+  --base-size: 14px;
+  --size-xs: calc(var(--base-size) * 0.5);
+  --size-s: calc(var(--base-size) * 0.9);
+  --size-m: var(--base-size);
+  --size-l: calc(var(--base-size) * 1.5);
+  --size-xl: calc(var(--base-size) * 2);
+  --size-xxl: calc(var(--base-size) * 3);
+}
+
+/* Base text styles */
+* {
+  font-family: "Colfax", Arial, Helvetica, sans-serif;
+}
+
+
+p, ul li, table td, table th, label{
+  color: var(--darkGrey);
+  font-size: var(--size-m);
+}
+
+
+/* Bold styles */
+.bold-text, form > label, .header, .section-header, table th, .plot-title {
+  color: var(--darkGrey);
+  font-weight: bold;
+}
+
+.range-select {
+  background: var(--inputTheme);
+}
+
+/* Header styles */
+.header {
+  font-size: var(--size-xxl);
+}
+
+.section-header, .plot-title {
+  font-size: var(--size-xl);
+}
+.section-header {
+    margin-bottom: 10px;
+}
+
+.plot-title {
+    margin-bottom: 0px;
+}
+
+/* Smaller text styles */
+.small-text, .plot-note, .plot-source {
+  font-size: var(--size-s);
+}
+
+.plot-note, .plot-source {
+    margin: 5px 0;
+}
+
+/* Plot subtitles */
+.plot-subtitle {
+  font-size: var(--size-l);
+  margin-bottom: 20px;
+}
+
+.export-subtitle-label {
+  color: var(--exports);
+}
+
+.import-subtitle-label {
+  color: var(--imports);
+}
+
+.balance-subtitle-label {
+  color: var(--balance);
+}
+
+/* Axis styles */
+[aria-label="x-axis tick label"],
+[aria-label="y-axis label"] text,
+[aria-label="y-axis tick label"] {
+  font-size: var(--size-m);
+  color: var(--midGrey);
+}
+
+[aria-label="y-grid"] {
+  color: var(--midGrey);
+}
+
+/* Plot annotations */
+.import-label text,
+.export-label text {
+  font-size: var(--size-s);
+  fill: var(--imports);
+  text-shadow: 0.5px 0.5px 0 var(--lightGrey);
+}
+
+.export-label text {
+  fill: var(--exports);
+}
+
+.country-label text {
+  font-size: var(--size-m);
+  font-weight: bold;
+  text-shadow: 0.5px 0.5px 0 var(--lightGrey);
+}
+
+/* Tooltip */
+[aria-label="tip"] tspan {
+  color: var(--darkGrey);
+}
+
+[aria-label="tip"] tspan:last-of-type {
+  font-weight: bold;
+}
+
+/* Top and bottom panels of plots and tables */
+.top-panel, .bottom-panel {
+  max-width: 1000px;
+}
+
+.top-panel * {
+    max-width: inherit;
+    box-sizing: border-box;
+}
+
+.bottom-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: var(--size-m) 0;
+}
+
+.text-section {
+  margin: 0;
+}
+
+.logo-section img {
+  height: var(--size-xxl);
+  margin: 0;
+}
+
+.normal-list li {
+    margin-bottom: 10px;
+}
