@@ -6,6 +6,7 @@ import { formatYear } from "./formatYear.js";
 import { formatValue } from "./formatValue.js";
 import { reactiveWidth } from "./reactiveWidth.js"
 import { jitterLabels } from "./jitterLabels.js"
+import { formatString } from "./formatString.js"
 
 export function plotMulti(data, countries, partner, timeRange, categories, unit, flow) {
 
@@ -73,7 +74,7 @@ export function plotMulti(data, countries, partner, timeRange, categories, unit,
           y: flow,
           z: "country",
           fill: "country",
-          title: (d) => `${d.country}, ${d.year}\n${flow}: ${formatValue(d[flow]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
+          title: (d) => `${d.country}, ${d.year}\n${formatString(flow)}: ${formatValue(d[flow]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
           tip: true
         }),
 

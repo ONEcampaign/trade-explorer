@@ -6,6 +6,7 @@ import { reshapeDataForTable } from "./reshapeDataForTable.js"
 import { getLimits } from "./getLimits.js"
 import { sparkbar } from "./sparkbar.js"
 import { reactiveWidth } from "./reactiveWidth.js";
+import { formatString } from "./formatString.js"
 
 export function tableMulti(data, groupKey, country, partner, categories, unit, flow, timeRange = null) {
 
@@ -37,7 +38,6 @@ export function tableMulti(data, groupKey, country, partner, categories, unit, f
   const limits = getLimits(tableData); // Get min and max values for sparkbars
 
   // Capitalize groupKey for header label
-  const headerLabel = groupKey.charAt(0).toUpperCase() + groupKey.slice(1);
 
   const colors = schemeObservable10;
 
@@ -63,10 +63,10 @@ export function tableMulti(data, groupKey, country, partner, categories, unit, f
       )
     },
     header: {
-      [groupKey]: headerLabel // Capitalized header label (e.g., "Year" or "Category")
+      [groupKey]: formatString(groupKey)
     },
     align: {
-      [groupKey]: "left" // Align the group key column to the left
+      [groupKey]: "left"
     },
     width: reactiveWidth - 50
   });

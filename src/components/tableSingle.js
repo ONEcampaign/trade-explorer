@@ -5,6 +5,7 @@ import { sparkbar } from "./sparkbar.js"
 import { colorPalette } from "./colorPalette.js"
 import { formatYear } from "./formatYear.js"
 import { reactiveWidth } from "./reactiveWidth.js";
+import { formatString } from "./formatString.js"
 
 export function tableSingle(data, groupKey, country, partner, categories, unit, timeRange = null) {
 
@@ -55,12 +56,15 @@ export function tableSingle(data, groupKey, country, partner, categories, unit, 
         limits.max
       )
     },
-    header: {
-      [groupKey]: isYearTable ? "Year" : "Category",
-      imports: "Imports",
-      exports: "Exports",
-      balance: "Trade balance"
-    },
+      header: {
+        ...Object.fromEntries(
+          Object.keys(tableData[0]) // Get all columns
+            .map((key) => [
+              key,
+              formatString(key) // Call formatString for each key
+            ])
+        )
+      },
     align: {
       [groupKey]: "left",
       imports: "right",

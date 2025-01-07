@@ -7,6 +7,7 @@ import { tableMulti } from "./components/tableMulti.js";
 import { colorPalette } from './components/colorPalette.js';
 import { rangeInput } from "./components/rangeInput.js"
 import { setCustomColors } from "./components/setCustomColors.js"
+import { formatString } from "./components/formatString.js"
 ```
 
 ```js 
@@ -29,11 +30,7 @@ const timeRange = [min(tradeData, d => d.year), max(tradeData, d => d.year)];
 const firstLink = document.querySelector("li.observablehq-secondary-link a");
 
 function updateFirstLinkText() {
-  const flowString = flowInput.value === "balance" 
-        ? "Trade balance with "
-        : flowInput.value === "imports" 
-          ? "Imports from " 
-          : "Exports to ";
+  const flowString = formatString(flowInput.value, { inSentence: true })
   const partnerString = partnerInput.value === "United Kingdom"
   ? "the UK"
   : partnerInput.value === "USA"
@@ -41,7 +38,7 @@ function updateFirstLinkText() {
     : partnerInput.value;
   
   if (firstLink) {
-    firstLink.textContent = flowString + partnerString
+    firstLink.textContent = flowString  + partnerString
   }
 }
 
@@ -180,7 +177,7 @@ const flowMulti = Generators.input(flowInput)
 <div class="viz-container">
     <div class="top-panel">
         <h2 class="plot-title" id="trade-plot"> 
-            ${flowMulti === "balance" ? "Trade balance with" : flowMulti === "imports" ? "Imports from" : "Exports to"} ${partnerMulti}
+            ${formatString(flowMulti, { inSentence: true })}${partnerMulti}
         </h2>
         <h3 class="plot-subtitle">
             Selected African countries

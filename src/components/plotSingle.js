@@ -6,6 +6,7 @@ import { formatYear } from "./formatYear.js";
 import { formatValue } from "./formatValue.js";
 import { colorPalette } from "./colorPalette.js";
 import { reactiveWidth } from "./reactiveWidth.js"
+import { formatString } from "./formatString.js"
 
 export function plotSingle(data, country, partner, timeRange, categories, unit) {
 
@@ -53,7 +54,7 @@ export function plotSingle(data, country, partner, timeRange, categories, unit) 
                 y: unit,
                 opacity: 0.6,
                 fill: "flow",
-                title: (d) => `${formatYear(d.year)} ${d.flow}\n${d.category}\n${formatValue(d[unit]).label} ${unit === "pct_gdp" ? "%" : "USD"} ${unit === "pct_gdp" ? "" : "M"}`,
+                title: (d) => `${formatYear(d.year)} ${formatString(d.flow)}\n${d.category}\n${formatValue(d[unit]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
                 tip: true
             }
           ),
@@ -93,7 +94,7 @@ export function plotSingle(data, country, partner, timeRange, categories, unit) 
             fill: colorPalette.balance,
             stroke: colorPalette.balance,
             strokeWidth: 3,
-            title: (d) => `${formatYear(d.year)} Trade balance\nUSD ${formatValue(d.balance).label} M`
+            title: (d) => `${formatYear(d.year)} Trade balance\n${formatValue(d.balance).label}${unit === "pct_gdp" ? " %" : " USD M"}`
           }),
 
 //          // Labels for total exports at the top
