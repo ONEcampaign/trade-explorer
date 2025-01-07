@@ -3,25 +3,27 @@
 </h1>
 
 <p class="normal-text">
-    All trade data comes from CEPII's
+    Trade data in current USD comes from CEPII's
     <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">
         BACI database
-    </a>
-    and processed as follows: 
+    </a>.
+    This data is then grouped by product categories according to     
+    <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">HS Nomenclature</a>,
+    such that each section constitutes a category.
 </p>
-<ul class="normal-list">
-    <li>
-        Products are classified into categories according to the WCO's
-        <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">HS Nomenclature</a>.
-    </li>
-    <li>
-        Current USD figures are converted into 2015 constant USD using
-        <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a>.
-    </li>
-    <li>
-        Figures expressed as a percentage of GDP are calculated by dividing the trade value (in 2015 constant USD) by the GDP (also in 2015 constant USD) for that specific year and country. GDP data is taken from the World Bank's
-        <a href="https://datacatalog.worldbank.org/search/dataset/0037712/World-Development-Indicators">World Development Indicators</a>.
-    </li>
 
-</ul>
+<p class="normal-text">
+    To convert figures into 2015 constant USD, we use GDP deflators and exchange rates from the IMF World Economic Outlook through the <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a> package.
+</p>
+
+<p class="normal-text">
+    Figures expressed as a percentage of GDP are calculated by dividing the trade value (in 2015 constant USD) by the GDP (also in 2015 constant USD) for that specific year and country. GDP figures are taken from the World Economic Outlook via the <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a> package and converted from current to 2015 constant USD using pydeflate.  
+</p>
+
+<p class="normal-text">
+    The scripts to wrangle the data are included in the <span style="font-family: monospace">data_preparation</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repo</a>.
+</p>
+
+
+
 

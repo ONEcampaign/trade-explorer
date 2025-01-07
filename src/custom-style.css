@@ -21,7 +21,7 @@
 
 /* Base text styles */
 * {
-  font-family:Helvetica, sans-serif;
+  font-family: Colfax, Helvetica, sans-serif;
 }
 
 
@@ -70,6 +70,7 @@ p, ul li, table td, table th, label{
 .plot-subtitle {
   font-size: var(--size-l);
   margin-bottom: 20px;
+  font-weight: normal;
 }
 
 .export-subtitle-label {

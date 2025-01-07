@@ -112,7 +112,7 @@ const unitInput = Inputs.radio(
 const unitSingle = Generators.input(unitInput)
 ```
 
-<h1>
+<h1 class="header">
     Single Country
 </h1>
 
@@ -127,6 +127,8 @@ const unitSingle = Generators.input(unitInput)
 <p class="normal-text">
     <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas <a href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
 </p>
+
+<br>
 
 <div class="card" style="display: grid; gap: 0.5rem;">
   <div>${countryInput}</div>
