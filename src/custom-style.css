@@ -30,7 +30,6 @@ p, ul li, table td, table th, label{
   font-size: var(--size-m);
 }
 
-
 /* Bold styles */
 .bold-text, form > label, .header, .section-header, table th, .plot-title {
   color: var(--darkGrey);
@@ -122,6 +121,24 @@ p, ul li, table td, table th, label{
 
 [aria-label="tip"] tspan:last-of-type {
   font-weight: bold;
+}
+
+/* format tables */
+form:has(table) {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+th, td {
+  white-space: nowrap;
+  padding: 8px;
+  text-align: left;
 }
 
 /* Top and bottom panels of plots and tables */
