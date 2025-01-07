@@ -1,10 +1,14 @@
 import pandas as pd
 import json
+
+from typing import Optional, Literal
+
+import bblocks_data_importers as bbdata
 import country_converter as coco
-from pydeflate import imf_cpi_deflate, set_pydeflate_path
-from typing import Literal
+from pydeflate import imf_gdp_deflate, set_pydeflate_path
+
+
 from data_preparation.utils.paths import PATHS
-from data_preparation.utils.wdi_wranggler import process_wdi_data
 
 
 def load_mappings():
@@ -59,14 +63,11 @@ def filter_and_aggregate_data(
     )
 
 
-def process_africa_trade_data(
-    year0: int, year1: int, save_as: Literal["none", "json", "csv"]
-):
+def process_trade_data(year0: int, year1: int):
     """
-    Process trade data between African countries and ONE market countries.
+    Process and aggregate trade data between African countries and ONE market countries.
     """
     product_code_to_category, country_code_to_name = load_mappings()
-
     african_countries = pd.read_csv(PATHS.AFRICAN_COUNTRIES)["countries"].tolist()
     one_markets = [
         "USA",
@@ -79,27 +80,117 @@ def process_africa_trade_data(
     ]
 
     agg_data_path = PATHS.DATA / f"{year0}_{year1}_raw_cepii.csv"
-
     if agg_data_path.exists():
-        agg_df = pd.read_csv(agg_data_path)
+        return pd.read_csv(agg_data_path), african_countries
+
+    dataframes = [
+        filter_and_aggregate_data(
+            pd.read_csv(
+                PATHS.BACI / f"BACI_HS02_Y{year}_V202401b.csv", dtype={"k": str}
+            ),
+            product_code_to_category,
+            country_code_to_name,
+            african_countries,
+            one_markets,
+        )
+        for year in range(year0, year1 + 1)
+    ]
+
+    agg_df = pd.concat(dataframes, ignore_index=True)
+    agg_df.to_csv(agg_data_path, index=False)
+    return agg_df, african_countries
+
+
+def get_weo_gdp():
+    weo = bbdata.WEO()
+    df = weo.get_data()
+
+    df = df[df.indicator_code == "NGDPD"]
+    df.loc[:, "value"] = df["value"] * 1000
+    df = df[["year", "entity_name", "value"]]
+
+    return df
+
+
+def merge_with_weo_data(africa_trade_long: pd.DataFrame):
+    """
+    Merges the processed trade data with WEO data and performs final calculations.
+    """
+    cc = coco.CountryConverter()
+
+    africa_trade_long["country_code"] = cc.convert(
+        africa_trade_long["country"], to="ISO3"
+    )
+
+    weo_df = get_weo_gdp()
+    weo_df["country_code"] = cc.convert(weo_df["entity_name"], to="ISO3")
+
+    full_df = pd.merge(
+        africa_trade_long,
+        weo_df,
+        on=["year", "country_code"],
+        how="left",
+        # validate="many_to_one",
+    )
+
+    set_pydeflate_path(PATHS.PYDEFLATE)
+
+    full_df = imf_gdp_deflate(
+        data=full_df,
+        base_year=2015,
+        id_column="country_code",
+        value_column="current_usd",
+        target_value_column="constant_usd_2015",
+    )
+
+    full_df = imf_gdp_deflate(
+        data=full_df,
+        base_year=2015,
+        id_column="country_code",
+        value_column="value",
+        target_value_column="constant_gdp_2015",
+    )
+
+    full_df["pct_gdp"] = (
+        full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
+    )
+    full_df.drop(
+        ["country_code", "entity_name", "value", "constant_gdp_2015"],
+        axis=1,
+        inplace=True,
+    )
+    full_df = full_df.dropna(subset=["current_usd"])
+
+    return full_df
+
+
+def save_data(
+    df: pd.DataFrame,
+    year0: int,
+    year1: int,
+    save_as: Optional[Literal["json", "csv"]] = None,
+):
+    """
+    Saves the final processed data in the desired format (json, csv, or none).
+    """
+    path_to_save = PATHS.SAVED_DATA / f"africa_trade_{year0}_{year1}.{save_as}"
+
+    if save_as == "json":
+        path_to_save.write_text(df.to_json(orient="records"))
+    elif save_as == "csv":
+        df.to_csv(path_to_save, index=False)
     else:
-        dataframes = [
-            filter_and_aggregate_data(
-                pd.read_csv(
-                    PATHS.BACI / f"/BACI_HS02_Y{year}_V202401b.csv", dtype={"k": str}
-                ),
-                product_code_to_category,
-                country_code_to_name,
-                african_countries,
-                one_markets,
-            )
-            for year in range(year0, year1 + 1)
-        ]
+        return df
 
-        agg_df = pd.concat(dataframes, ignore_index=True)
-        agg_df.to_csv(agg_data_path, index=False)
 
-    # Separate and transform export/import data
+def process_africa_trade_data(
+    year0: int, year1: int, save_as: Optional[Literal["json", "csv"]] = None
+):
+    """
+    Process trade data between African countries and ONE market countries.
+    """
+    agg_df, african_countries = process_trade_data(year0, year1)
+
     exp_df = agg_df[agg_df["exporter"].isin(african_countries)].rename(
         columns={"exporter": "country", "importer": "partner", "value": "exports"}
     )
@@ -110,7 +201,6 @@ def process_africa_trade_data(
     )
     imp_df["imports"] /= -1000
 
-    # Merge export and import data
     africa_trade = pd.merge(
         exp_df,
         imp_df,
@@ -126,43 +216,6 @@ def process_africa_trade_data(
         value_name="current_usd",
     )
 
-    # Convert country names to ISO3 codes
-    cc = coco.CountryConverter()
-    africa_trade_long["country_code"] = cc.convert(
-        africa_trade_long["country"], to="ISO3"
-    )
+    full_df = merge_with_weo_data(africa_trade_long)
 
-    # Apply GDP deflation
-    set_pydeflate_path(PATHS.PYDEFLATE)
-    africa_trade_constant = imf_cpi_deflate(
-        data=africa_trade_long,
-        base_year=2015,
-        id_column="country_code",
-        value_column="current_usd",
-        target_value_column="constant_usd_2015",
-    )
-    africa_trade_constant["year"] = africa_trade_constant["year"].astype(int)
-    africa_trade_constant.drop("country_code", axis=1, inplace=True)
-
-    # Process WDI data and merge with trade data
-    gdp_df = process_wdi_data(year0, year1)
-    gdp_df["year"] = gdp_df["year"].astype(int)
-    full_df = pd.merge(
-        africa_trade_constant,
-        gdp_df,
-        on=["year", "country"],
-        how="outer",
-        validate="many_to_one",
-    )
-
-    full_df["pct_gdp"] = (
-        full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
-    )
-
-    path_to_save = PATHS.SAVED_DATA / f"africa_trade_{year0}_{year1}.{save_as}"
-    if save_as == "json":
-        path_to_save.write_text(full_df.to_json(orient="records"))
-    elif save_as == "csv":
-        full_df.to_csv(path_to_save, index=False)
-    elif save_as == "none":
-        return full_df
+    save_data(full_df, year0, year1, save_as)
