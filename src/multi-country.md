@@ -177,7 +177,7 @@ const flowMulti = Generators.input(flowInput)
 <div class="viz-container">
     <div class="top-panel">
         <h2 class="plot-title" id="trade-plot"> 
-            ${formatString(flowMulti, { inSentence: true })}${partnerMulti}
+            ${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}
         </h2>
         <h3 class="plot-subtitle">
             Selected African countries
@@ -212,7 +212,7 @@ const flowMulti = Generators.input(flowInput)
         </h2>
         <p class="normal-text">
             Total value of 
-            <span class="bold-text">${flowMulti === "balance" ? "trade balance with " : flowMulti === "imports" ? "Imports from " : "Exports to "}</span> 
+            <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}</span> 
             <span class="bold-text">${partnerMulti}</span> for each category of traded goods in 
             <span class="bold-text">${timeRangeMulti[0]}-${timeRangeMulti[1]}</span>.
         </p>
@@ -247,8 +247,8 @@ const flowMulti = Generators.input(flowInput)
         </h2>
         ${
             categoriesMulti.length === categories.length
-            ? html`<p class="normal-text">Total yearly value of <span class="bold-text">${flowMulti === "balance" ? "trade balance with " : flowMulti === "imports" ? "Imports from " : "Exports to "}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">Total yearly value of <span class="bold-text">${flowMulti === "balance" ? "trade balance with " : flowMulti === "imports" ? "Imports from " : "Exports to "}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            ? html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>

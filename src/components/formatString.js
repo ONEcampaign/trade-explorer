@@ -1,15 +1,14 @@
-export function formatString(str, options = { inSentence: false }) {
+export function formatString(str, options = { capitalize: true, inSentence: false }) {
     let result = str;
 
-    // Handle specific string replacements
     if (str === "balance") {
         result = "trade balance";
     }
 
-    // Capitalize first letter
-    result = result.charAt(0).toUpperCase() + result.slice(1);
+    if (options.capitalize) {
+        result = result.charAt(0).toUpperCase() + result.slice(1);
+    }
 
-    // Add context for a full sentence if required
     if (options.inSentence) {
         if (str === "balance") {
             result += " with ";

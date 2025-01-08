@@ -178,7 +178,7 @@ const unitSingle = Generators.input(unitInput)
             Trade by category
         </h2>
         <p class="normal-text">
-            Total value of exports and imports for each category of traded goods between 
+            Total value of exports imports and trade balance for each category of traded goods between 
             <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and 
             <span class="bold-text">${partnerSingle}</span> in 
             <span class="bold-text">${timeRangeSingle[0]}-${timeRangeSingle[1]}</span>.
@@ -208,8 +208,8 @@ const unitSingle = Generators.input(unitInput)
         </h2>
         ${
             categoriesSingle.length === categories.length
-            ? html`<p class="normal-text">Total yearly value of exports, imports and the resulting trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">Total yearly value of exports, imports and the resulting trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            ? html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>
