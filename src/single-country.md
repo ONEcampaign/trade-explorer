@@ -1,44 +1,36 @@
 ```js 
-import { FileAttachment } from "observablehq:stdlib";
-import { min, max } from "npm:d3-array";
-import { sortCategories } from "./components/sortCategories.js";
-import { rangeInput } from "./components/rangeInput.js";
-import { plotSingle } from "./components/plotSingle.js";
-import { tableSingle } from "./components/tableSingle.js";
-import { colorPalette } from "./components/colorPalette.js";
-import { setCustomColors } from "./components/setCustomColors.js"
-```
+import {FileAttachment} from "observablehq:stdlib";
+import {min, max} from "npm:d3-array";
+import {sortCategories} from "./components/sortCategories.js";
+import {rangeInput} from "./components/rangeInput.js";
+import {plotSingle} from "./components/plotSingle.js";
+import {tableSingle} from "./components/tableSingle.js";
+import {colorPalette} from "./components/colorPalette.js";
+import {setCustomColors} from "./components/setCustomColors.js"
 
-```js 
 setCustomColors();
-```
 
-```js 
-const tradeData = FileAttachment("./data/africa_trade_2002_2022.csv").csv({typed:true});
-```
+const tradeData = FileAttachment("./data/africa_trade_2002_2022.csv").csv({typed: true});
 
-```js 
 // Input options
 const countries = Array.from(new Set(tradeData.map((d) => d.country))).filter((item) => item !== null && item !== "");
 const partners = Array.from(new Set(tradeData.map((d) => d.partner))).filter((item) => item !== null && item !== "");
-const categories = sortCategories(Array.from(new Set(tradeData.map((d) => d.category))).filter((item) => item !== null && item !== ""));
+const categories = sortCategories(Array.from(new Set(tradeData.map((d) => d.category))).filter((item) => item != "All products" && item !== null && item !== ""));
 const timeRange = [min(tradeData, d => d.year), max(tradeData, d => d.year)];
-```
 
-```js
 const firstLink = document.querySelector("li.observablehq-secondary-link a");
 
 function updateFirstLinkText() {
-  const countryString = countryInput.value === "Dem. Rep. of the Congo" 
+    const countryString = countryInput.value === "Dem. Rep. of the Congo"
         ? "DRC-"
         : countryInput.value + "-"
-  const partnerString = partnerInput.value === "United Kingdom"
-  ? "UK"
-  : partnerInput.value;
-  
-  if (firstLink) {
-    firstLink.textContent = countryString + partnerString + " trade"
-  }
+    const partnerString = partnerInput.value === "United Kingdom"
+        ? "UK"
+        : partnerInput.value;
+
+    if (firstLink) {
+        firstLink.textContent = countryString + partnerString + " trade"
+    }
 }
 
 // Add event listeners to update text reactively
@@ -47,71 +39,79 @@ partnerInput.addEventListener("input", updateFirstLinkText);
 
 // Initial call to set the text content on page load
 updateFirstLinkText();
-```
 
-```js
 // Country Input
 const countryInput = Inputs.select(
-  countries,
-  { label: "Select country", sort: true }
+    countries,
+    {label: "African country/region", sort: true}
 )
 const countrySingle = Generators.input(countryInput);
 
 // Partner Input
 const partnerInput = Inputs.select(
-  partners,
-  { label: "Select partner", sort: true }
+    partners,
+    {label: "ONE market", sort: true}
 )
 const partnerSingle = Generators.input(partnerInput)
 
 // Time Input
 const timeRangeInput = rangeInput({
-  min: timeRange[0],
-  max: timeRange[1],
-  step: 1,
-  value: [2012, 2022],
-  label: "Adjust time range",
-  color: colorPalette.inputTheme,
-  enableTextInput: true
+    min: timeRange[0],
+    max: timeRange[1],
+    step: 1,
+    value: [2012, 2022],
+    label: "Time range",
+    color: colorPalette.inputTheme,
+    enableTextInput: true
 })
 const timeRangeSingle = Generators.input(timeRangeInput)
 
 // Select all input
 const SelectAllInput = Inputs.toggle({
-  label: "Select all",
-  value: true
+    label: "Select all",
+    value: true
 });
+
+// Aggregation input
+const aggregationInput = Inputs.radio(
+    ["Total", "Product categories"],
+    {
+        label: "Product aggregation",
+        value: "Total"
+    }
+)
+const aggregationSingle = Generators.input(aggregationInput)
 
 // Categories Input
 const categoriesInput = Inputs.checkbox(categories, {
-  label: "Select product categories",
-  value: SelectAllInput.value ? categories : []
+    label: "Product categories",
+    value: SelectAllInput.value ? categories : []
 });
 const categoriesSingle = Generators.input(categoriesInput);
 
 // Reactive behavior to update categoriesInput and trigger categoriesSingle when SelectAllInput changes
 SelectAllInput.addEventListener("input", () => {
-  categoriesInput.value = SelectAllInput.value ? categories : [];
-  
-  // Manually dispatch an input event to trigger categoriesSingle update
-  categoriesInput.dispatchEvent(new Event("input"));
+    categoriesInput.value = SelectAllInput.value ? categories : [];
+
+    // Manually dispatch an input event to trigger categoriesSingle update
+    categoriesInput.dispatchEvent(new Event("input"));
 });
 
 // Unit input
 const unitInput = Inputs.radio(
-  new Map([
-    ["Constant USD", "constant_usd_2015"],
-    ["Current USD", "current_usd"],
-    ["Percentage of GDP", "pct_gdp"]
-  ]),
-  {
-    label: "Select unit",
-    value: "constant_usd_2015"
-  }
+    new Map([
+        ["Constant USD", "constant_usd_2015"],
+        ["Current USD", "current_usd"],
+        ["Percentage of GDP", "pct_gdp"]
+    ]),
+    {
+        label: "Currency unit",
+        value: "constant_usd_2015"
+    }
 )
 const unitSingle = Generators.input(unitInput)
 ```
-
+```html
 <h1 class="header">
     Single Country
 </h1>
@@ -134,15 +134,19 @@ const unitSingle = Generators.input(unitInput)
   <div>${countryInput}</div>
   <div>${partnerInput}</div>
   <div>${timeRangeInput}</div>
-  <div>${categoriesInput}</div>
-  <div>${SelectAllInput}</div>
+  <div>${aggregationInput}</div>
+  ${
+    aggregationSingle === 'Total' 
+    ? html`<div></div>`
+    : html`<div>${categoriesInput}</div> <div>${SelectAllInput}<div>`
+  }
   <div>${unitInput}</div>
 </div>
 
-<br>
-<br>
 
 
+<br>
+<br>
 
 <div class="viz-container">
     <div class="top-panel">
@@ -157,7 +161,7 @@ const unitSingle = Generators.input(unitInput)
         </h3>
     </div>
     <div>
-        ${plotSingle(tradeData, countrySingle, partnerSingle, timeRangeSingle, categoriesSingle, unitSingle)}
+        ${plotSingle(tradeData, countrySingle, partnerSingle, timeRangeSingle, aggregationSingle, categoriesSingle, unitSingle)}
     </div>
     <div class="bottom-panel">
       <div class="text-section">
@@ -225,3 +229,4 @@ const unitSingle = Generators.input(unitInput)
         </div>
     </div>
 </div>
+```

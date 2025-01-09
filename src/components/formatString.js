@@ -1,4 +1,4 @@
-export function formatString(str, options = { capitalize: true, inSentence: false }) {
+export function formatString(str, options = {capitalize: true, inSentence: false}) {
     let result = str;
 
     if (str === "balance") {

@@ -1,5 +1,7 @@
 import pandas as pd
 import json
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from typing import Optional, Literal
 
@@ -112,21 +114,19 @@ def get_weo_gdp():
     return df
 
 
-def merge_with_weo_data(africa_trade_long: pd.DataFrame):
+def convert_units(df_long: pd.DataFrame):
     """
     Merges the processed trade data with WEO data and performs final calculations.
     """
     cc = coco.CountryConverter()
 
-    africa_trade_long["country_code"] = cc.convert(
-        africa_trade_long["country"], to="ISO3"
-    )
+    df_long["country_code"] = cc.convert(df_long["country"], to="ISO3")
 
     weo_df = get_weo_gdp()
     weo_df["country_code"] = cc.convert(weo_df["entity_name"], to="ISO3")
 
     full_df = pd.merge(
-        africa_trade_long,
+        df_long,
         weo_df,
         on=["year", "country_code"],
         how="left",
@@ -164,14 +164,93 @@ def merge_with_weo_data(africa_trade_long: pd.DataFrame):
     return full_df
 
 
+def compute_totals(df_long: pd.DataFrame):
+
+    # Map countries to regions
+    with open(PATHS.AFRICAN_REGIONS, "r") as f:
+        african_regions = json.load(f)
+
+    region_mapping = {
+        country: region
+        for region, countries in african_regions.items()
+        for country in countries
+    }
+    df_long["region"] = df_long["country"].map(region_mapping)
+
+    # compute regional total imports/exports by product category
+    regional_totals = df_long.groupby(
+        ["year", "region", "partner", "category", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    regional_totals["pct_gdp"] = None
+    regional_totals["country"] = regional_totals["region"]
+    regional_totals["region"] = None
+
+    # compute regional total imports/exports
+    regional_totals_all = df_long.groupby(
+        ["year", "region", "partner", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    regional_totals_all["pct_gdp"] = None
+    regional_totals_all["country"] = regional_totals_all["region"]
+    regional_totals_all["region"] = None
+    regional_totals_all["category"] = "Total"
+
+    # compute total imports/exports by product category
+    africa_totals = df_long.groupby(
+        ["year", "partner", "category", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    africa_totals["pct_gdp"] = None
+    africa_totals["country"] = "Africa (total)"
+
+    # compute total imports/exports
+    africa_totals_all = df_long.groupby(
+        ["year", "partner", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    africa_totals_all["pct_gdp"] = None
+    africa_totals_all["country"] = "Africa (total)"
+    africa_totals_all["category"] = "Total"
+
+    # compute country total imports/exports by product
+    country_totals = df_long.groupby(
+        ["year", "country", "partner", "category", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum", "pct_gdp": "sum"})
+
+    # compute country total imports/exports
+    country_totals_all = df_long.groupby(
+        ["year", "country", "partner", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum", "pct_gdp": "sum"})
+    country_totals_all["category"] = "Total"
+
+    # combine all results
+    result = pd.concat(
+        [
+            df_long,
+            regional_totals,
+            regional_totals_all,
+            africa_totals,
+            africa_totals_all,
+            country_totals,
+            country_totals_all,
+        ],
+        ignore_index=True,
+    )
+
+    result.drop(
+        ["region"],
+        axis=1,
+        inplace=True,
+    )
+
+    return result
+
+
 def save_data(
     df: pd.DataFrame,
     year0: int,
     year1: int,
-    save_as: Optional[Literal["json", "csv"]] = None,
+    save_as: Optional[Literal["json", "csv", "parquet"]] = None,
 ):
     """
-    Saves the final processed data in the desired format (json, csv, or none).
+    Saves the final processed data in the desired format (json, csv, parquet or none).
     """
     path_to_save = PATHS.SAVED_DATA / f"africa_trade_{year0}_{year1}.{save_as}"
 
@@ -179,12 +258,15 @@ def save_data(
         path_to_save.write_text(df.to_json(orient="records"))
     elif save_as == "csv":
         df.to_csv(path_to_save, index=False)
+    elif save_as == "parquet":
+        arrow_table = pa.Table.from_pandas(df)
+        pq.write_table(arrow_table, path_to_save, engine="BROTLI")
     else:
         return df
 
 
 def process_africa_trade_data(
-    year0: int, year1: int, save_as: Optional[Literal["json", "csv"]] = None
+    year0: int, year1: int, save_as: Optional[Literal["json", "csv", "parquet"]] = None
 ):
     """
     Process trade data between African countries and ONE market countries.
@@ -216,6 +298,8 @@ def process_africa_trade_data(
         value_name="current_usd",
     )
 
-    full_df = merge_with_weo_data(africa_trade_long)
+    africa_trade_constant = convert_units(africa_trade_long)
+
+    full_df = compute_totals(africa_trade_constant)
 
     save_data(full_df, year0, year1, save_as)

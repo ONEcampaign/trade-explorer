@@ -1,22 +1,34 @@
 import * as Plot from "npm:@observablehq/plot";
-import { groupData } from "./groupData.js";
-import { xDomain } from "./xDomain.js";
-import { yDomain } from "./yDomain.js";
-import { formatYear } from "./formatYear.js";
-import { formatValue } from "./formatValue.js";
-import { colorPalette } from "./colorPalette.js";
-import { reactiveWidth } from "./reactiveWidth.js"
-import { formatString } from "./formatString.js"
+import {groupData} from "./groupData.js";
+import {xDomain} from "./xDomain.js";
+import {yDomain} from "./yDomain.js";
+import {formatYear} from "./formatYear.js";
+import {formatValue} from "./formatValue.js";
+import {colorPalette} from "./colorPalette.js";
+import {reactiveWidth} from "./reactiveWidth.js"
+import {formatString} from "./formatString.js"
 
-export function plotSingle(data, country, partner, timeRange, categories, unit) {
+export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit) {
 
-    const dataFiltered = data.filter(
-        (d) =>
-            d.country == country &&
-            d.partner == partner &&
-            categories.includes(d.category) &&
-            d[unit] != null
+    let dataFiltered;
+    if (aggregation == "Total") {
+        dataFiltered = data.filter(
+            (d) =>
+                d.country == country &&
+                d.partner == partner &&
+                d.category == "All products" &&
+                d[unit] != null
         )
+    } else {
+        dataFiltered = data.filter(
+            (d) =>
+                d.country == country &&
+                d.partner == partner &&
+                d.category != "All products" &&
+                categories.includes(d.category) &&
+                d[unit] != null
+        )
+    }
 
     const dataByYear = groupData(dataFiltered, ["year"], unit)
 
@@ -47,55 +59,55 @@ export function plotSingle(data, country, partner, timeRange, categories, unit) 
         },
         marks: [
 
-          // Bars for imports and exports
-          Plot.barY(
-            dataFiltered, {
+            // Bars for imports and exports
+            Plot.barY(
+                dataFiltered, {
+                    x: "year",
+                    y: unit,
+                    opacity: 0.6,
+                    fill: "flow",
+                    title: (d) => `${formatYear(d.year)} ${formatString(d.flow)}\n${d.category}\n${formatValue(d[unit]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
+                    tip: true
+                }
+            ),
+
+            // Exports reactivity
+            Plot.barY(
+                dataFiltered,
+                Plot.pointer({
+                    x: "year",
+                    y: unit,
+                    opacity: 1,
+                    fill: "flow",
+                    stroke: "black",
+                    strokeWidth: 1
+                })
+            ),
+
+            // Horizontal line at 0
+            Plot.ruleY([0], {
+                stroke: "black",
+                strokeWidth: 1
+            }),
+
+            // Line for balance
+            Plot.line(dataByYear, {
                 x: "year",
-                y: unit,
-                opacity: 0.6,
-                fill: "flow",
-                title: (d) => `${formatYear(d.year)} ${formatString(d.flow)}\n${d.category}\n${formatValue(d[unit]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
-                tip: true
-            }
-          ),
+                y: "balance",
+                curve: "catmull-rom",
+                stroke: colorPalette.balance,
+                strokeWidth: 2
+            }),
 
-          // Exports reactivity
-          Plot.barY(
-            dataFiltered,
-            Plot.pointer({
-              x: "year",
-              y: unit,
-              opacity: 1,
-              fill: "flow",
-              stroke: "black",
-              strokeWidth: 1
-            })
-          ),
-
-          // Horizontal line at 0
-          Plot.ruleY([0], {
-            stroke: "black",
-            strokeWidth: 1
-          }),
-
-          // Line for balance
-          Plot.line(dataByYear, {
-            x: "year",
-            y: "balance",
-            curve: "catmull-rom",
-            stroke: colorPalette.balance,
-            strokeWidth: 2
-          }),
-
-          // Points for balance
-          Plot.dot(dataByYear, {
-            x: "year",
-            y: "balance",
-            fill: colorPalette.balance,
-            stroke: colorPalette.balance,
-            strokeWidth: 3,
-            title: (d) => `${formatYear(d.year)} Trade balance\n${formatValue(d.balance).label}${unit === "pct_gdp" ? " %" : " USD M"}`
-          }),
+            // Points for balance
+            Plot.dot(dataByYear, {
+                x: "year",
+                y: "balance",
+                fill: colorPalette.balance,
+                stroke: colorPalette.balance,
+                strokeWidth: 3,
+                title: (d) => `${formatYear(d.year)} Trade balance\n${formatValue(d.balance).label}${unit === "pct_gdp" ? " %" : " USD M"}`
+            }),
 
 //          // Labels for total exports at the top
 //          Plot.text(dataByYear, {

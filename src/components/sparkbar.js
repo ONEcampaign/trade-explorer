@@ -1,30 +1,30 @@
-import { html } from "npm:htl"
-import { hex2rgb } from "./hex2rgb.js"
-import { colorPalette } from "./colorPalette.js"
-import { formatValue } from "./formatValue.js";
+import {html} from "npm:htl"
+import {hex2rgb} from "./hex2rgb.js"
+import {colorPalette} from "./colorPalette.js"
+import {formatValue} from "./formatValue.js";
 
 export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
-  const range = globalMax - globalMin;
-  const zeroPosition = Math.abs(globalMin) / range;
+    const range = globalMax - globalMin;
+    const zeroPosition = Math.abs(globalMin) / range;
 
-  return (x) => {
-    const barWidth = (100 * Math.abs(x)) / range;
+    return (x) => {
+        const barWidth = (100 * Math.abs(x)) / range;
 
-    const barStyle =
-      alignment === "center"
-        ? `
+        const barStyle =
+            alignment === "center"
+                ? `
           position: absolute;
           height: 80%; /* Reduced height */
           top: 10%;    /* Center the reduced bar vertically */
           background: ${hex2rgb(fillColor, 0.4)};
           width: ${barWidth}%;
           ${
-            x >= 0
-              ? `left: ${zeroPosition * 100}%;`
-              : `right: ${(1 - zeroPosition) * 100}%;`
-          }
+                    x >= 0
+                        ? `left: ${zeroPosition * 100}%;`
+                        : `right: ${(1 - zeroPosition) * 100}%;`
+                }
         `
-        : `
+                : `
           position: absolute;
           height: 80%; /* Reduced height */
           top: 10%;    /* Center the reduced bar vertically */
@@ -33,25 +33,25 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
           ${alignment === "right" ? "right: 0;" : "left: 0;"};
         `;
 
-    // Zero line style with full height
-    const zeroLineStyle =
-      alignment === "center"
-        ? `
+        // Zero line style with full height
+        const zeroLineStyle =
+            alignment === "center"
+                ? `
           position: absolute;
           height: 100%;
           width: 1px;
           background: ${hex2rgb(colorPalette.midGrey, 0.5)};
           left: ${zeroPosition * 100}%;
         `
-        : alignment === "right"
-        ? `
+                : alignment === "right"
+                    ? `
           position: absolute;
           height: 100%;
           width: 1px;
           background: ${hex2rgb(colorPalette.midGrey, 0.5)};
           right: 0;
         `
-        : `
+                    : `
           position: absolute;
           height: 100%;
           width: 1px;
@@ -59,15 +59,16 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
           left: 0;
         `;
 
-    // Text alignment based on alignment type
-    const textAlignment =
-      alignment === "center"
-        ? "center"
-        : alignment === "right"
-        ? "end" // Right-align text
-        : "start"; // Left-align text
+        // Text alignment based on alignment type
+        const textAlignment =
+            alignment === "center"
+                ? "center"
+                : alignment === "right"
+                    ? "end" // Right-align text
+                    : "start"; // Left-align text
 
-    return html`<div style="
+        return html`
+            <div style="
       position: relative;
       width: 100%;
       height: var(--size-l);
@@ -77,9 +78,9 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
       align-items: center;
       justify-content: ${textAlignment};
       box-sizing: border-box;">
-        <div style="${barStyle}"></div>
-        <div style="${zeroLineStyle}"></div> <!-- Zero line -->
-        <span style="
+                <div style="${barStyle}"></div>
+                <div style="${zeroLineStyle}"></div> <!-- Zero line -->
+                <span style="
           position: relative;
           z-index: 0;
           font-size: var(--size-s);
@@ -88,6 +89,6 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
           padding: 0 3px;">
           ${formatValue(x).label}
         </span>
-    </div>`;
-  };
+            </div>`;
+    };
 }

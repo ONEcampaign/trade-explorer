@@ -14,6 +14,7 @@ export const theme_Flat = `
   margin: 2px;
   vertical-align: middle;
 }
+
 :scope .range-track {
   box-sizing: border-box;
   position: relative;

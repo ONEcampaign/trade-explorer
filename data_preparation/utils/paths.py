@@ -7,6 +7,7 @@ class PATHS:
     UTILS = Path.cwd() / "data_preparation" / "utils"
     HARMONISED_SYSTEM = UTILS / "harmonised_system.json"
     AFRICAN_COUNTRIES = UTILS / "african_countries.txt"
+    AFRICAN_REGIONS = UTILS / "african_regions.json"
 
     DATA = Path.cwd() / "data_preparation" / "data"
     PYDEFLATE = DATA / "pydeflate"
