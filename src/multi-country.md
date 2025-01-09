@@ -8,18 +8,35 @@ import {colorPalette} from './components/colorPalette.js';
 import {rangeInput} from "./components/rangeInput.js"
 import {setCustomColors} from "./components/setCustomColors.js"
 import {formatString} from "./components/formatString.js"
+```
 
+```js
 setCustomColors();
+```
 
-const dams = FileAttachment("data/us-dams.parquet").parquet();
+```js
+// const tradeData = FileAttachment("./data/africa_trade_2002_2022.parquet").parquet();
+const tradeData = FileAttachment("./data/africa_trade_2002_2022.csv").csv({typed: true});
+```
 
+```js
 // Input options
-const countries = Array.from(new Set(tradeData.map((d) => d.country))).filter((item) => item !== null && item !== "");
-const partners = Array.from(new Set(tradeData.map((d) => d.partner))).filter((item) => item !== null && item !== "");
-const categories = sortCategories(Array.from(new Set(tradeData.map((d) => d.category))).filter((item) => item != "All products" && item !== null && item !== ""));
-const timeRange = [min(tradeData, d => d.year), max(tradeData, d => d.year)];
+const countries = Array.from(
+    new Set(tradeData.map((d) => d.country))).filter((item) => item
+);
+const partners = Array.from(
+    new Set(tradeData.map((d) => d.partner))).filter((item) => item
+);
+const categories = sortCategories(
+    Array.from(
+        new Set(tradeData.map((d) => d.category))).filter((item) => item !== "Total"
+    )
+);
+const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
+```
 
-
+```js
+// Remane plot link in toc
 const firstLink = document.querySelector("li.observablehq-secondary-link a");
 
 function updateFirstLinkText() {
@@ -41,7 +58,9 @@ partnerInput.addEventListener("input", updateFirstLinkText);
 
 // Initial call to set the text content on page load
 updateFirstLinkText();
+```
 
+```js
 // Country Input
 const countryInput = Inputs.select(
     Array.from(new Set(tradeData.map((d) => d.country))),
@@ -49,45 +68,37 @@ const countryInput = Inputs.select(
         label: "African countries/regions",
         sort: true,
         multiple: true,
-        value: [
-            "South Africa",
-            "Kenya",
-            "Nigeria",
-            "Senegal",
-            "Côte d'Ivoire"
-            // "Ghana"
-            // "Ethiopia"
-            // "Zambia"
-            // "Uganda"
-            // "Dem. Rep. of the Congo"
-        ]
-    }
-)
+        value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
+    })
 const countryMulti = Generators.input(countryInput);
 
 // Partner Input
 const partnerInput = Inputs.select(
     partners,
-    {label: "ONE market", sort: true}
-)
+    {
+        label: "ONE market", 
+        sort: true
+    })
 const partnerMulti = Generators.input(partnerInput)
 
 // Select all input
-const SelectAllInput = Inputs.toggle({
-    label: "Select all",
-    value: true
-});
+const SelectAllInput = Inputs.toggle(
+    {
+        label: "Select all",
+        value: true
+    });
 
 // Time Input
-const timeRangeInput = rangeInput({
-    min: timeRange[0],
-    max: timeRange[1],
-    step: 1,
-    value: [2012, 2022],
-    label: "Time range",
-    color: colorPalette.inputTheme,
-    enableTextInput: true
-})
+const timeRangeInput = rangeInput(
+    {
+        min: timeRange[0],
+        max: timeRange[1],
+        step: 1,
+        value: [2012, 2022],
+        label: "Time range",
+        color: colorPalette.inputTheme,
+        enableTextInput: true
+    })
 const timeRangeMulti = Generators.input(timeRangeInput)
 
 // Aggregation input
@@ -96,22 +107,21 @@ const aggregationInput = Inputs.radio(
     {
         label: "Product aggregation",
         value: "Total"
-    }
-)
+    })
 const aggregationMulti = Generators.input(aggregationInput)
 
 // Categories Input
-const categoriesInput = Inputs.checkbox(categories, {
-    label: "Product categories",
-    value: SelectAllInput.value ? categories : []
-});
+const categoriesInput = Inputs.checkbox(
+    categories, 
+    {
+        label: "Product categories",
+        value: SelectAllInput.value ? categories : []
+    });
 const categoriesMulti = Generators.input(categoriesInput);
 
-// Reactive behavior to update categoriesInput and trigger categoriesMulti when SelectAllInput changes
+// Make categories checkboxes reactive to select all checkbox
 SelectAllInput.addEventListener("input", () => {
     categoriesInput.value = SelectAllInput.value ? categories : [];
-
-    // Manually dispatch an input event to trigger categoriesMulti update
     categoriesInput.dispatchEvent(new Event("input"));
 });
 
@@ -123,7 +133,7 @@ const unitInput = Inputs.radio(
         ["Current USD", "current_usd"]
     ]),
     {
-        label: "Currency unit",
+        label: "Currency",
         value: "pct_gdp"
     }
 )
