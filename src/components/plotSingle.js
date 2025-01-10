@@ -5,26 +5,25 @@ import {yDomain} from "./yDomain.js";
 import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
 import {colorPalette} from "./colorPalette.js";
-import {reactiveWidth} from "./reactiveWidth.js"
 import {formatString} from "./formatString.js"
 
-export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit) {
+export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit, width) {
 
     let dataFiltered;
-    if (aggregation == "Total") {
+    if (aggregation === "Total") {
         dataFiltered = data.filter(
             (d) =>
-                d.country == country &&
-                d.partner == partner &&
-                d.category == "All products" &&
+                d.country === country &&
+                d.partner === partner &&
+                d.category === "Total" &&
                 d[unit] != null
         )
     } else {
         dataFiltered = data.filter(
             (d) =>
-                d.country == country &&
-                d.partner == partner &&
-                d.category != "All products" &&
+                d.country === country &&
+                d.partner === partner &&
+                d.category !== "Total" &&
                 categories.includes(d.category) &&
                 d[unit] != null
         )
@@ -33,7 +32,7 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
     const dataByYear = groupData(dataFiltered, ["year"], unit)
 
     return Plot.plot({
-        width: reactiveWidth,
+        width: width,
         height: 500,
         marginTop: 25,
         marginRight: 25,

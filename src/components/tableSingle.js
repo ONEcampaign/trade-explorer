@@ -4,16 +4,15 @@ import {getLimits} from "./getLimits.js"
 import {sparkbar} from "./sparkbar.js"
 import {colorPalette} from "./colorPalette.js"
 import {formatYear} from "./formatYear.js"
-import {reactiveWidth} from "./reactiveWidth.js";
 import {formatString} from "./formatString.js"
 
-export function tableSingle(data, groupKey, country, partner, categories, unit, timeRange = null) {
+export function tableSingle(data, groupKey, country, partner, categories, unit, timeRange = null, width) {
 
     let dataFiltered = data.filter(
         (d) =>
-            d.country == country &&
-            d.partner == partner &&
-            d.category != "All products" &&
+            d.country === country &&
+            d.partner === partner &&
+            d.category !== "All products" &&
             categories.includes(d.category) &&
             d[unit] != null
     )
@@ -72,6 +71,6 @@ export function tableSingle(data, groupKey, country, partner, categories, unit, 
             exports: "left",
             balance: "center"
         },
-        width: reactiveWidth - 50
+        width: width - 25
     });
 }

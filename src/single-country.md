@@ -8,28 +8,25 @@ import {tableSingle} from "./components/tableSingle.js";
 import {colorPalette} from "./components/colorPalette.js";
 import {setCustomColors} from "./components/setCustomColors.js"
 ```
+
 ```js 
 setCustomColors();
 ```
+
 ```js 
-// const tradeData = FileAttachment("./data/africa_trade_2002_2022.parquet").parquet();
-const tradeData = FileAttachment("./data/africa_trade_2002_2022.csv").csv({typed: true});
+const rawData = await FileAttachment("./data/africa_trade.parquet").parquet();
+const tradeData = rawData.toArray()
+    .map((d) => ({...d,year: Number(d.year)}));
 ```
 
 ```js
 // Input options
-const countries = Array.from(
-    new Set(tradeData.map((d) => d.country).filter((item) => item))
-);
-const partners = Array.from(
-    new Set(tradeData.map((d) => d.partner).filter((item) => item))
-);
+const countries = Array.from(new Set(tradeData.map((d) => d.country)));
+const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
 const categories = sortCategories(
-    Array.from(
-        new Set(tradeData.map((d) => d.category).filter((item) => item !== "Total"))
-    )
+    Array.from(new Set(tradeData.map((d) => d.category)))
+        .filter((item) => item !== "Total")
 );
-
 const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
 ```
 
@@ -135,6 +132,7 @@ const unitInput = Inputs.radio(
 )
 const unitSingle = Generators.input(unitInput)
 ```
+
 ```html
 <h1 class="header">
     Single Country
@@ -155,25 +153,23 @@ const unitSingle = Generators.input(unitInput)
 <br>
 
 <div class="card" style="display: grid; gap: 0.5rem;">
-  <div>${countryInput}</div>
-  <div>${partnerInput}</div>
-  <div>${timeRangeInput}</div>
-  <div>${aggregationInput}</div>
-  ${
-    aggregationSingle === 'Total' 
-    ? html`<div></div>`
-    : html`<div>${categoriesInput}</div> <div>${SelectAllInput}<div>`
-  }
-  <div>${unitInput}</div>
+    <div>${countryInput}</div>
+    <div>${partnerInput}</div>
+    <div>${timeRangeInput}</div>
+    <div>${aggregationInput}</div>
+     ${
+        aggregationSingle === 'Total' 
+        ? html``
+        : html`<div>${categoriesInput}</div> <div>${SelectAllInput}<div>`
+    }
+    <div>${unitInput}</div>
 </div>
-
-
-
+    
 <br>
 <br>
-
+    
 <div class="viz-container">
-    <div class="top-panel">
+    <div class="top-panel" style=`width:${width}`>
         <h2 class="plot-title" id="trade-plot">
             Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}
         </h2>
@@ -185,23 +181,25 @@ const unitSingle = Generators.input(unitInput)
         </h3>
     </div>
     <div>
-        ${plotSingle(tradeData, countrySingle, partnerSingle, timeRangeSingle, aggregationSingle, categoriesSingle, unitSingle)}
+        ${resize((width) =>
+            plotSingle(tradeData, countrySingle, partnerSingle, timeRangeSingle, aggregationSingle, categoriesSingle, unitSingle, width)
+        )}
     </div>
-    <div class="bottom-panel">
-      <div class="text-section">
-        <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI: International Trade Database at the Product-Level</a>. CEPII</p>
-      </div>
-      <div class="logo-section">
-        <img src="./ONE-logo-black.png"/>
-      </div>
+    <div class="bottom-panel" style=`width:${width}`>
+        <div class="text-section">
+            <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI: International Trade Database at the Product-Level</a>. CEPII</p>
+        </div>
+        <div class="logo-section">
+            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
+        </div>
     </div>
 </div>
-
+    
 <br>
 <br>
 
 <div class="viz-container">
-    <div class="top-panel">
+    <div class="top-panel" style=`width:${width}`>
         <h2 class="section-header" id="trade-by-category">
             Trade by category
         </h2>
@@ -213,15 +211,17 @@ const unitSingle = Generators.input(unitInput)
         </p>
     </div>
     <div>
-        ${tableSingle(tradeData, "category", countrySingle, partnerSingle, categoriesSingle, unitSingle, timeRangeSingle)}
+        ${resize((width) =>
+            tableSingle(tradeData, "category", countrySingle, partnerSingle, categoriesSingle, unitSingle, timeRangeSingle, width)
+        )}
     </div>
-    <div class="bottom-panel">
-        <div class="text-section">
+    <div class="bottom-panel" style=`width:${width}`>
+        <div class="text-section"> 
             <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI: International Trade Database at the Product-Level</a>. CEPII</p>
             <p class="plot-note">All values ${unitSingle === "pct_gdp" ? "as percentage of GDP" : unitSingle === "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"}.</p>
         </div>
         <div class="logo-section">
-            <img src="./ONE-logo-black.png"/>
+            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>
@@ -230,7 +230,7 @@ const unitSingle = Generators.input(unitInput)
 <br>
 
 <div class="viz-container">
-        <div class="top-panel">
+    <div class="top-panel" style=`width:${width}`>
         <h2 class="section-header" id="trade-by-year">
             Trade by year
         </h2>
@@ -241,15 +241,25 @@ const unitSingle = Generators.input(unitInput)
         }
     </div>
     <div>
-        ${tableSingle(tradeData, "year", countrySingle, partnerSingle, categoriesSingle, unitSingle)}
+        ${resize((width) =>
+            tableSingle(tradeData, "year", countrySingle, partnerSingle, categoriesSingle, unitSingle, width)
+        )}
     </div>
-    <div class="bottom-panel">
+    <div class="bottom-panel" style=`width:${width}`>
         <div class="text-section">
-            <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI: International Trade Database at the Product-Level</a>. CEPII</p>
-            <p class="plot-note">All values ${unitSingle === "pct_gdp" ? "as percentage of GDP" : unitSingle === "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"}.</p>
+            <p class="plot-source">
+                Source: Gaulier and Zignago (2010) 
+                    <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI: International Trade Database at the Product-Level</a>. 
+                CEPII
+            </p>
+            <p class="plot-note">All values 
+                ${
+                    unitSingle === "pct_gdp" ? "as percentage of GDP" : unitSingle === "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"
+                }.
+            </p>
         </div>
         <div class="logo-section">
-            <img src="./ONE-logo-black.png"/>
+            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>

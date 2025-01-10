@@ -7,7 +7,7 @@ const colfaxRegular2 = FileAttachment("./fonts/Colfax-Regular.woff2")
 ```js 
 console.log(await colfaxRegular.url());
 ```
-
+```html
 <h1 class="header">
     Trade Data Explorer
 </h1>
@@ -31,5 +31,5 @@ console.log(await colfaxRegular.url());
     <li>
         <a href="/multi-country" class="bold-text">Multi country</a> lets you compare trade relationships of multiple African countries with a ONE market.
     </li>
-
 </ul>
+```

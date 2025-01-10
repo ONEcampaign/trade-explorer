@@ -8,6 +8,10 @@ import {colorPalette} from './components/colorPalette.js';
 import {rangeInput} from "./components/rangeInput.js"
 import {setCustomColors} from "./components/setCustomColors.js"
 import {formatString} from "./components/formatString.js"
+import {toPng} from 'npm:html-to-image';
+
+
+// var htmlToImage = require('html-to-image');
 ```
 
 ```js
@@ -15,22 +19,18 @@ setCustomColors();
 ```
 
 ```js
-// const tradeData = FileAttachment("./data/africa_trade_2002_2022.parquet").parquet();
-const tradeData = FileAttachment("./data/africa_trade_2002_2022.csv").csv({typed: true});
+const rawData = await FileAttachment("./data/africa_trade.parquet").parquet();
+const tradeData = rawData.toArray()
+    .map((d) => ({...d,year: Number(d.year)}));
 ```
 
 ```js
 // Input options
-const countries = Array.from(
-    new Set(tradeData.map((d) => d.country))).filter((item) => item
-);
-const partners = Array.from(
-    new Set(tradeData.map((d) => d.partner))).filter((item) => item
-);
+const countries = Array.from(new Set(tradeData.map((d) => d.country)));
+const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
 const categories = sortCategories(
-    Array.from(
-        new Set(tradeData.map((d) => d.category))).filter((item) => item !== "Total"
-    )
+    Array.from(new Set(tradeData.map((d) => d.category)))
+        .filter((item) => item !== "Total")
 );
 const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
 ```
@@ -167,13 +167,12 @@ const flowMulti = Generators.input(flowInput)
 </p>
 
 <p class="normal-text">
-    <a href="#trade-plot">This plot</a> contains a line for each african country showing the selected trade flow with
-    the indicated trade partner.
+    <a href="#trade-plot">This plot</a> contains a line for each african country showing the selected trade flow with the indicated trade partner.
 </p>
 
 <p class="normal-text">
-    <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas <a
-        href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
+    <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas 
+    <a href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
 </p>
 
 <br>
@@ -184,130 +183,123 @@ const flowMulti = Generators.input(flowInput)
     <div>${timeRangeInput}</div>
     <div>${aggregationInput}</div>
     ${
-    aggregationMulti === 'Total'
-    ? html`
-    <div></div>
-    `
-    : html`
-    <div>${categoriesInput}</div>
-    <div>${SelectAllInput}
-        <div>`
-            }
-            <div>${unitInput}</div>
+        aggregationMulti === 'Total'
+        ? html``
+        : html`<div>${categoriesInput}</div><div>${SelectAllInput}<div>`
+    }
+    <div>${unitInput}</div>
+</div>
+    
+<br>
+<br>
+
+<div class="viz-container">
+    <div class="top-panel" style=`width:${width}`>
+        <h2 class="plot-title" id="trade-plot">
+            ${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}
+        </h2>
+        <h3 class="plot-subtitle">
+            Selected African countries
+        </h3>
+    </div>
+    <div>
+        ${resize((width) => 
+            plotMulti(tradeData, countryMulti, partnerMulti, timeRangeMulti, aggregationMulti, categoriesMulti, unitMulti, flowMulti, width)
+        )}
+    </div>
+    <div class="bottom-panel" style=`width:${width}`>
+        <div class="text-section">
+            <p class="plot-source">
+                Source: Gaulier and Zignago (2010)
+                <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">
+                    BACI: International Trade Database at the Product-Level
+                </a>. CEPII
+            </p>
         </div>
-
-        <br>
-        <br>
-
-        <div class="viz-container">
-            <div class="top-panel">
-                <h2 class="plot-title" id="trade-plot">
-                    ${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}
-                </h2>
-                <h3 class="plot-subtitle">
-                    Selected African countries
-                </h3>
-            </div>
-            <div>
-                ${plotMulti(tradeData, countryMulti, partnerMulti, timeRangeMulti, aggregationMulti, categoriesMulti,
-                unitMulti, flowMulti)}
-            </div>
-            <div class="bottom-panel">
-                <div class="text-section">
-                    <p class="plot-source">
-                        Source: Gaulier and Zignago (2010)
-                        <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                           rel="noopener noreferrer">
-                            BACI: International Trade Database at the Product-Level
-                        </a>
-                        . CEPII
-                    </p>
-                </div>
-                <div class="logo-section">
-                    <img src="ONE-logo-black.png"/>
-                </div>
-            </div>
+        <div class="logo-section">
+            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
         </div>
+    </div>
+</div>
 
-        <br>
-        <br>
+<br>
+<br>
 
-        <div class="viz-container">
-            <div class="top-panel">
-                <h2 class="section-header" id="trade-by-category">
-                    Trade by category
-                </h2>
-                <p class="normal-text">
-                    Total value of
-                    <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}</span>
-                    <span class="bold-text">${partnerMulti}</span> for each category of traded goods in
-                    <span class="bold-text">${timeRangeMulti[0]}-${timeRangeMulti[1]}</span>.
-                </p>
-            </div>
-            <div>
-                ${tableMulti(tradeData, "category", countryMulti, partnerMulti, categoriesMulti, unitMulti, flowMulti,
-                timeRangeMulti)}
-            </div>
-            <div class="bottom-panel">
-                <div class="text-section">
-                    <p class="plot-source">
-                        Source: Gaulier and Zignago (2010)
-                        <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                           rel="noopener noreferrer">
-                            BACI: International Trade Database at the Product-Level
-                        </a>
-                        . CEPII
-                    </p>
-                    <p class="plot-note">All values ${unitMulti === "pct_gdp" ? "as percentage of GDP" : unitMulti ===
-                        "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"}.</p>
-                </div>
-                <div class="logo-section">
-                    <img src="ONE-logo-black.png"/>
-                </div>
-            </div>
-        </div>
-
-        <br>
-        <br>
-
-        <div class="viz-container">
-            <div class="top-panel">
-                <h2 class="section-header" id="trade-by-year">
-                    Trade by year
-                </h2>
+<div class="viz-container">
+    <div class="top-panel" style=`width:${width}`>
+        <h2 class="section-header" id="trade-by-category">
+            Trade by category
+        </h2>
+        <p class="normal-text">
+            Total value of
+            <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}</span>
+            <span class="bold-text">${partnerMulti}</span> for each category of traded goods in
+            <span class="bold-text">${timeRangeMulti[0]}-${timeRangeMulti[1]}</span>.
+        </p>
+    </div>
+    <div>
+        ${resize((width) =>
+            tableMulti(tradeData, "category", countryMulti, partnerMulti, categoriesMulti, unitMulti, flowMulti, timeRangeMulti, width)
+        )}
+    </div>
+    <div class="bottom-panel" style=`width:${width}`>
+        <div class="text-section">
+            <p class="plot-source">
+                Source: Gaulier and Zignago (2010)
+                <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">
+                    BACI: International Trade Database at the Product-Level
+                </a>. 
+                CEPII
+            </p>
+            <p class="plot-note">All values 
                 ${
-                categoriesMulti.length === categories.length
-                ? html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span>
-                including <span class="bold-text">all product categories</span>.</p>`
-                : html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span>
-                including the following product categories:</p>
-                <ul>${categoriesMulti.map((item) => html`
-                    <li>${item}</li>
-                    `)}
-                </ul>
-                <br>`
-                }
-            </div>
-            <div>
-                ${tableMulti(tradeData, "year", countryMulti, partnerMulti, categoriesMulti, unitMulti, flowMulti,
-                timeRangeMulti)}
-            </div>
-            <div class="bottom-panel">
-                <div class="text-section">
-                    <p class="plot-source">
-                        Source: Gaulier and Zignago (2010)
-                        <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                           rel="noopener noreferrer">
-                            BACI: International Trade Database at the Product-Level
-                        </a>
-                        . CEPII
-                    </p>
-                    <p class="plot-note">All values ${unitMulti === "pct_gdp" ? "as percentage of GDP" : unitMulti ===
-                        "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"}.</p>
-                </div>
-                <div class="logo-section">
-                    <img src="ONE-logo-black.png"/>
-                </div>
-            </div>
+                    unitMulti === "pct_gdp" ? "as percentage of GDP" : unitMulti === "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"
+                }.
+            </p>
         </div>
+        <div class="logo-section"> 
+            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+        </div>
+    </div>
+</div>
+
+<br>
+<br>
+
+<div class="viz-container">
+    <div class="top-panel" style=`width:${width}`>
+        <h2 class="section-header" id="trade-by-year">
+            Trade by year
+        </h2>
+        ${
+            categoriesMulti.length === categories.length
+            ? html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
+        }
+    </div>
+    <div>
+        ${resize((width) =>
+            tableMulti(tradeData, "year", countryMulti, partnerMulti, categoriesMulti, unitMulti, flowMulti, timeRangeMulti, width)
+        )}
+    </div>
+    <div class="bottom-panel" style=`width:${width}`>
+        <div class="text-section">
+            <p class="plot-source">
+                Source: Gaulier and Zignago (2010)
+                <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">
+                    BACI: International Trade Database at the Product-Level
+                </a>
+                . CEPII
+            </p>
+            <p class="plot-note">All values 
+                ${
+                    unitMulti === "pct_gdp" ? "as percentage of GDP" : unitMulti === "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"
+                }.
+            </p>
+        </div>
+        <div class="logo-section">
+            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+        </div>
+    </div>
+</div>
 ```

@@ -4,27 +4,26 @@ import {xDomain} from "./xDomain.js";
 import {yDomain} from "./yDomain.js";
 import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
-import {reactiveWidth} from "./reactiveWidth.js"
 import {jitterLabels} from "./jitterLabels.js"
 import {formatString} from "./formatString.js"
 
-export function plotMulti(data, countries, partner, timeRange, aggregation, categories, unit, flow) {
+export function plotMulti(data, countries, partner, timeRange, aggregation, categories, unit, flow, width) {
 
     let dataFiltered;
-    if (aggregation == "Total") {
+    if (aggregation === "Total") {
         dataFiltered = data.filter(
             (d) =>
                 countries.includes(d.country) &&
-                d.partner == partner &&
-                d.category == "All products" &&
+                d.partner === partner &&
+                d.category === "Total" &&
                 d[unit] != null
         )
     } else {
         dataFiltered = data.filter(
             (d) =>
                 countries.includes(d.country) &&
-                d.partner == partner &&
-                d.category != "All products" &&
+                d.partner === partner &&
+                d.category !== "Total" &&
                 categories.includes(d.category) &&
                 d[unit] != null
         )
@@ -33,7 +32,7 @@ export function plotMulti(data, countries, partner, timeRange, aggregation, cate
     const groupedData = groupData(dataFiltered, ["year", "country"], unit)
 
     return Plot.plot({
-        width: reactiveWidth,
+        width: width,
         height: 500,
         marginTop: 25,
         marginRight: 75,

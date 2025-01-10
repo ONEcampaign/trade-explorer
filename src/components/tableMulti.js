@@ -5,16 +5,15 @@ import {groupData} from "./groupData.js"
 import {reshapeDataForTable} from "./reshapeDataForTable.js"
 import {getLimits} from "./getLimits.js"
 import {sparkbar} from "./sparkbar.js"
-import {reactiveWidth} from "./reactiveWidth.js";
 import {formatString} from "./formatString.js"
 
-export function tableMulti(data, groupKey, country, partner, categories, unit, flow, timeRange = null) {
+export function tableMulti(data, groupKey, country, partner, categories, unit, flow, timeRange = null, width) {
 
     let dataFiltered = data.filter(
         (d) =>
             country.includes(d.country) &&
-            d.partner == partner &&
-            d.category != "All products" &&
+            d.partner === partner &&
+            d.category !== "All products" &&
             categories.includes(d.category) &&
             d[unit] != null
     )
@@ -45,7 +44,7 @@ export function tableMulti(data, groupKey, country, partner, categories, unit, f
 
     return Inputs.table(tableData, {
         sort: groupKey === "year" ? "year" : undefined, // Sort by year if grouping by year
-        reverse: groupKey === "year" ? true : false,
+        reverse: groupKey === "year",
         format: {
             [groupKey]: (x) => x, // General formatter for groupKey (year or category)
             ...Object.fromEntries(
@@ -69,6 +68,6 @@ export function tableMulti(data, groupKey, country, partner, categories, unit, f
         align: {
             [groupKey]: "left"
         },
-        width: reactiveWidth - 50
+        width: width - 25
     });
 }

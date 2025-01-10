@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import pyarrow as pa
 import pyarrow.parquet as pq
+import sys
 
 from typing import Optional, Literal
 
@@ -9,8 +10,20 @@ import bblocks_data_importers as bbdata
 import country_converter as coco
 from pydeflate import imf_gdp_deflate, set_pydeflate_path
 
+from pathlib import Path
 
-from data_preparation.utils.paths import PATHS
+class PATHS:
+    """Class to store the paths to the data."""
+
+    UTILS = Path.cwd() / "src" / "data" / "utils"
+    HARMONISED_SYSTEM = UTILS / "harmonised_system.json"
+    AFRICAN_COUNTRIES = UTILS / "african_countries.txt"
+    AFRICAN_REGIONS = UTILS / "african_regions.json"
+
+    DATA = Path.cwd() / "data_preparation" / "data"
+    PYDEFLATE = DATA / "pydeflate"
+    BACI = DATA / "BACI_HS02_V202401b"
+    COUNTRY_CODES = BACI / "country_codes_V202401b.csv"
 
 
 def load_mappings():
@@ -32,11 +45,11 @@ def load_mappings():
 
 
 def filter_and_aggregate_data(
-    raw_df,
-    product_code_to_category,
-    country_code_to_name,
-    african_countries,
-    one_markets,
+        raw_df,
+        product_code_to_category,
+        country_code_to_name,
+        african_countries,
+        one_markets,
 ):
     """
     Filter and aggregate the raw trade data.
@@ -58,7 +71,7 @@ def filter_and_aggregate_data(
     df = df[
         (df["importer"].isin(african_countries) & df["exporter"].isin(one_markets))
         | (df["importer"].isin(one_markets) & df["exporter"].isin(african_countries))
-    ]
+        ]
 
     return df.groupby(["year", "exporter", "importer", "category"], as_index=False).agg(
         {"value": "sum"}
@@ -151,7 +164,7 @@ def convert_units(df_long: pd.DataFrame):
     )
 
     full_df["pct_gdp"] = (
-        full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
+            full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
     )
     full_df.drop(
         ["country_code", "entity_name", "value", "constant_gdp_2015"],
@@ -243,29 +256,24 @@ def compute_totals(df_long: pd.DataFrame):
 
 
 def save_data(
-    df: pd.DataFrame,
-    year0: int,
-    year1: int,
-    save_as: Optional[Literal["json", "csv", "parquet"]] = None,
+        df: pd.DataFrame,
 ):
     """
     Saves the final processed data in the desired format (json, csv, parquet or none).
     """
-    path_to_save = PATHS.SAVED_DATA / f"africa_trade_{year0}_{year1}.{save_as}"
 
-    if save_as == "json":
-        path_to_save.write_text(df.to_json(orient="records"))
-    elif save_as == "csv":
-        df.to_csv(path_to_save, index=False)
-    elif save_as == "parquet":
-        arrow_table = pa.Table.from_pandas(df)
-        pq.write_table(arrow_table, path_to_save, compression="BROTLI")
-    else:
-        return df
+    # Write DataFrame to a temporary file-like object
+    buf = pa.BufferOutputStream()
+    table = pa.Table.from_pandas(df)
+    pq.write_table(table, buf, compression="snappy")
+    # Get the buffer as a bytes object
+    buf_bytes = buf.getvalue().to_pybytes()
+    # Write the bytes to standard output
+    sys.stdout.buffer.write(buf_bytes)
 
 
 def process_africa_trade_data(
-    year0: int, year1: int, save_as: Optional[Literal["json", "csv", "parquet"]] = None
+        year0: int, year1: int
 ):
     """
     Process trade data between African countries and ONE market countries.
@@ -301,4 +309,7 @@ def process_africa_trade_data(
 
     full_df = compute_totals(africa_trade_constant)
 
-    save_data(full_df, year0, year1, save_as)
+    save_data(full_df)
+
+
+process_africa_trade_data(2002, 2022)

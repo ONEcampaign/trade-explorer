@@ -1,3 +1,4 @@
+```html
 <h1 class="header">
     Methodology
 </h1>
@@ -23,7 +24,7 @@
 <p class="normal-text">
     The scripts to wrangle the data are included in the <span style="font-family: monospace">data_preparation</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repo</a>.
 </p>
-
+```
 
 
 
