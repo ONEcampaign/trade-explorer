@@ -12,6 +12,7 @@ from pydeflate import imf_gdp_deflate, set_pydeflate_path
 
 from pathlib import Path
 
+
 class PATHS:
     """Class to store the paths to the data."""
 
@@ -45,11 +46,11 @@ def load_mappings():
 
 
 def filter_and_aggregate_data(
-        raw_df,
-        product_code_to_category,
-        country_code_to_name,
-        african_countries,
-        one_markets,
+    raw_df,
+    product_code_to_category,
+    country_code_to_name,
+    african_countries,
+    one_markets,
 ):
     """
     Filter and aggregate the raw trade data.
@@ -71,7 +72,7 @@ def filter_and_aggregate_data(
     df = df[
         (df["importer"].isin(african_countries) & df["exporter"].isin(one_markets))
         | (df["importer"].isin(one_markets) & df["exporter"].isin(african_countries))
-        ]
+    ]
 
     return df.groupby(["year", "exporter", "importer", "category"], as_index=False).agg(
         {"value": "sum"}
@@ -84,14 +85,7 @@ def process_trade_data(year0: int, year1: int):
     """
     product_code_to_category, country_code_to_name = load_mappings()
     african_countries = pd.read_csv(PATHS.AFRICAN_COUNTRIES)["countries"].tolist()
-    one_markets = [
-        "USA",
-        "Canada",
-        "United Kingdom",
-        "France",
-        "Germany",
-        "Belgium"
-    ]
+    one_markets = ["USA", "Canada", "United Kingdom", "France", "Germany", "Belgium"]
 
     agg_data_path = PATHS.DATA / f"{year0}_{year1}_raw_cepii.csv"
     if agg_data_path.exists():
@@ -164,7 +158,7 @@ def convert_units(df_long: pd.DataFrame):
     )
 
     full_df["pct_gdp"] = (
-            full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
+        full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
     )
     full_df.drop(
         ["country_code", "entity_name", "value", "constant_gdp_2015"],
@@ -256,7 +250,7 @@ def compute_totals(df_long: pd.DataFrame):
 
 
 def save_data(
-        df: pd.DataFrame,
+    df: pd.DataFrame,
 ):
     """
     Saves the final processed data in the desired format (json, csv, parquet or none).
@@ -272,9 +266,7 @@ def save_data(
     sys.stdout.buffer.write(buf_bytes)
 
 
-def process_africa_trade_data(
-        year0: int, year1: int
-):
+def process_africa_trade_data(year0: int, year1: int):
     """
     Process trade data between African countries and ONE market countries.
     """

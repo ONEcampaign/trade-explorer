@@ -71,14 +71,7 @@ def process_trade_data(year0: int, year1: int):
     """
     product_code_to_category, country_code_to_name = load_mappings()
     african_countries = pd.read_csv(PATHS.AFRICAN_COUNTRIES)["countries"].tolist()
-    one_markets = [
-        "USA",
-        "Canada",
-        "United Kingdom",
-        "France",
-        "Germany",
-        "Belgium"
-    ]
+    one_markets = ["USA", "Canada", "United Kingdom", "France", "Germany", "Belgium"]
 
     agg_data_path = PATHS.DATA / f"{year0}_{year1}_raw_cepii.csv"
     if agg_data_path.exists():
