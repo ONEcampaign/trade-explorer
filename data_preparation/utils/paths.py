@@ -13,5 +13,3 @@ class PATHS:
     PYDEFLATE = DATA / "pydeflate"
     BACI = DATA / "BACI_HS02_V202401b"
     COUNTRY_CODES = BACI / "country_codes_V202401b.csv"
-
-    SAVED_DATA = Path.cwd() / "src" / "data"

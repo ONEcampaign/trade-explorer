@@ -7,6 +7,9 @@ import {plotSingle} from "./components/plotSingle.js";
 import {tableSingle} from "./components/tableSingle.js";
 import {colorPalette} from "./components/colorPalette.js";
 import {setCustomColors} from "./components/setCustomColors.js"
+import {formatString} from "./components/formatString.js"
+import {downloadImage} from './components/downloadImage.js'
+
 ```
 
 ```js 
@@ -25,7 +28,7 @@ const countries = Array.from(new Set(tradeData.map((d) => d.country)));
 const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
 const categories = sortCategories(
     Array.from(new Set(tradeData.map((d) => d.category)))
-        .filter((item) => item !== "Total")
+        .filter((item) => item !== "All products")
 );
 const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
 ```
@@ -60,7 +63,7 @@ updateFirstLinkText();
 const countryInput = Inputs.select(
     countries,
     {
-        label: "African country/region", 
+        label: "Country/region", 
         sort: true
     })
 const countrySingle = Generators.input(countryInput);
@@ -96,10 +99,10 @@ const SelectAllInput = Inputs.toggle(
 
 // Aggregation input
 const aggregationInput = Inputs.radio(
-    ["Total", "Product categories"],
+    ["All products", "Product categories"],
     {
-        label: "Product aggregation",
-        value: "Total"
+        label: "Products",
+        value: "All products"
     })
 const aggregationSingle = Generators.input(aggregationInput)
 
@@ -107,7 +110,7 @@ const aggregationSingle = Generators.input(aggregationInput)
 const categoriesInput = Inputs.checkbox(
     categories, 
     {
-        label: "Product categories",
+        label: "Categories",
         value: SelectAllInput.value ? categories : []
     });
 const categoriesSingle = Generators.input(categoriesInput);
@@ -131,9 +134,10 @@ const unitInput = Inputs.radio(
     }
 )
 const unitSingle = Generators.input(unitInput)
+
+let plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo" ? "DRC" : countryInput.value} and ${partnerInput.value}`
 ```
 
-```html
 <h1 class="header">
     Single Country
 </h1>
@@ -147,7 +151,8 @@ const unitSingle = Generators.input(unitInput)
 </p>
 
 <p class="normal-text">
-    <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas <a href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
+    <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas 
+    <a href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
 </p>
 
 <br>
@@ -157,21 +162,20 @@ const unitSingle = Generators.input(unitInput)
     <div>${partnerInput}</div>
     <div>${timeRangeInput}</div>
     <div>${aggregationInput}</div>
-     ${
-        aggregationSingle === 'Total' 
-        ? html``
-        : html`<div>${categoriesInput}</div> <div>${SelectAllInput}<div>`
+    ${
+        aggregationSingle === 'All products' 
+        ? ''
+        : html`<div>${categoriesInput}</div><div>${SelectAllInput}</div>`
     }
     <div>${unitInput}</div>
 </div>
-    
+
 <br>
-<br>
     
-<div class="viz-container">
+<div id="single-plot" class="viz-container">
     <div class="top-panel" style=`width:${width}`>
         <h2 class="plot-title" id="trade-plot">
-            Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}
+            ${plotTitle}
         </h2>
         <h3 class="plot-subtitle">
             <span class="export-subtitle-label">Exports</span>, 
@@ -194,6 +198,14 @@ const unitSingle = Generators.input(unitInput)
         </div>
     </div>
 </div>
+<div class="download-panel">
+    <div>
+       ${Inputs.button("Download plot as PNG", {
+            value: null,
+            reduce: () => downloadImage('single-plot', `${formatString(plotTitle, {capitalize: false, fileMode: true})}.png`)
+        })}
+    </div>
+</div>
     
 <br>
 <br>
@@ -204,7 +216,7 @@ const unitSingle = Generators.input(unitInput)
             Trade by category
         </h2>
         <p class="normal-text">
-            Total value of exports imports and trade balance for each category of traded goods between 
+            All products value of exports imports and trade balance for each category of traded goods between 
             <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and 
             <span class="bold-text">${partnerSingle}</span> in 
             <span class="bold-text">${timeRangeSingle[0]}-${timeRangeSingle[1]}</span>.
@@ -236,8 +248,8 @@ const unitSingle = Generators.input(unitInput)
         </h2>
         ${
             categoriesSingle.length === categories.length
-            ? html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            ? html`<p class="normal-text">All products yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">All products yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>
@@ -263,4 +275,3 @@ const unitSingle = Generators.input(unitInput)
         </div>
     </div>
 </div>
-```

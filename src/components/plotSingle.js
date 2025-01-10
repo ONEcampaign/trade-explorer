@@ -10,12 +10,12 @@ import {formatString} from "./formatString.js"
 export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit, width) {
 
     let dataFiltered;
-    if (aggregation === "Total") {
+    if (aggregation === "All products") {
         dataFiltered = data.filter(
             (d) =>
                 d.country === country &&
                 d.partner === partner &&
-                d.category === "Total" &&
+                d.category === "All products" &&
                 d[unit] != null
         )
     } else {
@@ -23,7 +23,7 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
             (d) =>
                 d.country === country &&
                 d.partner === partner &&
-                d.category !== "Total" &&
+                d.category !== "All products" &&
                 categories.includes(d.category) &&
                 d[unit] != null
         )

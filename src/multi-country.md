@@ -8,10 +8,7 @@ import {colorPalette} from './components/colorPalette.js';
 import {rangeInput} from "./components/rangeInput.js"
 import {setCustomColors} from "./components/setCustomColors.js"
 import {formatString} from "./components/formatString.js"
-import {toPng} from 'npm:html-to-image';
-
-
-// var htmlToImage = require('html-to-image');
+import {downloadImage} from './components/downloadImage.js'
 ```
 
 ```js
@@ -30,7 +27,7 @@ const countries = Array.from(new Set(tradeData.map((d) => d.country)));
 const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
 const categories = sortCategories(
     Array.from(new Set(tradeData.map((d) => d.category)))
-        .filter((item) => item !== "Total")
+        .filter((item) => item !== "All products")
 );
 const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
 ```
@@ -65,7 +62,7 @@ updateFirstLinkText();
 const countryInput = Inputs.select(
     Array.from(new Set(tradeData.map((d) => d.country))),
     {
-        label: "African countries/regions",
+        label: "Countries/regions",
         sort: true,
         multiple: true,
         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
@@ -103,10 +100,10 @@ const timeRangeMulti = Generators.input(timeRangeInput)
 
 // Aggregation input
 const aggregationInput = Inputs.radio(
-    ["Total", "Product categories"],
+    ["All products", "Product categories"],
     {
-        label: "Product aggregation",
-        value: "Total"
+        label: "Products",
+        value: "All products"
     })
 const aggregationMulti = Generators.input(aggregationInput)
 
@@ -114,7 +111,7 @@ const aggregationMulti = Generators.input(aggregationInput)
 const categoriesInput = Inputs.checkbox(
     categories, 
     {
-        label: "Product categories",
+        label: "Categories",
         value: SelectAllInput.value ? categories : []
     });
 const categoriesMulti = Generators.input(categoriesInput);
@@ -152,9 +149,11 @@ const flowInput = Inputs.radio(
     }
 )
 const flowMulti = Generators.input(flowInput)
+
+let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence: true })}${partnerInput.value}`
 ```
 
-```html 
+
 <h1 class="header">
     Multi Country
 </h1>
@@ -183,20 +182,19 @@ const flowMulti = Generators.input(flowInput)
     <div>${timeRangeInput}</div>
     <div>${aggregationInput}</div>
     ${
-        aggregationMulti === 'Total'
-        ? html``
-        : html`<div>${categoriesInput}</div><div>${SelectAllInput}<div>`
+        aggregationMulti === 'All products'
+        ? ''
+        : html`<div>${categoriesInput}</div><div>${SelectAllInput}</div>`
     }
     <div>${unitInput}</div>
 </div>
     
 <br>
-<br>
 
-<div class="viz-container">
+<div class="viz-container" id="multi-plot">
     <div class="top-panel" style=`width:${width}`>
         <h2 class="plot-title" id="trade-plot">
-            ${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}
+            ${plotTitle}
         </h2>
         <h3 class="plot-subtitle">
             Selected African countries
@@ -221,6 +219,11 @@ const flowMulti = Generators.input(flowInput)
         </div>
     </div>
 </div>
+<div class="download-panel">
+    <div>
+        ${Inputs.button("Download plot as PNG", {value: null, reduce: () => downloadImage('multi-plot', `${formatString(plotTitle, { capitalize: false, fileMode: true })}.png`)})}
+    </div>
+</div>
 
 <br>
 <br>
@@ -231,7 +234,7 @@ const flowMulti = Generators.input(flowInput)
             Trade by category
         </h2>
         <p class="normal-text">
-            Total value of
+            All products value of
             <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}</span>
             <span class="bold-text">${partnerMulti}</span> for each category of traded goods in
             <span class="bold-text">${timeRangeMulti[0]}-${timeRangeMulti[1]}</span>.
@@ -273,8 +276,8 @@ const flowMulti = Generators.input(flowInput)
         </h2>
         ${
             categoriesMulti.length === categories.length
-            ? html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            ? html`<p class="normal-text">All products yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">All products yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>
@@ -302,4 +305,3 @@ const flowMulti = Generators.input(flowInput)
         </div>
     </div>
 </div>
-```

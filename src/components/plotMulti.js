@@ -10,12 +10,12 @@ import {formatString} from "./formatString.js"
 export function plotMulti(data, countries, partner, timeRange, aggregation, categories, unit, flow, width) {
 
     let dataFiltered;
-    if (aggregation === "Total") {
+    if (aggregation === "All products") {
         dataFiltered = data.filter(
             (d) =>
                 countries.includes(d.country) &&
                 d.partner === partner &&
-                d.category === "Total" &&
+                d.category === "All products" &&
                 d[unit] != null
         )
     } else {
@@ -23,7 +23,7 @@ export function plotMulti(data, countries, partner, timeRange, aggregation, cate
             (d) =>
                 countries.includes(d.country) &&
                 d.partner === partner &&
-                d.category !== "Total" &&
+                d.category !== "All products" &&
                 categories.includes(d.category) &&
                 d[unit] != null
         )

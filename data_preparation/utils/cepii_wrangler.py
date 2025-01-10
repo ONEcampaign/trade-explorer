@@ -1,14 +1,10 @@
 import pandas as pd
 import json
-import pyarrow as pa
-import pyarrow.parquet as pq
-
-from typing import Optional, Literal
+import logging
 
 import bblocks_data_importers as bbdata
 import country_converter as coco
 from pydeflate import imf_gdp_deflate, set_pydeflate_path
-
 
 from data_preparation.utils.paths import PATHS
 
@@ -75,8 +71,10 @@ def process_trade_data(year0: int, year1: int):
 
     agg_data_path = PATHS.DATA / f"{year0}_{year1}_raw_cepii.csv"
     if agg_data_path.exists():
+        logging.info(f"Loading aggregated BACI data from {agg_data_path}")
         return pd.read_csv(agg_data_path), african_countries
 
+    logging.info("Aggregating BACI data")
     dataframes = [
         filter_and_aggregate_data(
             pd.read_csv(
@@ -90,6 +88,7 @@ def process_trade_data(year0: int, year1: int):
         for year in range(year0, year1 + 1)
     ]
 
+    logging.info(f"Saving aggregated BACI data to {agg_data_path}")
     agg_df = pd.concat(dataframes, ignore_index=True)
     agg_df.to_csv(agg_data_path, index=False)
     return agg_df, african_countries
@@ -117,7 +116,7 @@ def convert_units(df_long: pd.DataFrame):
     weo_df = get_weo_gdp()
     weo_df["country_code"] = cc.convert(weo_df["entity_name"], to="ISO3")
 
-    full_df = pd.merge(
+    result = pd.merge(
         df_long,
         weo_df,
         on=["year", "country_code"],
@@ -127,37 +126,46 @@ def convert_units(df_long: pd.DataFrame):
 
     set_pydeflate_path(PATHS.PYDEFLATE)
 
-    full_df = imf_gdp_deflate(
-        data=full_df,
+    result = imf_gdp_deflate(
+        data=result,
         base_year=2015,
         id_column="country_code",
         value_column="current_usd",
         target_value_column="constant_usd_2015",
     )
 
-    full_df = imf_gdp_deflate(
-        data=full_df,
+    result = imf_gdp_deflate(
+        data=result,
         base_year=2015,
         id_column="country_code",
         value_column="value",
         target_value_column="constant_gdp_2015",
     )
 
-    full_df["pct_gdp"] = (
-        full_df["constant_usd_2015"] / full_df["constant_gdp_2015"] * 100
-    )
-    full_df.drop(
-        ["country_code", "entity_name", "value", "constant_gdp_2015"],
+    result.drop(
+        ["country_code", "entity_name", "value"],
         axis=1,
         inplace=True,
     )
-    full_df = full_df.dropna(subset=["current_usd"])
 
-    return full_df
+    result["pct_gdp"] = (
+            result["constant_usd_2015"] / result["constant_gdp_2015"] * 100
+    )
+
+    return result
 
 
 def compute_totals(df_long: pd.DataFrame):
+    """
+    Compute trade totals at various levels (country, regional, Africa) and by categories,
+    including imports and exports as a percentage of GDP (pct_gdp).
 
+    Parameters:
+        df_long (pd.DataFrame): Input DataFrame with trade data.
+
+    Returns:
+        pd.DataFrame: DataFrame with aggregated totals and original data.
+    """
     # Map countries to regions
     with open(PATHS.AFRICAN_REGIONS, "r") as f:
         african_regions = json.load(f)
@@ -169,68 +177,86 @@ def compute_totals(df_long: pd.DataFrame):
     }
     df_long["region"] = df_long["country"].map(region_mapping)
 
-    # compute regional total imports/exports by product category
-    regional_totals = df_long.groupby(
-        ["year", "region", "partner", "category", "flow"], as_index=False
-    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
-    regional_totals["pct_gdp"] = None
-    regional_totals["country"] = regional_totals["region"]
-    regional_totals["region"] = None
-
-    # compute regional total imports/exports
-    regional_totals_all = df_long.groupby(
-        ["year", "region", "partner", "flow"], as_index=False
-    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
-    regional_totals_all["pct_gdp"] = None
-    regional_totals_all["country"] = regional_totals_all["region"]
-    regional_totals_all["region"] = None
-    regional_totals_all["category"] = "Total"
-
-    # compute total imports/exports by product category
-    africa_totals = df_long.groupby(
-        ["year", "partner", "category", "flow"], as_index=False
-    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
-    africa_totals["pct_gdp"] = None
-    africa_totals["country"] = "Africa (total)"
-
-    # compute total imports/exports
-    africa_totals_all = df_long.groupby(
-        ["year", "partner", "flow"], as_index=False
-    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
-    africa_totals_all["pct_gdp"] = None
-    africa_totals_all["country"] = "Africa (total)"
-    africa_totals_all["category"] = "Total"
-
-    # compute country total imports/exports by product
+    # Compute country-level import/exports totals by year
     country_totals = df_long.groupby(
-        ["year", "country", "partner", "category", "flow"], as_index=False
-    ).agg({"current_usd": "sum", "constant_usd_2015": "sum", "pct_gdp": "sum"})
-
-    # compute country total imports/exports
-    country_totals_all = df_long.groupby(
         ["year", "country", "partner", "flow"], as_index=False
     ).agg({"current_usd": "sum", "constant_usd_2015": "sum", "pct_gdp": "sum"})
-    country_totals_all["category"] = "Total"
+    country_totals["category"] = "All products"
 
-    # combine all results
+    # Compute regional and Africa-wide GDP totals by year
+    unique_gdp = df_long[["year", "country", "region", "constant_gdp_2015"]].drop_duplicates()
+    regional_gdp = unique_gdp.groupby(["year", "region"], as_index=False).agg(
+        {"constant_gdp_2015": "sum"}
+    )
+    africa_gdp = unique_gdp.groupby(["year"], as_index=False).agg(
+        {"constant_gdp_2015": "sum"}
+    )
+
+    # Compute regional import/export totals by category and year
+    regional_category_totals = df_long.groupby(
+        ["year", "region", "partner", "category", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    regional_category_totals = regional_category_totals.merge(
+        regional_gdp, on=["year", "region"], how="left"
+    )
+    regional_category_totals["pct_gdp"] = (
+            regional_category_totals["constant_usd_2015"] / regional_category_totals["constant_gdp_2015"] * 100
+    )
+    regional_category_totals["country"] = regional_category_totals["region"]
+    regional_category_totals["region"] = None
+
+    # Compute regional import/export totals by year
+    regional_totals = df_long.groupby(
+        ["year", "region", "partner", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    regional_totals = regional_totals.merge(
+        regional_gdp, on=["year", "region"], how="left"
+    )
+    regional_totals["pct_gdp"] = (
+            regional_totals["constant_usd_2015"] / regional_totals["constant_gdp_2015"] * 100
+    )
+    regional_totals["country"] = regional_totals["region"]
+    regional_totals["region"] = None
+    regional_totals["category"] = "All products"
+
+# Compute Africa-level import/export totals by year and category
+    africa_category_totals = df_long.groupby(
+        ["year", "partner", "category", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    africa_category_totals = africa_category_totals.merge(
+        africa_gdp, on="year", how="left"
+    )
+    africa_category_totals["pct_gdp"] = (
+            africa_category_totals["constant_usd_2015"] / africa_category_totals["constant_gdp_2015"] * 100
+    )
+    africa_category_totals["country"] = "Africa (total)"
+
+    # Compute Africa-level import/export totals by year
+    africa_totals = df_long.groupby(
+        ["year", "partner", "flow"], as_index=False
+    ).agg({"current_usd": "sum", "constant_usd_2015": "sum"})
+    africa_totals = africa_totals.merge(africa_gdp, on="year", how="left")
+    africa_totals["pct_gdp"] = (
+            africa_totals["constant_usd_2015"] / africa_totals["constant_gdp_2015"] * 100
+    )
+    africa_totals["country"] = "Africa (total)"
+    africa_totals["category"] = "All products"
+
+    # Combine all results
     result = pd.concat(
         [
             df_long,
-            regional_totals,
-            regional_totals_all,
-            africa_totals,
-            africa_totals_all,
             country_totals,
-            country_totals_all,
+            regional_category_totals,
+            regional_totals,
+            africa_category_totals,
+            africa_totals,
         ],
         ignore_index=True,
     )
 
-    result.drop(
-        ["region"],
-        axis=1,
-        inplace=True,
-    )
+    # Drop unnecessary columns
+    result.drop(["region", "constant_gdp_2015"], axis=1, inplace=True, errors="ignore")
 
     return result
 
@@ -238,27 +264,19 @@ def compute_totals(df_long: pd.DataFrame):
 def save_data(
     df: pd.DataFrame,
     year0: int,
-    year1: int,
-    save_as: Optional[Literal["json", "csv", "parquet"]] = None,
+    year1: int
 ):
     """
     Saves the final processed data in the desired format (json, csv, parquet or none).
     """
-    path_to_save = PATHS.SAVED_DATA / f"africa_trade_{year0}_{year1}.{save_as}"
 
-    if save_as == "json":
-        path_to_save.write_text(df.to_json(orient="records"))
-    elif save_as == "csv":
-        df.to_csv(path_to_save, index=False)
-    elif save_as == "parquet":
-        arrow_table = pa.Table.from_pandas(df)
-        pq.write_table(arrow_table, path_to_save, compression="BROTLI")
-    else:
-        return df
+    path_to_save = PATHS.DATA / f"africa_trade_{year0}_{year1}.csv"
+    logging.info(f"Saving data to {path_to_save}")
+    df.to_csv(path_to_save, index=False)
 
 
 def process_africa_trade_data(
-    year0: int, year1: int, save_as: Optional[Literal["json", "csv", "parquet"]] = None
+    year0: int, year1: int
 ):
     """
     Process trade data between African countries and ONE market countries.
@@ -290,8 +308,10 @@ def process_africa_trade_data(
         value_name="current_usd",
     )
 
+    africa_trade_long = africa_trade_long.dropna(subset=["current_usd"])
+
     africa_trade_constant = convert_units(africa_trade_long)
 
-    full_df = compute_totals(africa_trade_constant)
+    final_df = compute_totals(africa_trade_constant)
 
-    save_data(full_df, year0, year1, save_as)
+    save_data(final_df, year0, year1)
