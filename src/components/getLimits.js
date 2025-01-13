@@ -12,5 +12,5 @@ export function getLimits(data) {
         });
     });
 
-    return {min: minValue, max: maxValue};
+    return [minValue, maxValue];
 }

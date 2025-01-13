@@ -8,7 +8,7 @@ import {colorPalette} from './components/colorPalette.js';
 import {rangeInput} from "./components/rangeInput.js"
 import {setCustomColors} from "./components/setCustomColors.js"
 import {formatString} from "./components/formatString.js"
-import {downloadImage} from './components/downloadImage.js'
+import {downloadPNG} from './components/downloadPNG.js'
 ```
 
 ```js
@@ -221,7 +221,9 @@ let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence:
 </div>
 <div class="download-panel">
     <div>
-        ${Inputs.button("Download plot as PNG", {value: null, reduce: () => downloadImage('multi-plot', `${formatString(plotTitle, { capitalize: false, fileMode: true })}.png`)})}
+        ${Inputs.button("Download plot as PNG", {
+                reduce: () => downloadPNG('multi-plot', `${formatString(plotTitle, { capitalize: false, fileMode: true })}`)
+        })}
     </div>
 </div>
 

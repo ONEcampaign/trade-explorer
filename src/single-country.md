@@ -3,13 +3,13 @@ import {FileAttachment} from "observablehq:stdlib";
 import {min, max} from "npm:d3-array";
 import {sortCategories} from "./components/sortCategories.js";
 import {rangeInput} from "./components/rangeInput.js";
+import {filterData} from "./components/filterData.js"
 import {plotSingle} from "./components/plotSingle.js";
 import {tableSingle} from "./components/tableSingle.js";
 import {colorPalette} from "./components/colorPalette.js";
 import {setCustomColors} from "./components/setCustomColors.js"
 import {formatString} from "./components/formatString.js"
-import {downloadImage} from './components/downloadImage.js'
-
+import {downloadPNG} from './components/downloadPNG.js'
 ```
 
 ```js 
@@ -134,8 +134,16 @@ const unitInput = Inputs.radio(
     }
 )
 const unitSingle = Generators.input(unitInput)
+```
 
-let plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo" ? "DRC" : countryInput.value} and ${partnerInput.value}`
+```js
+const dataFiltered = filterData(tradeData,
+    countryInput.value, partnerInput.value, timeRangeInput.value,  unitInput.value,  
+    "single")
+```
+
+```js
+const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo" ? "DRC" : countryInput.value} and ${partnerInput.value}`
 ```
 
 <h1 class="header">
@@ -186,7 +194,7 @@ let plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo"
     </div>
     <div>
         ${resize((width) =>
-            plotSingle(tradeData, countrySingle, partnerSingle, timeRangeSingle, aggregationSingle, categoriesSingle, unitSingle, width)
+            plotSingle(dataFiltered, unitSingle, aggregationSingle, categoriesSingle, width)
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>
@@ -201,8 +209,7 @@ let plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo"
 <div class="download-panel">
     <div>
        ${Inputs.button("Download plot as PNG", {
-            value: null,
-            reduce: () => downloadImage('single-plot', `${formatString(plotTitle, {capitalize: false, fileMode: true})}.png`)
+            reduce: () => downloadPNG('single-plot', `${formatString(plotTitle, {capitalize: false, fileMode: true})}`)
         })}
     </div>
 </div>
@@ -224,7 +231,7 @@ let plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo"
     </div>
     <div>
         ${resize((width) =>
-            tableSingle(tradeData, "category", countrySingle, partnerSingle, categoriesSingle, unitSingle, timeRangeSingle, width)
+            tableSingle(dataFiltered, "category", unitSingle, categoriesSingle, width)
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>
@@ -248,13 +255,13 @@ let plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo"
         </h2>
         ${
             categoriesSingle.length === categories.length
-            ? html`<p class="normal-text">All products yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">All products yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            ? html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>
         ${resize((width) =>
-            tableSingle(tradeData, "year", countrySingle, partnerSingle, categoriesSingle, unitSingle, width)
+            tableSingle(dataFiltered, "year", unitSingle, categoriesSingle, width)
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>

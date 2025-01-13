@@ -6,30 +6,19 @@ import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
 import {colorPalette} from "./colorPalette.js";
 import {formatString} from "./formatString.js"
+import {getLimits} from "./getLimits.js";
 
-export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit, width) {
+export function plotSingle(data, unit, aggregation, categories, width) {
 
-    let dataFiltered;
+    let plotData
     if (aggregation === "All products") {
-        dataFiltered = data.filter(
-            (d) =>
-                d.country === country &&
-                d.partner === partner &&
-                d.category === "All products" &&
-                d[unit] != null
-        )
+        plotData = data.filter((d) => d.category === "All products");
     } else {
-        dataFiltered = data.filter(
-            (d) =>
-                d.country === country &&
-                d.partner === partner &&
-                d.category !== "All products" &&
-                categories.includes(d.category) &&
-                d[unit] != null
-        )
+        plotData = data.filter((d) => categories.includes(d.category));
     }
 
-    const dataByYear = groupData(dataFiltered, ["year"], unit)
+    const timeRange = getLimits(data.map((row) => ({ yearValue: row.year })));
+    const dataByYear = groupData(plotData, ["year"], unit)
 
     return Plot.plot({
         width: width,
@@ -60,7 +49,7 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
 
             // Bars for imports and exports
             Plot.barY(
-                dataFiltered, {
+                plotData, {
                     x: "year",
                     y: unit,
                     opacity: 0.6,
@@ -72,7 +61,7 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
 
             // Exports reactivity
             Plot.barY(
-                dataFiltered,
+                plotData,
                 Plot.pointer({
                     x: "year",
                     y: unit,

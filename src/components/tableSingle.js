@@ -6,25 +6,16 @@ import {colorPalette} from "./colorPalette.js"
 import {formatYear} from "./formatYear.js"
 import {formatString} from "./formatString.js"
 
-export function tableSingle(data, groupKey, country, partner, categories, unit, timeRange = null, width) {
+export function tableSingle(data, groupKey, unit, categories, width) {
 
-    let dataFiltered = data.filter(
+    const filteredData = data.filter(
         (d) =>
-            d.country === country &&
-            d.partner === partner &&
             d.category !== "All products" &&
-            categories.includes(d.category) &&
-            d[unit] != null
-    )
-    if (groupKey === "category") {
-        dataFiltered = dataFiltered.filter((d) => d.year >= timeRange[0] && d.year <= timeRange[1])
-    }
+            categories.includes(d.category)
+    );
 
-    const tableData = groupData(
-        dataFiltered,
-        [groupKey],
-        unit
-    )
+    console.log("data:", filteredData)
+    const tableData = groupData(filteredData, [groupKey], unit);
 
     const limits = getLimits(tableData); // Get min and max values for sparkbars
     const isYearTable = groupKey === "year";
@@ -38,22 +29,22 @@ export function tableSingle(data, groupKey, country, partner, categories, unit, 
                 tableData,
                 colorPalette.imports,
                 "right",
-                limits.min,
-                limits.max
+                limits[0],
+                limits[1]
             ),
             exports: sparkbar(
                 tableData,
                 colorPalette.exports,
                 "left",
-                limits.min,
-                limits.max
+                limits[0],
+                limits[1]
             ),
             balance: sparkbar(
                 tableData,
                 colorPalette.balance,
                 "center",
-                limits.min,
-                limits.max
+                limits[0],
+                limits[1]
             )
         },
         header: {

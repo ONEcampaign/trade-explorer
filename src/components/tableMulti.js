@@ -56,8 +56,8 @@ export function tableMulti(data, groupKey, country, partner, categories, unit, f
                             tableData,
                             colors[index % colors.length], // Cycle through colors
                             "center",
-                            limits.min,
-                            limits.max
+                            limits[0],
+                            limits[1]
                         )
                     ])
             )
