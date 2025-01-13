@@ -1,14 +1,16 @@
 ```js 
 import {FileAttachment} from "observablehq:stdlib";
+import {sortCountries} from "./components/sortCountries.js";
 import {sortCategories} from "./components/sortCategories.js";
 import {plotMulti} from "./components/plotMulti.js";
 import {min, max} from "npm:d3-array";
 import {tableMulti} from "./components/tableMulti.js";
 import {colorPalette} from './components/colorPalette.js';
-import {rangeInput} from "./components/rangeInput.js"
-import {setCustomColors} from "./components/setCustomColors.js"
-import {formatString} from "./components/formatString.js"
-import {downloadPNG} from './components/downloadPNG.js'
+import {rangeInput} from "./components/rangeInput.js";
+import {setCustomColors} from "./components/setCustomColors.js";
+import {formatString} from "./components/formatString.js";
+import {downloadPNG} from './components/downloadPNG.js';
+import {downloadXLSX} from "./components/downloadXLSX.js";
 ```
 
 ```js
@@ -23,7 +25,7 @@ const tradeData = rawData.toArray()
 
 ```js
 // Input options
-const countries = Array.from(new Set(tradeData.map((d) => d.country)));
+const countries = sortCountries(Array.from(new Set(tradeData.map((d) => d.country))));
 const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
 const categories = sortCategories(
     Array.from(new Set(tradeData.map((d) => d.category)))
@@ -37,7 +39,7 @@ const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)]
 const firstLink = document.querySelector("li.observablehq-secondary-link a");
 
 function updateFirstLinkText() {
-    const flowString = formatString(flowInput.value, {inSentence: true})
+    const flowString = formatString(flowInput.value, {capitalize: true, inSentence: true})
     const partnerString = partnerInput.value === "United Kingdom"
         ? "the UK"
         : partnerInput.value === "USA"
@@ -60,10 +62,9 @@ updateFirstLinkText();
 ```js
 // Country Input
 const countryInput = Inputs.select(
-    Array.from(new Set(tradeData.map((d) => d.country))),
+    countries,
     {
         label: "Countries/regions",
-        sort: true,
         multiple: true,
         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
     })
@@ -144,15 +145,12 @@ const flowInput = Inputs.radio(
         ["Imports", "imports"]
     ]),
     {
-        label: "Select flow",
+        label: "Trade flow",
         value: "balance"
     }
 )
 const flowMulti = Generators.input(flowInput)
-
-let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence: true })}${partnerInput.value}`
 ```
-
 
 <h1 class="header">
     Multi Country
@@ -180,6 +178,7 @@ let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence:
     <div>${countryInput}</div>
     <div>${partnerInput}</div>
     <div>${timeRangeInput}</div>
+    <div>${flowInput}</div>
     <div>${aggregationInput}</div>
     ${
         aggregationMulti === 'All products'
@@ -194,15 +193,25 @@ let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence:
 <div class="viz-container" id="multi-plot">
     <div class="top-panel" style=`width:${width}`>
         <h2 class="plot-title" id="trade-plot">
-            ${plotTitle}
+            ${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}
         </h2>
         <h3 class="plot-subtitle">
             Selected African countries
         </h3>
     </div>
     <div>
-        ${resize((width) => 
-            plotMulti(tradeData, countryMulti, partnerMulti, timeRangeMulti, aggregationMulti, categoriesMulti, unitMulti, flowMulti, width)
+        ${resize((width) =>
+            plotMulti(
+                tradeData, 
+                countryMulti, 
+                partnerMulti, 
+                flowMulti, 
+                timeRangeMulti, 
+                aggregationMulti, 
+                categoriesMulti, 
+                unitMulti, 
+                width
+            )
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>
@@ -220,11 +229,31 @@ let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence:
     </div>
 </div>
 <div class="download-panel">
-    <div>
-        ${Inputs.button("Download plot as PNG", {
-                reduce: () => downloadPNG('multi-plot', `${formatString(plotTitle, { capitalize: false, fileMode: true })}`)
-        })}
-    </div>
+    ${Inputs.button(
+        "Download plot", {
+            reduce: () => downloadPNG('multi-plot', 
+            `${formatString(
+                `${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}`, 
+                { capitalize: false, fileMode: true })}`
+            )}
+    )}
+    ${Inputs.button("Download data", {
+        reduce: () => downloadXLSX(
+            tradeData,
+            countryMulti,
+            partnerMulti,
+            timeRangeMulti,
+            aggregationMulti,
+            categoriesMulti,
+            unitMulti,
+            flowMulti,
+            "multi",
+            `${formatString(
+                `${formatString(flowMulti, { capitalize: true, inSentence: true })}${partnerMulti}`, 
+                { capitalize: false, fileMode: true })}`
+            )}
+        )
+    }
 </div>
 
 <br>
@@ -244,7 +273,17 @@ let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence:
     </div>
     <div>
         ${resize((width) =>
-            tableMulti(tradeData, "category", countryMulti, partnerMulti, categoriesMulti, unitMulti, flowMulti, timeRangeMulti, width)
+            tableMulti(
+                tradeData, 
+                countryMulti, 
+                partnerMulti, 
+                timeRangeMulti, 
+                categoriesMulti, 
+                unitMulti, 
+                flowMulti, 
+                "category", 
+                width
+            )
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>
@@ -284,7 +323,17 @@ let plotTitle = `${formatString(flowInput.value, { capitalize: true, inSentence:
     </div>
     <div>
         ${resize((width) =>
-            tableMulti(tradeData, "year", countryMulti, partnerMulti, categoriesMulti, unitMulti, flowMulti, timeRangeMulti, width)
+            tableMulti(
+                tradeData, 
+                countryMulti, 
+                partnerMulti, 
+                timeRangeMulti, 
+                categoriesMulti, 
+                unitMulti, 
+                flowMulti, 
+                "year", 
+                width
+            )
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>

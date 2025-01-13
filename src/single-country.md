@@ -1,15 +1,16 @@
 ```js 
 import {FileAttachment} from "observablehq:stdlib";
 import {min, max} from "npm:d3-array";
+import {sortCountries} from "./components/sortCountries.js";
 import {sortCategories} from "./components/sortCategories.js";
 import {rangeInput} from "./components/rangeInput.js";
-import {filterData} from "./components/filterData.js"
 import {plotSingle} from "./components/plotSingle.js";
 import {tableSingle} from "./components/tableSingle.js";
 import {colorPalette} from "./components/colorPalette.js";
-import {setCustomColors} from "./components/setCustomColors.js"
-import {formatString} from "./components/formatString.js"
-import {downloadPNG} from './components/downloadPNG.js'
+import {setCustomColors} from "./components/setCustomColors.js";
+import {formatString} from "./components/formatString.js";
+import {downloadPNG} from './components/downloadPNG.js';
+import {downloadXLSX} from "./components/downloadXLSX.js";
 ```
 
 ```js 
@@ -24,7 +25,7 @@ const tradeData = rawData.toArray()
 
 ```js
 // Input options
-const countries = Array.from(new Set(tradeData.map((d) => d.country)));
+const countries = sortCountries(Array.from(new Set(tradeData.map((d) => d.country))));
 const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
 const categories = sortCategories(
     Array.from(new Set(tradeData.map((d) => d.category)))
@@ -63,8 +64,8 @@ updateFirstLinkText();
 const countryInput = Inputs.select(
     countries,
     {
-        label: "Country/region", 
-        sort: true
+        label: "Country/region",
+        value: "Algeria"
     })
 const countrySingle = Generators.input(countryInput);
 
@@ -136,16 +137,6 @@ const unitInput = Inputs.radio(
 const unitSingle = Generators.input(unitInput)
 ```
 
-```js
-const dataFiltered = filterData(tradeData,
-    countryInput.value, partnerInput.value, timeRangeInput.value,  unitInput.value,  
-    "single")
-```
-
-```js
-const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Congo" ? "DRC" : countryInput.value} and ${partnerInput.value}`
-```
-
 <h1 class="header">
     Single Country
 </h1>
@@ -183,7 +174,7 @@ const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Cong
 <div id="single-plot" class="viz-container">
     <div class="top-panel" style=`width:${width}`>
         <h2 class="plot-title" id="trade-plot">
-            ${plotTitle}
+            ${`Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`}
         </h2>
         <h3 class="plot-subtitle">
             <span class="export-subtitle-label">Exports</span>, 
@@ -194,7 +185,16 @@ const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Cong
     </div>
     <div>
         ${resize((width) =>
-            plotSingle(dataFiltered, unitSingle, aggregationSingle, categoriesSingle, width)
+            plotSingle(
+                tradeData, 
+                countrySingle, 
+                partnerSingle, 
+                timeRangeSingle, 
+                aggregationSingle, 
+                categoriesSingle, 
+                unitSingle, 
+                width
+            )
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>
@@ -207,11 +207,32 @@ const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Cong
     </div>
 </div>
 <div class="download-panel">
-    <div>
-       ${Inputs.button("Download plot as PNG", {
-            reduce: () => downloadPNG('single-plot', `${formatString(plotTitle, {capitalize: false, fileMode: true})}`)
-        })}
-    </div>
+    ${Inputs.button("Download plot", {
+        reduce: () => downloadPNG(
+            'single-plot',
+            formatString(
+                `Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`,
+                { capitalize: false, fileMode: true }
+            )
+        )
+    })}
+    ${Inputs.button("Download data", {
+        reduce: () => downloadXLSX(
+            tradeData,
+            countrySingle,
+            partnerSingle,
+            timeRangeSingle,
+            aggregationSingle,
+            categoriesSingle,
+            unitSingle,
+            null,
+            "single",
+            formatString(
+                `Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`,
+                { capitalize: false, fileMode: true }
+            )
+        )
+    })}
 </div>
     
 <br>
@@ -223,7 +244,7 @@ const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Cong
             Trade by category
         </h2>
         <p class="normal-text">
-            All products value of exports imports and trade balance for each category of traded goods between 
+            Total value of exports imports and trade balance for each category of traded goods between 
             <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and 
             <span class="bold-text">${partnerSingle}</span> in 
             <span class="bold-text">${timeRangeSingle[0]}-${timeRangeSingle[1]}</span>.
@@ -231,7 +252,16 @@ const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Cong
     </div>
     <div>
         ${resize((width) =>
-            tableSingle(dataFiltered, "category", unitSingle, categoriesSingle, width)
+            tableSingle(
+                tradeData, 
+                countrySingle,
+                partnerSingle, 
+                timeRangeSingle, 
+                categoriesSingle,
+                unitSingle, 
+                "category", 
+                width
+            )
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>
@@ -261,7 +291,16 @@ const plotTitle = `Trade between ${countryInput.value === "Dem. Rep. of the Cong
     </div>
     <div>
         ${resize((width) =>
-            tableSingle(dataFiltered, "year", unitSingle, categoriesSingle, width)
+            tableSingle(
+                tradeData, 
+                countrySingle,
+                partnerSingle, 
+                timeRangeSingle, 
+                categoriesSingle,
+                unitSingle, 
+                "year", 
+                width
+            )
         )}
     </div>
     <div class="bottom-panel" style=`width:${width}`>

@@ -6,18 +6,24 @@ import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
 import {colorPalette} from "./colorPalette.js";
 import {formatString} from "./formatString.js"
-import {getLimits} from "./getLimits.js";
 
-export function plotSingle(data, unit, aggregation, categories, width) {
+export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit, width) {
 
-    let plotData
+    let plotData = data.filter(
+        (d) =>
+            d.country === country &&
+            d.partner === partner &&
+            d.year >= timeRange[0] &&
+            d.year <= timeRange[1] &&
+            d[unit] != null
+    );
+
     if (aggregation === "All products") {
-        plotData = data.filter((d) => d.category === "All products");
+        plotData = plotData.filter((d) => d.category === "All products");
     } else {
-        plotData = data.filter((d) => categories.includes(d.category));
+        plotData = plotData.filter((d) => categories.includes(d.category));
     }
 
-    const timeRange = getLimits(data.map((row) => ({ yearValue: row.year })));
     const dataByYear = groupData(plotData, ["year"], unit)
 
     return Plot.plot({
@@ -87,33 +93,15 @@ export function plotSingle(data, unit, aggregation, categories, width) {
                 strokeWidth: 2
             }),
 
-            // Points for balance
-            Plot.dot(dataByYear, {
-                x: "year",
-                y: "balance",
-                fill: colorPalette.balance,
-                stroke: colorPalette.balance,
-                strokeWidth: 3,
-                title: (d) => `${formatYear(d.year)} Trade balance\n${formatValue(d.balance).label}${unit === "pct_gdp" ? " %" : " USD M"}`
-            }),
-
-//          // Labels for total exports at the top
-//          Plot.text(dataByYear, {
-//            x: "year",
-//            y: (d) => d.exports,
-//            text: (d) => `${formatValue(d.exports).label}`,
-//            dy: -10, // Offset text above the bar
-//            className: "export-label"
-//          }),
-//
-//          // Labels for total imports at the bottom
-//          Plot.text(dataByYear, {
-//            x: "year",
-//            y: (d) => d.imports,
-//            text: (d) => `${formatValue(d.imports).label}`,
-//            dy: 10, // Offset text below the bar
-//            className: "import-label"
-//          })
+            // // Points for balance
+            // Plot.dot(dataByYear, {
+            //     x: "year",
+            //     y: "balance",
+            //     fill: colorPalette.balance,
+            //     stroke: colorPalette.balance,
+            //     strokeWidth: 3,
+            //     title: (d) => `${formatYear(d.year)} Trade balance\n${formatValue(d.balance).label}${unit === "pct_gdp" ? " %" : " USD M"}`
+            // })
         ]
     })
 }

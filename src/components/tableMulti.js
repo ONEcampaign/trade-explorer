@@ -7,23 +7,26 @@ import {getLimits} from "./getLimits.js"
 import {sparkbar} from "./sparkbar.js"
 import {formatString} from "./formatString.js"
 
-export function tableMulti(data, groupKey, country, partner, categories, unit, flow, timeRange = null, width) {
+export function tableMulti(data, countries, partner, timeRange, categories, unit, flow, groupKey, width) {
 
-    let dataFiltered = data.filter(
+    const isYearTable = groupKey === "year";
+
+    let filteredData = data.filter(
         (d) =>
-            country.includes(d.country) &&
+            countries.includes(d.country) &&
             d.partner === partner &&
-            d.category !== "All products" &&
-            categories.includes(d.category) &&
-            d[unit] != null
-    )
+            d[unit] != null &&
+            d.category !== "All products"
+    );
 
-    if (groupKey === "category") {
-        dataFiltered = dataFiltered.filter((d) => d.year >= timeRange[0] && d.year <= timeRange[1])
+    if (isYearTable) {
+        filteredData = filteredData.filter((d) => categories.includes(d.category))
+    } else  {
+        filteredData = filteredData.filter((d) => d.year >= timeRange[0] &&  d.year <= timeRange[1])
     }
 
     const groupedData = groupData(
-        dataFiltered,
+        filteredData,
         [groupKey, "country"],
         unit
     )
@@ -37,14 +40,11 @@ export function tableMulti(data, groupKey, country, partner, categories, unit, f
 
     const limits = getLimits(tableData); // Get min and max values for sparkbars
 
-    // Capitalize groupKey for header label
-
     const colors = schemeObservable10;
 
-
     return Inputs.table(tableData, {
-        sort: groupKey === "year" ? "year" : undefined, // Sort by year if grouping by year
-        reverse: groupKey === "year",
+        sort: isYearTable ? "year" : undefined, // Sort by year if grouping by year
+        reverse: isYearTable ? "year" : undefined,
         format: {
             [groupKey]: (x) => x, // General formatter for groupKey (year or category)
             ...Object.fromEntries(

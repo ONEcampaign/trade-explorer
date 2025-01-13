@@ -4,32 +4,28 @@ import {xDomain} from "./xDomain.js";
 import {yDomain} from "./yDomain.js";
 import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
-import {jitterLabels} from "./jitterLabels.js"
-import {formatString} from "./formatString.js"
+import {jitterLabels} from "./jitterLabels.js";
+import {formatString} from "./formatString.js";
+import {getLimits} from "./getLimits.js";
 
-export function plotMulti(data, countries, partner, timeRange, aggregation, categories, unit, flow, width) {
+export function plotMulti(data, countries, partner, flow, timeRange, aggregation, categories, unit, width) {
 
-    let dataFiltered;
+    let filteredData = data.filter(
+        (d) =>
+            countries.includes(d.country) &&
+            d.partner === partner &&
+            d.year >= timeRange[0] &&
+            d.year <= timeRange[1] &&
+            d[unit] != null
+    );
+
     if (aggregation === "All products") {
-        dataFiltered = data.filter(
-            (d) =>
-                countries.includes(d.country) &&
-                d.partner === partner &&
-                d.category === "All products" &&
-                d[unit] != null
-        )
+        filteredData = filteredData.filter((d) => d.category === "All products");
     } else {
-        dataFiltered = data.filter(
-            (d) =>
-                countries.includes(d.country) &&
-                d.partner === partner &&
-                d.category !== "All products" &&
-                categories.includes(d.category) &&
-                d[unit] != null
-        )
+        filteredData = filteredData.filter((d) => categories.includes(d.category));
     }
 
-    const groupedData = groupData(dataFiltered, ["year", "country"], unit)
+    const groupedData = groupData(filteredData, ["year", "country"], unit)
 
     return Plot.plot({
         width: width,
@@ -84,6 +80,7 @@ export function plotMulti(data, countries, partner, timeRange, aggregation, cate
                 x: "year",
                 y: flow,
                 z: "country",
+                r: 1,
                 fill: "country",
                 title: (d) => `${d.country}, ${d.year}\n${formatString(flow)}: ${formatValue(d[flow]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
                 tip: true
