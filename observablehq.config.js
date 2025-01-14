@@ -19,7 +19,7 @@ export default {
   root: "src",
 
   interpreters: {
-      ".py": ["poetry python"],
+      ".py": ["poetry run"],
     }
 
   // Some additional configuration options and their defaults:
