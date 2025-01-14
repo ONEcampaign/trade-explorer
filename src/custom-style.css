@@ -141,6 +141,11 @@ th, td {
   text-align: left;
 }
 
+/* Visualizations */
+.viz-container {
+    padding: 40px 20px 20px 20px;
+}
+
 /* Top and bottom panels of plots and tables */
 .top-panel * {
     max-width: inherit;
@@ -151,7 +156,7 @@ th, td {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  margin: var(--size-m) 0;
+  margin-top: var(--size-m);
 }
 
 .text-section {

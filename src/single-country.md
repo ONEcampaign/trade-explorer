@@ -35,6 +35,10 @@ const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)]
 ```
 
 ```js
+const oneLogo = FileAttachment("./ONE-logo-black.png").href;
+```
+
+```js
 // Remane plot link in toc
 const firstLink = document.querySelector("li.observablehq-secondary-link a");
 
@@ -137,6 +141,7 @@ const unitInput = Inputs.radio(
 const unitSingle = Generators.input(unitInput)
 ```
 
+```html
 <h1 class="header">
     Single Country
 </h1>
@@ -202,7 +207,7 @@ const unitSingle = Generators.input(unitInput)
             <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI: International Trade Database at the Product-Level</a>. CEPII</p>
         </div>
         <div class="logo-section">
-            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
         </div>
     </div>
 </div>
@@ -270,7 +275,7 @@ const unitSingle = Generators.input(unitInput)
             <p class="plot-note">All values ${unitSingle === "pct_gdp" ? "as percentage of GDP" : unitSingle === "constant_usd_2015" ? "in million constant 2015 USD" : "in million current USD"}.</p>
         </div>
         <div class="logo-section">
-            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>
@@ -317,7 +322,8 @@ const unitSingle = Generators.input(unitInput)
             </p>
         </div>
         <div class="logo-section">
-            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>
+```

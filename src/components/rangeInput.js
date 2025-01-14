@@ -13,7 +13,7 @@ export function rangeInput(options = {}) {
         width,
         theme = theme_Flat,
         enableTextInput = false,
-        label = "" // New option for the label text
+        label = ""
     } = options;
 
     const controls = {};
@@ -22,55 +22,41 @@ export function rangeInput(options = {}) {
         (performance.now() + Math.random()).toString(32).replace(".", "-");
     const clamp = (a, b, v) => (v < a ? a : v > b ? b : v);
 
-    const inputMin = html`<input type="number" id="min-input" min=${min} max=${defaultValue[1]} step=${step}
-                                 value=${defaultValue[0]}/>`;
+    const inputMin = html`<input type="number" id="min-input"  min=${min} max=${defaultValue[1]} step=${step} value=${defaultValue[0]} />`;
     inputMin.style = "width:5em; margin-right: var(--size-xs)";
-    const inputMax = html`<input type="number" id="max-input" min=${defaultValue[0]} max=${max} step=${step}
-                                 value=${defaultValue[1]}/>`;
+    const inputMax = html`<input type="number" id="max-input"  min=${defaultValue[0]} max=${max} step=${step} value=${defaultValue[1]} />`;
     inputMax.style = "width:5em; margin-left: var(--size-xs)";
 
     // Will be used to sanitize values while avoiding floating point issues.
-    const input = html`<input type=range ${{min, max, step}}>`;
+    const input = html`<input type=range ${{ min, max, step }}>`;
 
     const sliderContent = html`${
             enableTextInput ? inputMin : ""
-    }
-    <div class=${`${scope} range-slider`} style=${{
+    }<div class=${`${scope} range-slider`} style=${{
         color,
-        width:
-                width == null
-                        ? null
-                        : typeof width === "number"
-                                ? `${width}px`
-                                : `${width}`
+        width: width == null 
+            ? null
+            : typeof width === "number"
+                ? `${width}px`
+                : `${width}`
     }}>
-        ${(controls.track = html`
-            <div class="range-track">
-                ${(controls.zone = html`
-                    <div class="range-track-zone">
-                        ${(controls.range = html`
-                            <div class="range-select" style="background:${
-                                    colorPalette.inputTheme
-                            }" tabindex=0>
-                                ${(controls.min = html`
-                                    <div class="thumb thumb-min" tabindex=0>`)}
-                                ${(controls.max = html`
-                                    <div class="thumb thumb-max" tabindex=0>`)}
-                        `)}
+        ${(controls.track = html`<div class="range-track">
+            ${(controls.zone = html`<div class="range-track-zone">
+                ${(controls.range = html`<div class="range-select" style="background:${colorPalette.inputTheme}"tabindex=0>
+                    ${(controls.min = html`<div class="thumb thumb-min" tabindex=0>`)}
+                    ${(controls.max = html`<div class="thumb thumb-max" tabindex=0>`)}
                 `)}
+            `)}
         `)}
-        ${html`
-            <style>${theme.replace(/:scope\b/g, "." + scope)}`}
+        ${html`<style>${theme.replace(/:scope\b/g, "." + scope)}`}
     </div>${enableTextInput ? inputMax : ""}`;
 
-    // Wrapper div to include the label
     const dom = html`
         <div style="display: flex; align-items: left; justify-content: start; gap: 0em;">
             ${
-                    label
-                            ? html`<label
-                                    style="font-size: var(--size-m); font-weight: bold; padding: 5px 0 4px 0; width:120px; margin-right: 6.5px;">${label}</label>`
-                            : ""
+                label   
+                ? html`<label style="font-size: var(--size-m); font-weight: bold; padding: 5px 0 4px 0; width:120px; margin-right: 6.5px;">${label}</label>`
+                : ""
             }
             ${sliderContent}
         </div>`;
@@ -98,7 +84,7 @@ export function rangeInput(options = {}) {
     };
 
     const dispatch = (name) => {
-        dom.dispatchEvent(new Event(name, {bubbles: true}));
+        dom.dispatchEvent(new Event(name, { bubbles: true }));
     };
     const setValue = (vmin, vmax) => {
         const [pmin, pmax] = value;
@@ -114,8 +100,7 @@ export function rangeInput(options = {}) {
 
     inputMin.addEventListener("input", () => {
         if (+inputMin.value > +inputMax.value || +inputMin.value < min) {
-            dom.appendChild(html`
-                <please enter less>`);
+            dom.appendChild(html`<please enter less>`);
             return;
         }
         inputMax.min = inputMin.value;
@@ -124,8 +109,7 @@ export function rangeInput(options = {}) {
 
     inputMax.addEventListener("input", () => {
         if (+inputMax.value < +inputMin.value || +inputMax.value > max) {
-            dom.appendChild(html`
-                <please enter above>`);
+            dom.appendChild(html`<please enter above>`);
             return;
         }
 
@@ -161,22 +145,24 @@ export function rangeInput(options = {}) {
         ]
     ]);
 
+    // Returns client offset object.
     const pointer = (e) => (e.touches ? e.touches[0] : e);
+    // Note: Chrome defaults "passive" for touch events to true.
     const on = (e, fn) =>
         e
             .split(" ")
-            .map((e) => document.addEventListener(e, fn, {passive: false}));
+            .map((e) => document.addEventListener(e, fn, { passive: false }));
     const off = (e, fn) =>
         e
             .split(" ")
-            .map((e) => document.removeEventListener(e, fn, {passive: false}));
+            .map((e) => document.removeEventListener(e, fn, { passive: false }));
 
     let initialX,
         initialV,
         target,
         dragging = false;
-
     function handleDrag(e) {
+        // Gracefully handle exit and reentry of the viewport.
         if (!e.buttons && !e.touches) {
             handleDragStop();
             return;

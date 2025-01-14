@@ -28,7 +28,7 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
 
     return Plot.plot({
         width: width,
-        height: 500,
+        height: width * .5,
         marginTop: 25,
         marginRight: 25,
         marginBottom: 25,

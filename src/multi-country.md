@@ -7,6 +7,7 @@ import {min, max} from "npm:d3-array";
 import {tableMulti} from "./components/tableMulti.js";
 import {colorPalette} from './components/colorPalette.js';
 import {rangeInput} from "./components/rangeInput.js";
+import {multiSelect} from "./components/multiSelect.js";
 import {setCustomColors} from "./components/setCustomColors.js";
 import {formatString} from "./components/formatString.js";
 import {downloadPNG} from './components/downloadPNG.js';
@@ -32,6 +33,10 @@ const categories = sortCategories(
         .filter((item) => item !== "All products")
 );
 const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
+```
+
+```js
+const oneLogo = FileAttachment("./ONE-logo-black.png").href;
 ```
 
 ```js
@@ -61,13 +66,13 @@ updateFirstLinkText();
 
 ```js
 // Country Input
-const countryInput = Inputs.select(
+const countryInput = multiSelect(
     countries,
     {
         label: "Countries/regions",
-        multiple: true,
         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
     })
+
 const countryMulti = Generators.input(countryInput);
 
 // Partner Input
@@ -152,6 +157,7 @@ const flowInput = Inputs.radio(
 const flowMulti = Generators.input(flowInput)
 ```
 
+```html
 <h1 class="header">
     Multi Country
 </h1>
@@ -224,7 +230,7 @@ const flowMulti = Generators.input(flowInput)
             </p>
         </div>
         <div class="logo-section">
-            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>
@@ -302,7 +308,7 @@ const flowMulti = Generators.input(flowInput)
             </p>
         </div>
         <div class="logo-section"> 
-            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>
@@ -352,7 +358,8 @@ const flowMulti = Generators.input(flowInput)
             </p>
         </div>
         <div class="logo-section">
-            <img src="ONE-logo-black.png" alt="A black circle with ONE written in white thick letters."/>
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters."/>
         </div>
     </div>
 </div>
+```

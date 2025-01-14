@@ -29,7 +29,7 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
 
     return Plot.plot({
         width: width,
-        height: 500,
+        height: width * .5,
         marginTop: 25,
         marginRight: 75,
         marginBottom: 25,
