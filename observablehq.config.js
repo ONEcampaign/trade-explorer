@@ -18,10 +18,6 @@ export default {
   // The path to the source root.
   root: "src",
 
-  interpreters: {
-      ".py": ["poetry run"],
-    }
-
   // Some additional configuration options and their defaults:
   // theme: "default", // try "light", "dark", "slate", etc.
   // header: "", // what to show in the header (HTML)
