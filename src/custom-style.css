@@ -25,9 +25,13 @@
 }
 
 
-p, ul li, table td, table th, label{
+p, ul li, table td, table th{
   color: var(--darkGrey);
   font-size: var(--size-m);
+}
+
+label{
+  font-size: var(--size-s);
 }
 
 /* Bold styles */
@@ -63,6 +67,212 @@ p, ul li, table td, table th, label{
 
 .plot-note, .plot-source {
     margin: 5px 0;
+}
+
+/* Input panel */
+
+.tab-wrap {
+  border-radius: 6px;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  border: solid 1px var(--theme-foreground-faintest);
+}
+
+.tab {
+  display: flex;
+  justify-content: space-between;
+  background-color: #f2f2f2;
+}
+
+.tab {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.tab-button:first-of-type {
+  border-top-left-radius: 6px;
+  border-right: solid 1px var(--theme-foreground-faintest);
+}
+
+.tab-button:last-of-type {
+  border-top-right-radius: 6px;
+  border-left: solid 1px var(--theme-foreground-faintest);
+}
+
+.tab-button {
+  flex-grow: 1;
+  display: inline-block;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.3s background-color ease;
+  background-color: var(--theme-background-alt);
+  border-bottom: solid 2px var(--theme-foreground-faintest);
+  padding: 7.5px 15px;
+
+  form {
+    --input-width: 100%;
+    font: var(--size-m) Colfax, Helvetica, sans-serif;
+  }
+
+  button {
+    all: unset;
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  &:hover {
+    background-color: #f9f9f9;
+  }
+  &.active {
+    background-color: #fff;
+    cursor: default;
+    border: none;
+    &:hover {
+      background-color: #fff;
+    }
+  }
+}
+
+.tab-content {
+  display: none;
+  padding: 20px 30px;
+  background-color: #fff;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  margin-top: -1px;
+  &.show {
+    display: grid;
+    gap: .5rem;
+  }
+}
+
+/* Multi select styles */
+/*<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">*/
+
+.filter-selected {
+  text-wrap:wrap;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+}
+
+.dropdown-action-buttons-container {
+  padding:10px;
+}
+
+.dropdown-action-buttons {
+  width:100%;
+}
+
+.dropdown-action-buttons button {
+  width:50%;
+  font-size:14px;
+  height:30px;
+  background-color:#E9E9E9;
+}
+
+.dropdown-action-buttons button:hover {
+  background-color: var(--lightGrey);
+}
+
+.dropdown-list a {
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  min-height:14px!important;
+}
+
+.dropdown-list .text {
+  width:90%;
+}
+
+.dropdown-inner {
+  border:1px #ccc solid;
+  border-radius:2px;
+  background-color:white;
+  margin-top:5px;
+  position:absolute;
+  z-index:2000;
+}
+
+.dropdown-list {
+  padding:0px;
+  margin:0px;
+  line-height:0px;
+  list-style: none;
+}
+
+.dropdown-list li {
+  display:flex;
+  align-content:center;
+  min-height:35px;
+  font-size:var(--size-s);
+}
+
+li .checkmark {
+  display:none;
+  float:right;
+  padding-right:5px;
+}
+
+li.selected .checkmark {
+  display:flex!important;
+}
+
+.dropdown-list li:hover {
+  background-color:whitesmoke;
+  cursor:pointer;
+}
+.dropdown-list li.selected:hover {
+  background-color: #ffdfdf;
+}
+
+.dropdown-list>li>a {
+  padding: 5px 20px!important;
+  white-space: nowrap;
+}
+
+.dropdown-form {
+  display:flex;
+  flex-flow:row nowrap;
+}
+
+.dropdown-form label {
+  font-weight:bold;
+  font-size:var(--size-s);
+  flex-shrink: 0;
+  align-self: start;
+  padding: 5px 0 4px 0;
+  width: 120px;
+  margin-right: 6.5px;
+}
+
+.dropdown-form form {
+  width: 233.5px;
+}
+
+.dropdown-form button {
+  background-color:white;
+  font: normal var(--size-s) Colfax, Helvetica, sans-serif !important;
+  color: #333!important;
+  border:1px rgb(118, 118, 118) solid!important;
+  border-radius:2px!important;
+  padding: 1px 4px;
+  cursor:pointer;
+}
+
+.dropdown-button button {
+  width:100%;
+}
+
+/* select styles */
+form select {
+  font: normal var(--size-s) Colfax, Helvetica, sans-serif !important;
 }
 
 /* Plot subtitles */

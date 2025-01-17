@@ -1,12 +1,10 @@
 import * as Plot from "npm:@observablehq/plot";
+import {utcYear} from "npm:d3-time"
+import {timeFormat} from "npm:d3-time-format"
 import {groupData} from "./groupData.js";
-import {xDomain} from "./xDomain.js";
-import {yDomain} from "./yDomain.js";
-import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
 import {jitterLabels} from "./jitterLabels.js";
 import {formatString} from "./formatString.js";
-import {getLimits} from "./getLimits.js";
 
 export function plotMulti(data, countries, partner, flow, timeRange, aggregation, categories, unit, width) {
 
@@ -25,34 +23,33 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
         filteredData = filteredData.filter((d) => categories.includes(d.category));
     }
 
-    const groupedData = groupData(filteredData, ["year", "country"], unit)
+    const groupedData = groupData(filteredData, ["date", "country"], unit)
+
+    // const parseDate = timeParse("%Y");
+    const formatYear = timeFormat("%Y");
 
     return Plot.plot({
         width: width,
         height: width * .5,
         marginTop: 25,
-        marginRight: 75,
+        marginRight: 100,
         marginBottom: 25,
-        marginLeft: 75,
+        marginLeft: 40,
         x: {
-            domain: xDomain(timeRange),
-            type: "band",
+            inset: 10,
             label: null,
             tickSize: 0,
             ticks: 5,
-            tickFormat: formatYear
+            grid: false,
+            tickFormat: "%Y",
+            tickPadding: 10,
+            interval: utcYear,
         },
         y: {
-            domain: yDomain(
-                groupedData,
-                timeRange,
-                flow,
-                "multi"
-            ),
-            className: "axis-labels-y",
+            inset: 5,
             label: unit === "pct_gdp" ? "% GDP" : "Million USD",
             tickSize: 0,
-            ticks: 5,
+            ticks: 4,
             grid: true
         },
         color: {
@@ -67,7 +64,7 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
 
             // Lines for each country
             Plot.line(groupedData, {
-                x: "year",
+                x: "date",
                 y: flow,
                 z: "country",
                 curve: "catmull-rom",
@@ -77,12 +74,12 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
 
             // Dots for each point
             Plot.dot(groupedData, {
-                x: "year",
+                x: "date",
                 y: flow,
                 z: "country",
                 r: 1,
                 fill: "country",
-                title: (d) => `${d.country}, ${d.year}\n${formatString(flow)}: ${formatValue(d[flow]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
+                title: (d) => `${d.country}, ${formatYear(d.date)}\n${formatString(flow)}: ${formatValue(d[flow]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
                 tip: true
             }),
 
@@ -93,7 +90,7 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
                     flow
                 ),
                 {
-                    x: "year",
+                    x: "date",
                     y: flow,
                     fill: "country",
                     text: "country",

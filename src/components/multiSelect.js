@@ -11,6 +11,7 @@ export function multiSelect(data, options = {}) {
         options
     );
 
+    // Ensure we have the correct `keyof` and `valueof` functions
     const keyof = options.keyof ? options.keyof : isMap(data) ? first : identity;
     const valueof = options.valueof
         ? options.valueof
@@ -18,9 +19,11 @@ export function multiSelect(data, options = {}) {
             ? second
             : identity;
 
+    // Define the keys and values for the selection
     const keys = getKeys(data, keyof);
     const values = getValues(data, valueof);
 
+    // Initialize selected indices
     const initialIndices = Array.isArray(options.value)
         ? indicesFromValues(options.value)
         : [];
@@ -30,25 +33,25 @@ export function multiSelect(data, options = {}) {
     const id = newId();
     const datalistId = `${id}-datalist`;
     const inputEl = html`<input id="${id}"
-                              class="${blockClass}__input" 
-                              type="text" 
-                              list="${datalistId}"
-                              placeholder=${placeholder}
-                              disabled=${disabled}
-                              />`;
+                                class="${blockClass}__input"
+                                type="text"
+                                list="${datalistId}"
+                                placeholder=${placeholder}
+                                disabled=${disabled}
+    />`;
     const selectionEl = html`<ul class="${blockClass}__selected-items" region="status"></ul>`;
     const labelEl = label ? html`<label for="${id}">${label}</label>` : "";
     const datalistEl = html`<datalist id=${datalistId}></datalist>`;
 
     const form = html`<form class="${ns} ${blockClass}" style="width: 41em" disabled=${disabled}>
-  ${labelEl}
-  
-  <div class="${blockClass}__wrapper">
-    ${selectionEl}
-    ${inputEl}
-    ${datalistEl}
-  </div>
-</form>`;
+        ${labelEl}
+
+        <div class="${blockClass}__wrapper">
+            ${selectionEl}
+            ${inputEl}
+            ${datalistEl}
+        </div>
+    </form>`;
 
     function dispatchInputEvent() {
         form.dispatchEvent(new Event("input", { bubbles: true }));
@@ -99,15 +102,15 @@ export function multiSelect(data, options = {}) {
         for (let i of selectedIndices) {
             const k = keys[i];
             items.push(html`<li class="${blockClass}__selected-item">
-  <span class="${blockClass}__selected-item-label">${k}</span>
-  <button class="${blockClass}__remove"
-          type="button"
-          title="Remove"
-          onclick=${() => removeIndex(i)}
-          disabled=${disabled}>
-    <span class="${blockClass}__icon">${icons.close()}</span>
-  </button>
-</li>`);
+                <span class="${blockClass}__selected-item-label">${k}</span>
+                <button class="${blockClass}__remove"
+                        type="button"
+                        title="Remove"
+                        onclick=${() => removeIndex(i)}
+                        disabled=${disabled}>
+                    <span class="${blockClass}__icon">${icons.close()}</span>
+                </button>
+            </li>`);
         }
         items.forEach((el) => selectionEl.append(el));
     }
@@ -215,7 +218,7 @@ function second([, x]) {
 }
 
 function isMap(data) {
-    data instanceof Map
+    return data instanceof Map;
 }
 
 function stringify(x) {
@@ -314,6 +317,7 @@ function attachStyles(placeOfUseInvalidation) {
         border-radius: var(--border-radius-200);
         padding-inline-start: 0.5rem;
         background-color: white;
+        font-size: var(--size-s);
       }
 
       button.${blockClass}__remove {

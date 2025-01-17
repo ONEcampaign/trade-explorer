@@ -1,9 +1,10 @@
 ```js 
 import {FileAttachment} from "observablehq:stdlib";
 import {min, max} from "npm:d3-array";
+import {timeParse, timeFormat} from "npm:d3-time-format"
 import {sortCountries} from "./components/sortCountries.js";
-import {sortCategories} from "./components/sortCategories.js";
 import {rangeInput} from "./components/rangeInput.js";
+import {dropdownInput} from "./components/dropdownInput.js";
 import {plotSingle} from "./components/plotSingle.js";
 import {tableSingle} from "./components/tableSingle.js";
 import {colorPalette} from "./components/colorPalette.js";
@@ -17,21 +18,25 @@ import {downloadXLSX} from "./components/downloadXLSX.js";
 setCustomColors();
 ```
 
-```js 
+```js
 const rawData = await FileAttachment("./data/africa_trade.parquet").parquet();
 const tradeData = rawData.toArray()
-    .map((d) => ({...d,year: Number(d.year)}));
+    .map(d => {
+        return {
+            ...d,
+            year: Number(d.year),  // Convert year to integer
+            date: new Date(Number(d.year) + 0, 1, 1)  // Create a date for the middle of the previous year (July 1st)
+        };
+    });
 ```
 
 ```js
 // Input options
 const countries = sortCountries(Array.from(new Set(tradeData.map((d) => d.country))));
 const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
-const categories = sortCategories(
-    Array.from(new Set(tradeData.map((d) => d.category)))
-        .filter((item) => item !== "All products")
-);
-const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
+const categories = Array.from(new Set(tradeData.map((d) => d.category)))
+        .filter((item) => item !== "All products");
+const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)]
 ```
 
 ```js
@@ -95,12 +100,6 @@ const timeRangeInput = rangeInput(
     })
 const timeRangeSingle = Generators.input(timeRangeInput)
 
-// Select all input
-const SelectAllInput = Inputs.toggle(
-    {
-        label: "Select all",
-        value: true
-    });
 
 // Aggregation input
 const aggregationInput = Inputs.radio(
@@ -112,19 +111,13 @@ const aggregationInput = Inputs.radio(
 const aggregationSingle = Generators.input(aggregationInput)
 
 // Categories Input
-const categoriesInput = Inputs.checkbox(
-    categories, 
-    {
-        label: "Categories",
-        value: SelectAllInput.value ? categories : []
-    });
+const categoriesInput = dropdownInput({
+    inputLabel: "Categories",
+    placeholderText: "Select a category...",
+    options: categories,
+    selected: ["Mineral products"]
+})
 const categoriesSingle = Generators.input(categoriesInput);
-
-// Make categories checkboxes reactive to select all checkbox
-SelectAllInput.addEventListener("input", () => {
-    categoriesInput.value = SelectAllInput.value ? categories : [];
-    categoriesInput.dispatchEvent(new Event("input"));
-});
 
 // Unit input
 const unitInput = Inputs.radio(
@@ -141,37 +134,58 @@ const unitInput = Inputs.radio(
 const unitSingle = Generators.input(unitInput)
 ```
 
+```js
+const tabSelection = Mutable("Settings")
+const selectSettings = () => tabSelection.value = "Settings";
+const selectAdvanced = () => tabSelection.value = "Advanced";
+```
+
 ```html
 <h1 class="header">
     Single Country
 </h1>
 
 <p class="normal-text">
-    Begin by selecting an African country and a trading partner (ONE market) from the dropdown menus below. You can also adjust the time range, the product categories of traded goods and the unit of currency for the data shown.
+    Explore trade between an African country or region and a ONE market.
 </p>
 
 <p class="normal-text">
-    <a href="#trade-plot">This plot</a> shows exports and imports between the two selected countries as well as the trade balance, calculated as the difference between exports and imports. You can hover over the bars for additional information.
+    <a href="#trade-plot">This plot</a> shows exports and imports between the two countries as well as a line representing their trade balance (difference between exports and imports).
 </p>
 
 <p class="normal-text">
-    <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas 
-    <a href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
+    The tables below present trade figures aggregated
+    <a href="#trade-by-year">by year</a> and
+    <a href="#trade-by-category">product</a>.
 </p>
 
 <br>
 
-<div class="card" style="display: grid; gap: 0.5rem;">
-    <div>${countryInput}</div>
-    <div>${partnerInput}</div>
-    <div>${timeRangeInput}</div>
-    <div>${aggregationInput}</div>
-    ${
-        aggregationSingle === 'All products' 
-        ? ''
-        : html`<div>${categoriesInput}</div><div>${SelectAllInput}</div>`
-    }
-    <div>${unitInput}</div>
+<div class="tab-wrap">
+    <div class="tab">
+        <div class="tab-button ${tabSelection === 'Settings' ? 'active' : ''}">    
+            ${Inputs.button("Settings", {reduce: selectSettings})}
+        </div>
+        <div class="tab-button ${tabSelection === 'Advanced' ? 'active' : ''}">
+            ${Inputs.button("Advanced", {reduce: selectAdvanced})}
+        </div>
+    </div>
+
+    <div class="tab-content ${tabSelection === 'Settings' ? 'show' : ''}">
+        <div>${countryInput}</div>
+        <div>${partnerInput}</div>
+        <div>${unitInput}</div>
+    </div>
+
+    <div class="tab-content ${tabSelection === 'Advanced' ? 'show' : ''}">
+        <div>${timeRangeInput}</div>
+        <div>${aggregationInput}</div>    
+        ${
+            aggregationSingle === 'All products'
+            ? ''
+            : html`<div>${categoriesInput}</div>`
+        }
+    </div>
 </div>
 
 <br>
@@ -249,7 +263,7 @@ const unitSingle = Generators.input(unitInput)
             Trade by category
         </h2>
         <p class="normal-text">
-            Total value of exports imports and trade balance for each category of traded goods between 
+            Total value of exports, imports and trade balance for each category of traded goods between 
             <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and 
             <span class="bold-text">${partnerSingle}</span> in 
             <span class="bold-text">${timeRangeSingle[0]}-${timeRangeSingle[1]}</span>.
@@ -258,13 +272,14 @@ const unitSingle = Generators.input(unitInput)
     <div>
         ${resize((width) =>
             tableSingle(
-                tradeData, 
+                tradeData,
                 countrySingle,
-                partnerSingle, 
-                timeRangeSingle, 
+                partnerSingle,
+                timeRangeSingle,
+                aggregationSingle,
                 categoriesSingle,
-                unitSingle, 
-                "category", 
+                unitSingle,
+                "category",
                 width
             )
         )}
@@ -289,21 +304,22 @@ const unitSingle = Generators.input(unitInput)
             Trade by year
         </h2>
         ${
-            categoriesSingle.length === categories.length
-            ? html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">Total yearly value of exports, imports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            aggregationSingle === "All products"
+            ? html`<p class="normal-text">Total yearly value of imports, exports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">Total yearly value of imports, exports and trade balance between <span class="bold-text">${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle}</span> and <span class="bold-text">${partnerSingle}</span> including the following product categories:</p> <ul>${categoriesSingle.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>
         ${resize((width) =>
             tableSingle(
-                tradeData, 
+                tradeData,
                 countrySingle,
-                partnerSingle, 
-                timeRangeSingle, 
+                partnerSingle,
+                timeRangeSingle,
+                aggregationSingle,
                 categoriesSingle,
-                unitSingle, 
-                "year", 
+                unitSingle,
+                "year",
                 width
             )
         )}

@@ -29,7 +29,7 @@ console.log(await colfaxRegular.url());
         <a href="./single-country" class="bold-text">Single country</a> allows you to explore trade between a single African country and a ONE market.
     </li>
     <li>
-        <a href="/multi-country" class="bold-text">Multi country</a> lets you compare trade relationships of multiple African countries with a ONE market.
+        <a href="./multi-country" class="bold-text">Multi country</a> lets you compare trade relationships of multiple African countries with a ONE market.
     </li>
 </ul>
 ```

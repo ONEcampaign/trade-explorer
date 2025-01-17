@@ -1,13 +1,12 @@
 import * as Inputs from "npm:@observablehq/inputs";
 import {schemeObservable10} from "npm:d3-scale-chromatic"
-import {sortCategories} from "./sortCategories.js"
 import {groupData} from "./groupData.js"
 import {reshapeDataForTable} from "./reshapeDataForTable.js"
 import {getLimits} from "./getLimits.js"
 import {sparkbar} from "./sparkbar.js"
 import {formatString} from "./formatString.js"
 
-export function tableMulti(data, countries, partner, timeRange, categories, unit, flow, groupKey, width) {
+export function tableMulti(data, countries, partner, timeRange, aggregation, categories, unit, flow, groupKey, width) {
 
     const isYearTable = groupKey === "year";
 
@@ -15,14 +14,22 @@ export function tableMulti(data, countries, partner, timeRange, categories, unit
         (d) =>
             countries.includes(d.country) &&
             d.partner === partner &&
-            d[unit] != null &&
-            d.category !== "All products"
+            d[unit] != null
     );
 
     if (isYearTable) {
-        filteredData = filteredData.filter((d) => categories.includes(d.category))
+        if  (aggregation === "All products") {
+            filteredData = filteredData.filter((d) => d.category === "All products")
+        } else {
+            filteredData = filteredData.filter((d) => categories.includes(d.category))
+        }
     } else  {
-        filteredData = filteredData.filter((d) => d.year >= timeRange[0] &&  d.year <= timeRange[1])
+        filteredData = filteredData.filter(
+            (d) =>
+                d.year >= timeRange[0] &&
+                d.year <= timeRange[1] &&
+                d.category !== "All products"
+        )
     }
 
     const groupedData = groupData(
@@ -31,12 +38,7 @@ export function tableMulti(data, countries, partner, timeRange, categories, unit
         unit
     )
 
-    let tableData;
-    if (groupKey === "category") {
-        tableData = sortCategories(reshapeDataForTable(groupedData, flow), groupKey);
-    } else {
-        tableData = reshapeDataForTable(groupedData, flow);
-    }
+    const tableData = reshapeDataForTable(groupedData, flow, groupKey);
 
     const limits = getLimits(tableData); // Get min and max values for sparkbars
 

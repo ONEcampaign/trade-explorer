@@ -1,7 +1,7 @@
 export function jitterLabels(
     data,
     unit,
-    xKey = "year",
+    xKey = "date",
     thresholdPercent = 0.05,
     maxIterations = 10,
     jitterAmount = 0.2

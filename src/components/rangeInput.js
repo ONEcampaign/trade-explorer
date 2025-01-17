@@ -55,7 +55,7 @@ export function rangeInput(options = {}) {
         <div style="display: flex; align-items: left; justify-content: start; gap: 0em;">
             ${
                 label   
-                ? html`<label style="font-size: var(--size-m); font-weight: bold; padding: 5px 0 4px 0; width:120px; margin-right: 6.5px;">${label}</label>`
+                ? html`<label style="font-size: var(--size-s); font-weight: bold; padding: 5px 0 4px 0; width:120px; margin-right: 6.5px;">${label}</label>`
                 : ""
             }
             ${sliderContent}

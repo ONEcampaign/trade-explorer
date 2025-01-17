@@ -1,8 +1,7 @@
 import * as Plot from "npm:@observablehq/plot";
+import {utcYear} from "npm:d3-time"
+import {timeFormat} from "npm:d3-time-format"
 import {groupData} from "./groupData.js";
-import {xDomain} from "./xDomain.js";
-import {yDomain} from "./yDomain.js";
-import {formatYear} from "./formatYear.js";
 import {formatValue} from "./formatValue.js";
 import {colorPalette} from "./colorPalette.js";
 import {formatString} from "./formatString.js"
@@ -16,7 +15,7 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
             d.year >= timeRange[0] &&
             d.year <= timeRange[1] &&
             d[unit] != null
-    );
+        );
 
     if (aggregation === "All products") {
         plotData = plotData.filter((d) => d.category === "All products");
@@ -24,7 +23,9 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
         plotData = plotData.filter((d) => categories.includes(d.category));
     }
 
-    const dataByYear = groupData(plotData, ["year"], unit)
+    const dataByYear = groupData(plotData, ["date"], unit)
+
+    const formatYear = timeFormat("%Y")
 
     return Plot.plot({
         width: width,
@@ -34,17 +35,20 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
         marginBottom: 25,
         marginLeft: 75,
         x: {
-            domain: xDomain(timeRange),
+            inset: 10,
             label: null,
             tickSize: 0,
-            tickFormat: formatYear,
-            type: "band"
+            ticks: 5,
+            grid: false,
+            tickFormat: "%Y",
+            tickPadding: 10,
+            interval: utcYear,
         },
         y: {
-            domain: yDomain(dataByYear, timeRange, null, "single"),
+            inset: 5,
             label: unit === "pct_gdp" ? "% GDP" : "Million USD",
             tickSize: 0,
-            ticks: 5,
+            ticks: 4,
             grid: true
         },
         color: {
@@ -54,22 +58,22 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
         marks: [
 
             // Bars for imports and exports
-            Plot.barY(
+            Plot.rectY(
                 plotData, {
-                    x: "year",
+                    x: "date",
                     y: unit,
-                    opacity: 0.6,
                     fill: "flow",
-                    title: (d) => `${formatYear(d.year)} ${formatString(d.flow)}\n${d.category}\n${formatValue(d[unit]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
-                    tip: true
+                    title: (d) => `${formatYear(d.date)} ${formatString(d.flow)}\n${d.category}\n${formatValue(d[unit]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
+                    tip: true,
+                    opacity: .6
                 }
             ),
 
-            // Exports reactivity
-            Plot.barY(
+            // reactivity
+            Plot.rectY(
                 plotData,
                 Plot.pointer({
-                    x: "year",
+                    x: "date",
                     y: unit,
                     opacity: 1,
                     fill: "flow",
@@ -86,22 +90,12 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
 
             // Line for balance
             Plot.line(dataByYear, {
-                x: "year",
+                x: "date",
                 y: "balance",
                 curve: "catmull-rom",
                 stroke: colorPalette.balance,
                 strokeWidth: 2
-            }),
-
-            // // Points for balance
-            // Plot.dot(dataByYear, {
-            //     x: "year",
-            //     y: "balance",
-            //     fill: colorPalette.balance,
-            //     stroke: colorPalette.balance,
-            //     strokeWidth: 3,
-            //     title: (d) => `${formatYear(d.year)} Trade balance\n${formatValue(d.balance).label}${unit === "pct_gdp" ? " %" : " USD M"}`
-            // })
+            })
         ]
     })
 }

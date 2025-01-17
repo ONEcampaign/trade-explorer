@@ -3,10 +3,9 @@ import {groupData} from "./groupData.js"
 import {getLimits} from "./getLimits.js"
 import {sparkbar} from "./sparkbar.js"
 import {colorPalette} from "./colorPalette.js"
-import {formatYear} from "./formatYear.js"
 import {formatString} from "./formatString.js"
 
-export function tableSingle(data, country, partner, timeRange, categories, unit, groupKey,  width) {
+export function tableSingle(data, country, partner, timeRange, aggregation, categories, unit, groupKey, width) {
 
     const isYearTable = groupKey === "year";
 
@@ -14,14 +13,22 @@ export function tableSingle(data, country, partner, timeRange, categories, unit,
         (d) =>
             d.country === country &&
             d.partner === partner &&
-            d[unit] != null &&
-            d.category !== "All products"
+            d[unit] != null
     );
 
     if (isYearTable) {
-        filteredData = filteredData.filter((d) => categories.includes(d.category))
+        if  (aggregation === "All products") {
+            filteredData = filteredData.filter((d) => d.category === "All products")
+        } else {
+            filteredData = filteredData.filter((d) => categories.includes(d.category))
+        }
     } else  {
-        filteredData = filteredData.filter((d) => d.year >= timeRange[0] &&  d.year <= timeRange[1])
+        filteredData = filteredData.filter(
+            (d) =>
+                d.year >= timeRange[0] &&
+                d.year <= timeRange[1] &&
+                d.category !== "All products"
+        )
     }
 
     const tableData = groupData(filteredData, [groupKey], unit);
@@ -32,7 +39,7 @@ export function tableSingle(data, country, partner, timeRange, categories, unit,
         sort: isYearTable ? "year" : "exports", // Sort by year or exports
         reverse: true, // Reverse sort only for category-based tables
         format: {
-            [groupKey]: isYearTable ? (x) => formatYear(x) : (x) => x, // Format year or category
+            [groupKey]: (x) => x,
             imports: sparkbar(
                 tableData,
                 colorPalette.imports,

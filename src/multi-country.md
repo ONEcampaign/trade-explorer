@@ -1,12 +1,12 @@
 ```js 
 import {FileAttachment} from "observablehq:stdlib";
 import {sortCountries} from "./components/sortCountries.js";
-import {sortCategories} from "./components/sortCategories.js";
 import {plotMulti} from "./components/plotMulti.js";
 import {min, max} from "npm:d3-array";
 import {tableMulti} from "./components/tableMulti.js";
 import {colorPalette} from './components/colorPalette.js';
 import {rangeInput} from "./components/rangeInput.js";
+import {dropdownInput} from "./components/dropdownInput.js";
 import {multiSelect} from "./components/multiSelect.js";
 import {setCustomColors} from "./components/setCustomColors.js";
 import {formatString} from "./components/formatString.js";
@@ -21,17 +21,21 @@ setCustomColors();
 ```js
 const rawData = await FileAttachment("./data/africa_trade.parquet").parquet();
 const tradeData = rawData.toArray()
-    .map((d) => ({...d,year: Number(d.year)}));
+    .map(d => {
+        return {
+            ...d,
+            year: Number(d.year),  // Convert year to integer
+            date: new Date(Number(d.year) + 0, 1, 1)  // Create a date for the middle of the previous year (July 1st)
+        };
+    });
 ```
 
 ```js
 // Input options
 const countries = sortCountries(Array.from(new Set(tradeData.map((d) => d.country))));
 const partners = Array.from(new Set(tradeData.map((d) => d.partner)));
-const categories = sortCategories(
-    Array.from(new Set(tradeData.map((d) => d.category)))
-        .filter((item) => item !== "All products")
-);
+const categories = Array.from(new Set(tradeData.map((d) => d.category)))
+        .filter((item) => item !== "All products");
 const timeRange = [min(tradeData, (d) => d.year), max(tradeData, (d) => d.year)];
 ```
 
@@ -66,11 +70,17 @@ updateFirstLinkText();
 
 ```js
 // Country Input
-const countryInput = multiSelect(
-    countries,
-    {
-        label: "Countries/regions",
-        value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
+// const countryInput = multiSelect(
+//     countries,
+//     {
+//         label: "Countries/regions",
+//         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
+//     })
+const countryInput = dropdownInput({
+        inputLabel: "Countries/regions",
+        placeholderText: "Select a country/region",
+        options: countries,
+        selected: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
     })
 
 const countryMulti = Generators.input(countryInput);
@@ -114,19 +124,13 @@ const aggregationInput = Inputs.radio(
 const aggregationMulti = Generators.input(aggregationInput)
 
 // Categories Input
-const categoriesInput = Inputs.checkbox(
-    categories, 
-    {
-        label: "Categories",
-        value: SelectAllInput.value ? categories : []
-    });
+const categoriesInput = dropdownInput({
+    inputLabel: "Categories",
+    placeholderText: "Select a category...",
+    options: categories,
+    selected: ["Mineral products"]
+})
 const categoriesMulti = Generators.input(categoriesInput);
-
-// Make categories checkboxes reactive to select all checkbox
-SelectAllInput.addEventListener("input", () => {
-    categoriesInput.value = SelectAllInput.value ? categories : [];
-    categoriesInput.dispatchEvent(new Event("input"));
-});
 
 // Unit input
 const unitInput = Inputs.radio(
@@ -157,41 +161,59 @@ const flowInput = Inputs.radio(
 const flowMulti = Generators.input(flowInput)
 ```
 
+```js
+const tabSelection = Mutable("Settings")
+const selectSettings = () => tabSelection.value = "Settings";
+const selectAdvanced = () => tabSelection.value = "Advanced";
+```
+
 ```html
 <h1 class="header">
     Multi Country
 </h1>
 
 <p class="normal-text">
-    Choose multiple African countries from the list below by dragging or Shift-clicking, and select or deselect a
-    country by Command-clicking. Next, select a trading partner (ONE market) and a trade flow (trade balance, exports,
-    imports). You can also adjust the time range, the product categories of traded goods and the unit of currency for
-    the data shown.
+    Compare trade relationships between multiple African countries or regions and a ONE market.
 </p>
 
 <p class="normal-text">
-    <a href="#trade-plot">This plot</a> contains a line for each african country showing the selected trade flow with the indicated trade partner.
+    <a href="#trade-plot">This plot</a> shows a line for each african country and the selected trade flow.
 </p>
 
 <p class="normal-text">
-    <a href="#trade-by-year">This table</a> shows the figures included in the plot, whereas 
-    <a href="#trade-by-category">this one</a> presents trade data aggregated by product categories.
+    The tables below present trade figures aggregated
+    <a href="#trade-by-year">by year</a> and
+    <a href="#trade-by-category">by product category</a>.
 </p>
 
 <br>
 
-<div class="card" style="display: grid; gap: 0.5rem;">
-    <div>${countryInput}</div>
-    <div>${partnerInput}</div>
-    <div>${timeRangeInput}</div>
-    <div>${flowInput}</div>
-    <div>${aggregationInput}</div>
-    ${
+<div class="tab-wrap">
+    <div class="tab">
+        <div class="tab-button ${tabSelection === 'Settings' ? 'active' : ''}">
+            ${Inputs.button("Settings", {reduce: selectSettings})}
+        </div>
+        <div class="tab-button ${tabSelection === 'Advanced' ? 'active' : ''}">
+            ${Inputs.button("Advanced", {reduce: selectAdvanced})}
+        </div>
+    </div>
+
+    <div class="tab-content ${tabSelection === 'Settings' ? 'show' : ''}">
+        <div>${countryInput}</div>
+        <div>${partnerInput}</div>
+        <div>${flowInput}</div>
+        <div>${unitInput}</div>
+    </div>
+
+    <div class="tab-content ${tabSelection === 'Advanced' ? 'show' : ''}">
+        <div>${timeRangeInput}</div>
+        <div>${aggregationInput}</div>
+        ${
         aggregationMulti === 'All products'
         ? ''
-        : html`<div>${categoriesInput}</div><div>${SelectAllInput}</div>`
-    }
-    <div>${unitInput}</div>
+        : html`<div>${categoriesInput}</div>`
+        }
+    </div>
 </div>
     
 <br>
@@ -271,19 +293,20 @@ const flowMulti = Generators.input(flowInput)
             Trade by category
         </h2>
         <p class="normal-text">
-            All products value of
+            Total value of
             <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}</span>
-            <span class="bold-text">${partnerMulti}</span> for each category of traded goods in
-            <span class="bold-text">${timeRangeMulti[0]}-${timeRangeMulti[1]}</span>.
+            <span class="bold-text">${partnerMulti}</span> in
+            <span class="bold-text">${timeRangeMulti[0]}-${timeRangeMulti[1]}</span> for each category of traded goods.
         </p>
     </div>
     <div>
         ${resize((width) =>
             tableMulti(
-                tradeData, 
-                countryMulti, 
-                partnerMulti, 
-                timeRangeMulti, 
+                tradeData,
+                countryMulti,
+                partnerMulti,
+                timeRangeMulti,
+                aggregationMulti,
                 categoriesMulti, 
                 unitMulti, 
                 flowMulti, 
@@ -322,22 +345,23 @@ const flowMulti = Generators.input(flowInput)
             Trade by year
         </h2>
         ${
-            categoriesMulti.length === categories.length
-            ? html`<p class="normal-text">All products yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
-            : html`<p class="normal-text">All products yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
+            aggregationMulti === "All products"
+            ? html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including <span class="bold-text">all product categories</span>.</p>`
+            : html`<p class="normal-text">Total yearly value of <span class="bold-text">${formatString(flowMulti, { capitalize: false, inSentence: true })}${partnerMulti}</span> including the following product categories:</p><ul>${categoriesMulti.map((item) => html`<li>${item}</li>`)}</ul><br>`
         }
     </div>
     <div>
         ${resize((width) =>
             tableMulti(
-                tradeData, 
-                countryMulti, 
-                partnerMulti, 
-                timeRangeMulti, 
-                categoriesMulti, 
-                unitMulti, 
-                flowMulti, 
-                "year", 
+                tradeData,
+                countryMulti,
+                partnerMulti,
+                timeRangeMulti,
+                aggregationMulti,
+                categoriesMulti,
+                unitMulti,
+                flowMulti,
+                "year",
                 width
             )
         )}
