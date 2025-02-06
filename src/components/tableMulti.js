@@ -32,8 +32,6 @@ export function tableMulti(query, flow, width) {
 
     const groupedData = groupData(arrayData, flow)
 
-    console.log(groupedData);
-
     const tableData = reshapeDataForTable(groupedData, flow, "category");
 
     const limits = getLimits(tableData);

@@ -3,7 +3,8 @@ export default {
 
   title: "Trade Data Explorer",
 
-  head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">',
+  head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">' +
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />',
 
   root: "src",
   theme: ["light", "wide", "alt"],

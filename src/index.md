@@ -46,7 +46,7 @@ const groups = Object.values(groupMappings)
 const countrySingleInput = Inputs.select(
     countries,
     {
-        label: "Entity",
+        label: "Country",
         sort: true,
     })
 
@@ -134,7 +134,7 @@ const pricesSingle = Generators.input(pricesSingleInput)
 const countryMultiInput = Inputs.select(
     countries,
     {
-        label: "Entity",
+        label: "Country",
         sort: true,
         value: "Canada"
     })
@@ -428,7 +428,7 @@ const queryMulti = await db.query(queryMultiString, queryMultiParams);
 const viewSelection = Mutable("Single")
 const selectSingle = () => viewSelection.value = "Single";
 const selectMulti = () => viewSelection.value = "Multi";
-const selectMethodology = () => viewSelection.value = "Methodology"
+const selectAbout = () => viewSelection.value = "About"
 ```
 
 ```js
@@ -444,6 +444,32 @@ const selectMethodology = () => viewSelection.value = "Methodology"
 ```
 
 ```html
+<div class="title-container">
+    <div class="title-logo">
+        <a href="https://data.one.org/" target="_blank">
+            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
+        </a>
+    </div>
+    <h1 class="title-text">
+        's trade data explorer
+    </h1>
+</div>
+
+<div class="intro-container">
+    <div class="view-button-intro ${viewSelection === 'Single' ? 'active' : ''}">
+        ${Inputs.button("Single Country", {reduce: selectSingle})}
+        <span>
+            allows you to explore trade between a country and trading partner.
+        </span>
+    </div>
+    <div class="view-button-intro ${viewSelection === 'Multi' ? 'active' : ''}">
+        ${Inputs.button("Multi Country", {reduce: selectMulti})}
+        <span>
+            lets you compare trade of a country with multiple trading partners.
+        </span>
+    </div>
+</div>
+
 <div class="header card">
     <div class="view-button ${viewSelection === 'Single' ? 'active' : ''}">
         ${Inputs.button("Single Country", {reduce: selectSingle})}
@@ -451,8 +477,8 @@ const selectMethodology = () => viewSelection.value = "Methodology"
     <div class="view-button ${viewSelection === 'Multi' ? 'active' : ''}">
         ${Inputs.button("Multi Country", {reduce: selectMulti})}
     </div>
-    <div class="view-button ${viewSelection === 'Methodology' ? 'active' : ''}">
-        ${Inputs.button("Methodology", {reduce: selectMethodology})}
+    <div class="view-button ${viewSelection === 'About' ? 'active' : ''}">
+        ${Inputs.button("About", {reduce: selectAbout})}
     </div>
 </div>
 
@@ -478,7 +504,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
         <div class="card">
             <div class="plot-container" id="single-plot">
                 <h2 class="plot-title">
-                    ${`Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`}
+                    ${`Trade between ${countrySingle} and ${partnerSingle}`}
                 </h2>
                 <h3 class="plot-subtitle">
                     <span class="export-subtitle-label">Exports</span>,
@@ -513,7 +539,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                         reduce: () => downloadPNG(
                             'single-plot',
                                 formatString(
-                                    `Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`,
+                                    `Trade between ${countrySingle} and ${partnerSingle}`,
                                     { capitalize: false, fileMode: true }
                                 )
                         )
@@ -525,7 +551,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
         <div class="card">
             <div class="plot-container" id="single-table">
                 <h2 class="table-title">
-                    ${`Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`}
+                    ${`Trade between ${countrySingle} and ${partnerSingle}`}
                 </h2>
                 <h3 class="table-subtitle">
                     By product category,  ${timeRangeSingle[0] === timeRangeSingle[1] ? timeRangeSingle[0] : `${timeRangeSingle[0]}-${timeRangeSingle[1]}`}
@@ -557,7 +583,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                         reduce: () => downloadXLSX(
                             querySingle,
                             formatString(
-                                `trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`,
+                                `trade between ${countrySingle} and ${partnerSingle}`,
                                 { capitalize: false, fileMode: true }
                             )
                         )
@@ -621,7 +647,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                                 ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
                                 : flowMulti === "imports"
                                     ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                                    : html`<span></span>`
+                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
@@ -697,32 +723,60 @@ const selectMethodology = () => viewSelection.value = "Methodology"
 </div>
 
 
-<div class="view-box ${viewSelection === 'Methodology' ? 'active' : ''}">
+<div class="view-box ${viewSelection === 'About' ? 'active' : ''}">
     
     <div class="card">
-        <p>
-            Trade data in current USD comes from CEPII's
-            <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">
-                BACI database
-            </a>.
-            This data is then grouped by product categories according to
+        
+        <h2 class="section-header">
+            How to use
+        </h2>
+        
+        <p class="normal-text">
+            Begin by selecting a country/group from the <span style="font-style: italic">Country</span> dropdown menu. All trade figures are presented from the selected country's perspective; If you choose Botswana, exports represent goods and services flowing out of Botswana to the selected partner, while imports represent inflows into Botswana. In this sense, exports are always positive, reflecting incoming revenue, while imports are negative.        
+        </p>
+        
+        <p class="normal-text">
+            You can then select a trading partner, adjust the currency, prices and time range. In addition to these controls, the <span style="font-style: italic">Multi Country</span> view allows you to select multiple trading partners by dragging or Shift-clicking. You can select/deselect an individual partner by Command-clicking it. Since this view presents multiple countries, you can only visualize a single trade flow at once.
+        </p>
+        
+        <h2 class="section-header">
+            Methodology
+        </h2>
+
+        <p class="normal-text">
+            Trade data is retrieved from CEPII's
+            <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">BACI database</a>,
+            and grouped by product category according to
             <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">HS Nomenclature</a>,
-            such that each section constitutes a category.
+            with each section forming a category.
         </p>
 
-        <p>
-            To convert figures into 2015 constant USD, we use GDP deflators and exchange rates from the IMF World Economic Outlook through the <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a> package.
+        <p class="normal-text">
+            The original trade figures are presented in current US$. We use the <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a> package to convert them into other currencies and constant prices.
         </p>
 
-        <p>
+        <p class="normal-text">
             Figures expressed as a percentage of GDP are calculated by dividing the trade value (in 2015 constant USD) by the GDP (also in 2015 constant USD) for that specific year and country. GDP figures are taken from the World Economic Outlook via the <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a> package and converted from current to 2015 constant USD using pydeflate.
         </p>
 
-        <p>
-            The scripts to wrangle the data are included in the <span style="font-family: monospace">data_preparation</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repo</a>.
+        <p class="normal-text">
+            The data preparation scripts are included in the <span style="font-family: monospace">scripts</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repository</a>.
         </p>
+
+        <h2 class="section-header">
+            Country groups
+        </h2>
+
+        <ul class="group-list">
+            ${
+            Object.entries(groupMappings)
+            .filter(([_, countries]) => countries.length > 1)
+            .sort(([a], [b]) => a.localeCompare(b)) // Sort alphabetically by group name
+            .map(([group, countries]) => html`<li><span class="group-name" ">${group}</span>: ${countries.join(", ")}.</li>`)
+            }
+        </ul>
+        
     </div>
     
 </div>
-
 ```
