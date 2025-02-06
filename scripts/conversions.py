@@ -6,6 +6,8 @@ from scripts.config import PATHS, time_range
 
 set_pydeflate_path(PATHS.PYDEFLATE)
 
+base_year = 2015
+
 df = pd.DataFrame({
     'year': range(time_range[0], time_range[1] + 1),
     'iso_code': "USA",
@@ -14,7 +16,7 @@ df = pd.DataFrame({
 
 df_usd = imf_gdp_deflate(
     data=df,
-    base_year=2015,
+    base_year=base_year,
     id_column="iso_code",
     source_currency="USD",
     target_currency="USD",
@@ -47,7 +49,7 @@ for country, code in currencies.items():
     df_conversion["iso_code"] = country
 
     df_conversion = imf_gdp_deflate(
-        base_year=2015,
+        base_year=base_year,
         data=df_conversion,
         source_currency=country,
         id_column="iso_code",

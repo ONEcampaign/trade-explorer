@@ -1,5 +1,4 @@
 import * as Inputs from "npm:@observablehq/inputs";
-import {groupData} from "./groupData.js";
 import {getLimits} from "./getLimits.js";
 import {sparkbar} from "./sparkbar.js";
 import {ONEPalette} from "./ONEPalette.js";

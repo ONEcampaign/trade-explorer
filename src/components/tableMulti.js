@@ -1,12 +1,11 @@
 import * as Inputs from "npm:@observablehq/inputs";
 import {schemeObservable10} from "npm:d3-scale-chromatic";
-import {groupData} from "./groupData.js";
 import {reshapeDataForTable} from "./reshapeDataForTable.js";
 import {getLimits} from "./getLimits.js";
 import {sparkbar} from "./sparkbar.js";
 import {formatString} from "./formatString.js";
 
-export function tableMulti(query, width) {
+export function tableMulti(query, flow, width) {
 
     const arrayData = query.toArray()
         .map((row) => ({
@@ -14,27 +13,28 @@ export function tableMulti(query, width) {
             year: new Date(row.year, 1, 1)
         }))
 
-    const columns = Object.keys(arrayData[0]);
-    const nonValueColumns = ['year', 'country', 'category'];
-    const flow = columns.find(col => !nonValueColumns.includes(col));
+    function groupData(data, flow) {
+        return Object.values(
+            data.reduce((acc, item) => {
+                const category = item.category;
+                const partner = item.partner;
+                const key = `${category}-${partner}`;
 
-    // Grouping and summing logic, with the dynamic value column
-    const groupedData = arrayData.reduce((acc, { category, country, [flow]: value }) => {
-        const key = `${category}-${country}`;
+                if (!acc[key]) {
+                    acc[key] = { category, partner, [flow]: 0 };
+                }
+                acc[key].balance += item[flow];
 
-        if (!acc[key]) {
-            acc[key] = { category, country, [flow]: 0 };
-        }
+                return acc;
+            }, {})
+        );
+    }
 
-        acc[key][flow] += value;
+    const groupedData = groupData(arrayData, flow)
 
-        return acc;
-    }, {});
+    console.log(groupedData);
 
-    const arrayGroupedData = Object.values(groupedData)
-        .sort((a, b) => a.year - b.year);
-
-    const tableData = reshapeDataForTable(arrayGroupedData, flow, "category");
+    const tableData = reshapeDataForTable(groupedData, flow, "category");
 
     const limits = getLimits(tableData);
 

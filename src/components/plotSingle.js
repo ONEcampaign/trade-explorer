@@ -1,7 +1,6 @@
 import * as Plot from "npm:@observablehq/plot";
 import {utcYear} from "npm:d3-time";
 import {timeFormat} from "npm:d3-time-format";
-import {groupData} from "./groupData.js";
 import {formatValue} from "./formatValue.js";
 import {ONEPalette} from "./ONEPalette.js";
 import {formatString} from "./formatString.js"

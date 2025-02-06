@@ -8,6 +8,7 @@ import {timeRange, categories, groupMappings} from "./components/inputValues.js"
 import {rangeInput} from "./components/rangeInput.js";
 
 import {formatString} from "./components/formatString.js";
+import {getCurrencyLabel} from "./components/getCurrencyLabel.js"
 
 import {plotSingle} from "./components/plotSingle.js";
 import {tableSingle} from "./components/tableSingle.js";
@@ -303,12 +304,15 @@ const querySingleString = `
     SELECT 
         t.year,
         t.category,
+        '${countrySingle}' AS country,
+        '${partnerSingle}' AS partner,
         (t.exports * c.${currencyColumnSingle}) AS exports,
         (t.imports * c.${currencyColumnSingle}) AS imports,
         (t.balance * c.${currencyColumnSingle}) AS balance
     FROM trade_data t
     LEFT JOIN conversion_table c
     ON t.year = c.year
+    ORDER BY t.year ASC, category ASC;
 `;
 
 const querySingleParams = [timeRangeSingle[0], timeRangeSingle[1]];
@@ -329,8 +333,8 @@ const currencyColumnMulti = `${currencyMulti}_${pricesMulti}`;
 
 // Define flow column selection
 const flowColumn = flowMulti === 'exports' ? `COALESCE(SUM(e.exports), 0)` :
-    flowMulti === 'imports' ? `COALESCE(SUM(i.imports), 0) * -1` :
-        flowMulti === 'balance' ? `COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0)` :
+    flowMulti === 'imports' ?                 `COALESCE(SUM(i.imports), 0) * -1` :
+        flowMulti === 'balance' ?              `COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0)` :
             null;
 
 // Generate CASE statement for importer/exporter mappings
@@ -356,57 +360,63 @@ const queryMultiString = `
     ),
     exports AS (
         SELECT year, 
-               country,
+               partner,
                category, 
                SUM(value) AS exports
         FROM (
             SELECT year, importer, category, value, 
-                   unnest(ARRAY[ ${caseStatement("importer")} ]) AS country
+                   unnest(ARRAY[ ${caseStatement("importer")} ]) AS partner
             FROM unpivoted
             WHERE exporter IN (${countryMultiSQLList}) 
             AND importer IN (${partnersMultiSQLList})
         ) expanded
-        WHERE country IS NOT NULL
-        GROUP BY year, country, category
+        WHERE partner IS NOT NULL
+        GROUP BY year, partner, category
     ),
     imports AS (
         SELECT year, 
-               country,
+               partner,
                category, 
                SUM(value) AS imports
         FROM (
             SELECT year, exporter, category, value, 
-                   unnest(ARRAY[ ${caseStatement("exporter")} ]) AS country
+                   unnest(ARRAY[ ${caseStatement("exporter")} ]) AS partner
             FROM unpivoted
             WHERE importer IN (${countryMultiSQLList}) 
             AND exporter IN (${partnersMultiSQLList})
         ) expanded
-        WHERE country IS NOT NULL
-        GROUP BY year, country, category
+        WHERE partner IS NOT NULL
+        GROUP BY year, partner, category
     ),
     trade_data AS (
         SELECT 
             COALESCE(e.year, i.year) AS year,
-            COALESCE(e.country, i.country) AS country,
+            COALESCE(e.partner, i.partner) AS partner,
             COALESCE(e.category, i.category) AS category,
-            ${flowColumn} AS ${flowMulti}
+            COALESCE(SUM(e.exports), 0) AS exports,
+            COALESCE(SUM(i.imports), 0) * -1 AS imports,
+            COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0) AS balance
         FROM exports e
         FULL OUTER JOIN imports i
         ON e.year = i.year 
-        AND e.country = i.country 
+        AND e.partner = i.partner 
         AND e.category = i.category 
             GROUP BY COALESCE(e.year, i.year), 
-                     COALESCE(e.country, i.country), 
+                     COALESCE(e.partner, i.partner), 
                      COALESCE(e.category, i.category)
     )
     SELECT
         t.year,
-        t.country,
+        '${countryMulti}' AS country,
+        t.partner,
         t.category,
-        (t.${flowMulti} * c.${currencyColumnMulti}) AS ${flowMulti}
+        (t.exports * c.${currencyColumnMulti}) AS exports,
+        (t.imports * c.${currencyColumnMulti}) AS imports,
+        (t.balance * c.${currencyColumnMulti}) AS balance
     FROM trade_data t
     LEFT JOIN conversion_table c
-    ON t.year = c.year;
+    ON t.year = c.year
+    ORDER BY t.year ASC, category ASC, partner ASC;
 `;
 
 const queryMultiParams = [timeRangeMulti[0], timeRangeMulti[1]];
@@ -481,7 +491,14 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
-                        <p class="plot-note">Exports refer to the total value of goods exported from ${countrySingle} to ${partnerSingle}</p>
+                        <p class="plot-note">
+                            ${
+                                pricesSingle === "constant" 
+                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencySingle, {})}.</span>`
+                                : html`<span>All values in current ${getCurrencyLabel(currencySingle, {})}.</span>`
+                            }
+                            <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
+                        </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
@@ -519,8 +536,14 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
-                        <p class="plot-note">Exports refer to the total value of goods exported from ${countrySingle} to ${partnerSingle}</p>
-                    </div>
+                        <p class="plot-note">
+                            ${
+                                pricesSingle === "constant"
+                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencySingle, {})}.</span>`
+                                : html`<span>All values in current ${getCurrencyLabel(currencySingle, {})}.</span>`
+                            }
+                            <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
+                        </p>                    </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
                             <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
@@ -530,15 +553,15 @@ const selectMethodology = () => viewSelection.value = "Methodology"
             </div>
             <div class="download-panel">
                 ${Inputs.button(
-                "Download data", {
-                reduce: () => downloadXLSX(
-                querySingle,
-                formatString(
-                `Trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`,
-                { capitalize: false, fileMode: true }
-                )
-                )
-                }
+                    "Download data", {
+                        reduce: () => downloadXLSX(
+                            querySingle,
+                            formatString(
+                                `trade between ${countrySingle === "Dem. Rep. of the Congo" ? "DRC" : countrySingle} and ${partnerSingle}`,
+                                { capitalize: false, fileMode: true }
+                            )
+                        )
+                    }
                 )}
             </div>
         </div>
@@ -582,11 +605,25 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                     }
                 </h3>
                 ${resize((width) =>
-                    plotMulti(queryMulti, currencyMulti, width)
+                    plotMulti(queryMulti, flowMulti, currencyMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                        <p class="plot-note">
+                            ${
+                                pricesMulti === "constant"
+                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencyMulti, {})}.</span>`
+                                : html`<span>All values in current ${getCurrencyLabel(currencyMulti, {})}.</span>`
+                            }
+                            ${
+                                flowMulti === "exports"
+                                ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
+                                : flowMulti === "imports"
+                                    ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
+                                    : html`<span></span>`
+                            }
+                        </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
@@ -600,7 +637,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                     "Download plot", {
                         reduce: () => downloadPNG(
                             'multi-plot',
-                            formatString(flowMulti + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
+                            formatString(flowMulti + " " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
                         )
                     }
                 )}
@@ -616,11 +653,25 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                     By product category,  ${timeRangeMulti[0] === timeRangeMulti[1] ? timeRangeMulti[0] : `${timeRangeMulti[0]}-${timeRangeMulti[1]}`}
                 </h3>
                 ${resize((width) =>
-                    tableMulti(queryMulti, width)
+                    tableMulti(queryMulti, flowMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                        <p class="plot-note">
+                            ${
+                                pricesMulti === "constant"
+                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencyMulti, {})}.</span>`
+                                : html`<span>All values in current ${getCurrencyLabel(currencyMulti, {})}.</span>`
+                            }
+                            ${
+                                flowMulti === "exports"
+                                ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
+                                : flowMulti === "imports"
+                                    ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
+                                    : html`<span></span>`
+                            }
+                        </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
@@ -634,7 +685,7 @@ const selectMethodology = () => viewSelection.value = "Methodology"
                     "Download data", {
                         reduce: () => downloadXLSX(
                             queryMulti,
-                            formatString(flowMulti + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
+                            formatString("trade with " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
                         )
                     }
                 )}

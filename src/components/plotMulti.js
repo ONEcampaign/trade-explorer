@@ -3,11 +3,9 @@ import {utcYear} from "npm:d3-time"
 import {timeFormat} from "npm:d3-time-format"
 import {formatValue} from "./formatValue.js";
 import {jitterLabels} from "./jitterLabels.js";
-import {formatString} from "./formatString.js";
-import {groupData} from "./groupData.js";
 import {getCurrencyLabel} from "./getCurrencyLabel.js";
 
-export function plotMulti(query, currency, width) {
+export function plotMulti(query, flow, currency, width) {
 
     const arrayData = query.toArray()
         .map((row) => ({
@@ -15,30 +13,25 @@ export function plotMulti(query, currency, width) {
             year: new Date(row.year, 1, 1)
         }))
 
-    const columns = Object.keys(arrayData[0]);
-    const nonValueColumns = ['year', 'country', 'category'];
-    const flow = columns.find(col => !nonValueColumns.includes(col));
+    function groupData(data, flow) {
+        return Object.values(
+            data.reduce((acc, item) => {
+                const Year = new Date(item.year);
+                const Partner = item.partner;
+                const key = `${Year}-${Partner}`;
 
-    // Grouping and summing logic, with the dynamic value column
-    const groupedData = arrayData.reduce((acc, { year, country, [flow]: value }) => {
-        const key = `${year.getFullYear()}-${country}`;
+                if (!acc[key]) {
+                    acc[key] = { Year, Partner, [flow]: 0 };
+                }
+                acc[key].balance += item[flow];
 
-        if (!acc[key]) {
-            acc[key] = { year, country, [flow]: 0 };
-        }
+                return acc;
+            }, {})
+        );
+    }
 
-        acc[key][flow] += value;
-
-        return acc;
-    }, {});
-
-    const plotData = Object.values(groupedData)
-        .sort((a, b) => a.year - b.year)
-        .map(item => ({
-            Year: item.year,
-            Country: item.country,
-            [flow]: item[flow],
-        }));
+    const plotData = groupData(arrayData, flow)
+        .sort((a, b) => a.year - b.year);
 
     const formatYear = timeFormat("%Y");
 
@@ -80,9 +73,9 @@ export function plotMulti(query, currency, width) {
             Plot.line(plotData, {
                 x: "Year",
                 y: flow,
-                z: "Country",
+                z: "Partner",
                 curve: "catmull-rom",
-                stroke: "Country",
+                stroke: "Partner",
                 strokeWidth: 2
             }),
 
@@ -92,13 +85,13 @@ export function plotMulti(query, currency, width) {
                     plotData,
                     flow,
                     "Year",
-                    "Country"
+                    "Partner",
                 ),
                 {
                     x: "Year",
                     y: flow,
-                    fill: "Country",
-                    text: "Country",
+                    fill: "Partner",
+                    text: "Partner",
                     fontSize: 12,
                     dx: 10,
                     frameAnchor: "left",
@@ -110,7 +103,7 @@ export function plotMulti(query, currency, width) {
                 Plot.pointer({
                     x: "Year",
                     y: flow,
-                    fill: "Country",
+                    fill: "Partner",
                     format: {
                         fill: true,
                         x: (d) => formatYear(d),
