@@ -1,40 +1,54 @@
 import * as Plot from "npm:@observablehq/plot";
 import {utcYear} from "npm:d3-time"
 import {timeFormat} from "npm:d3-time-format"
-import {groupData} from "./groupData.js";
 import {formatValue} from "./formatValue.js";
 import {jitterLabels} from "./jitterLabels.js";
 import {formatString} from "./formatString.js";
+import {groupData} from "./groupData.js";
+import {getCurrencyLabel} from "./getCurrencyLabel.js";
 
-export function plotMulti(data, countries, partner, flow, timeRange, aggregation, categories, unit, width) {
+export function plotMulti(query, currency, width) {
 
-    let filteredData = data.filter(
-        (d) =>
-            countries.includes(d.country) &&
-            d.partner === partner &&
-            d.year >= timeRange[0] &&
-            d.year <= timeRange[1] &&
-            d[unit] != null
-    );
+    const arrayData = query.toArray()
+        .map((row) => ({
+            ...row,
+            year: new Date(row.year, 1, 1)
+        }))
 
-    if (aggregation === "All products") {
-        filteredData = filteredData.filter((d) => d.category === "All products");
-    } else {
-        filteredData = filteredData.filter((d) => categories.includes(d.category));
-    }
+    const columns = Object.keys(arrayData[0]);
+    const nonValueColumns = ['year', 'country', 'category'];
+    const flow = columns.find(col => !nonValueColumns.includes(col));
 
-    const groupedData = groupData(filteredData, ["date", "country"], unit)
+    // Grouping and summing logic, with the dynamic value column
+    const groupedData = arrayData.reduce((acc, { year, country, [flow]: value }) => {
+        const key = `${year.getFullYear()}-${country}`;
 
-    // const parseDate = timeParse("%Y");
+        if (!acc[key]) {
+            acc[key] = { year, country, [flow]: 0 };
+        }
+
+        acc[key][flow] += value;
+
+        return acc;
+    }, {});
+
+    const plotData = Object.values(groupedData)
+        .sort((a, b) => a.year - b.year)
+        .map(item => ({
+            Year: item.year,
+            Country: item.country,
+            [flow]: item[flow],
+        }));
+
     const formatYear = timeFormat("%Y");
 
     return Plot.plot({
         width: width,
         height: width * .5,
         marginTop: 25,
-        marginRight: 100,
+        marginRight: 75,
         marginBottom: 25,
-        marginLeft: 40,
+        marginLeft: 75,
         x: {
             inset: 10,
             label: null,
@@ -47,7 +61,7 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
         },
         y: {
             inset: 5,
-            label: unit === "pct_gdp" ? "% GDP" : "Million USD",
+            label: getCurrencyLabel(currency, {}),
             tickSize: 0,
             ticks: 4,
             grid: true
@@ -63,42 +77,52 @@ export function plotMulti(data, countries, partner, flow, timeRange, aggregation
             }),
 
             // Lines for each country
-            Plot.line(groupedData, {
-                x: "date",
+            Plot.line(plotData, {
+                x: "Year",
                 y: flow,
-                z: "country",
+                z: "Country",
                 curve: "catmull-rom",
-                stroke: "country",
+                stroke: "Country",
                 strokeWidth: 2
-            }),
-
-            // Dots for each point
-            Plot.dot(groupedData, {
-                x: "date",
-                y: flow,
-                z: "country",
-                r: 1,
-                fill: "country",
-                title: (d) => `${d.country}, ${formatYear(d.date)}\n${formatString(flow)}: ${formatValue(d[flow]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
-                tip: true
             }),
 
             // Country labels
             Plot.text(
                 jitterLabels(
-                    groupedData,
-                    flow
+                    plotData,
+                    flow,
+                    "Year",
+                    "Country"
                 ),
                 {
-                    x: "date",
+                    x: "Year",
                     y: flow,
-                    fill: "country",
-                    text: "country",
+                    fill: "Country",
+                    text: "Country",
+                    fontSize: 12,
                     dx: 10,
                     frameAnchor: "left",
                     className: "country-label"
                 }
+            ),
+
+            Plot.tip(plotData,
+                Plot.pointer({
+                    x: "Year",
+                    y: flow,
+                    fill: "Country",
+                    format: {
+                        fill: true,
+                        x: (d) => formatYear(d),
+                        y: (d) => `${formatValue(d).label}`,
+                        stroke: true
+                    },
+                    lineHeight: 1.25,
+                    fontSize: 12
+                })
             )
+
+
         ]
     })
 }

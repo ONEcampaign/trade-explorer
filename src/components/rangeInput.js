@@ -1,6 +1,5 @@
-import {html} from "npm:htl"
-import {theme_Flat} from "./theme_Flat.js"
-import {colorPalette} from "./colorPalette.js"
+import {html} from "npm:htl";
+import {theme_Flat} from "./theme_Flat.js";
 
 // Source: https://observablehq.com/@kasivisu4/range-slider
 export function rangeInput(options = {}) {
@@ -12,7 +11,6 @@ export function rangeInput(options = {}) {
         color,
         width,
         theme = theme_Flat,
-        enableTextInput = false,
         label = ""
     } = options;
 
@@ -30,36 +28,36 @@ export function rangeInput(options = {}) {
     // Will be used to sanitize values while avoiding floating point issues.
     const input = html`<input type=range ${{ min, max, step }}>`;
 
-    const sliderContent = html`${
-            enableTextInput ? inputMin : ""
-    }<div class=${`${scope} range-slider`} style=${{
-        color,
-        width: width == null 
-            ? null
-            : typeof width === "number"
-                ? `${width}px`
-                : `${width}`
-    }}>
-        ${(controls.track = html`<div class="range-track">
-            ${(controls.zone = html`<div class="range-track-zone">
-                ${(controls.range = html`<div class="range-select" style="background:${colorPalette.inputTheme}"tabindex=0>
-                    ${(controls.min = html`<div class="thumb thumb-min" tabindex=0>`)}
-                    ${(controls.max = html`<div class="thumb thumb-max" tabindex=0>`)}
-                `)}
-            `)}
-        `)}
-        ${html`<style>${theme.replace(/:scope\b/g, "." + scope)}`}
-    </div>${enableTextInput ? inputMax : ""}`;
-
     const dom = html`
-        <div style="display: flex; align-items: left; justify-content: start; gap: 0em;">
-            ${
-                label   
-                ? html`<label style="font-size: var(--size-s); font-weight: bold; padding: 5px 0 4px 0; width:120px; margin-right: 6.5px;">${label}</label>`
-                : ""
-            }
-            ${sliderContent}
-        </div>`;
+        <form class="range-input">
+            <label>${label}</label>
+            <div class="${scope} range-slider" style=${
+                    {
+                        color,
+                        width:
+                                width == null
+                                        ? null
+                                        : typeof width === "number"
+                                                ? `${width}px`
+                                                : `${width}`
+                    }
+            }>
+                ${inputMin}
+                ${(controls.track = html`<div class="range-track">
+                    ${(controls.zone = html`<div class="range-track-zone">
+                        ${(controls.range = html`<div class="range-select" tabindex=0>
+                            ${(controls.min = html`<div class="thumb thumb-min" tabindex=0>`)}
+                            ${(controls.max = html`<div class="thumb thumb-max" tabindex=0>`)}
+                        `)}
+                    `)}
+                `)}
+                ${html`<style>${theme.replace(/:scope\b/g, "." + scope)}`}
+                ${inputMax}
+            </div>
+
+        </form>
+    `;
+
 
     let value = [],
         changed = false;

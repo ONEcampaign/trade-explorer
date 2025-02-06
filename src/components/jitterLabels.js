@@ -1,7 +1,8 @@
 export function jitterLabels(
     data,
     unit,
-    xKey = "date",
+    xKey = "Year",
+    groupKey = "Country",
     thresholdPercent = 0.05,
     maxIterations = 10,
     jitterAmount = 0.2
@@ -10,7 +11,7 @@ export function jitterLabels(
     const seriesMap = new Map();
     data.forEach((d) => {
         if (d[unit] != null) {
-            const country = d["country"];
+            const country = d[groupKey];
             if (!seriesMap.has(country) || d[xKey] > seriesMap.get(country)[xKey]) {
                 seriesMap.set(country, d);
             }

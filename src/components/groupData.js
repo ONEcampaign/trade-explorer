@@ -1,7 +1,8 @@
-import {rollups, sum} from "npm:d3-array"
+import { rollups, sum } from "npm:d3-array";
 
 export function groupData(data, groupByColumns, unitColumn) {
-    return rollups(
+    // Group the data by the specified columns and sum up imports and exports
+    const groupedData = rollups(
         data,
         (v) => ({
             imports: sum(
@@ -14,7 +15,10 @@ export function groupData(data, groupByColumns, unitColumn) {
             )
         }),
         ...groupByColumns.map((col) => (d) => d[col]) // Dynamically group by specified columns
-    )
+    );
+
+    // Map the grouped data to a more readable format
+    const mappedData = groupedData
         .map((group) => {
             if (groupByColumns.length === 1) {
                 // Single-level grouping (year or category)
@@ -38,4 +42,15 @@ export function groupData(data, groupByColumns, unitColumn) {
             }
         })
         .flat(); // Flatten if two-level grouping
+
+    // Sort the data by groupByColumns
+    return mappedData.sort((a, b) => {
+        for (let i = 0; i < groupByColumns.length; i++) {
+            // Compare values of the current column
+            const col = groupByColumns[i];
+            if (a[col] < b[col]) return -1; // If a is less than b, return -1
+            if (a[col] > b[col]) return 1;  // If a is greater than b, return 1
+        }
+        return 0; // If they are equal, return 0
+    });
 }

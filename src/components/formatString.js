@@ -13,9 +13,9 @@ export function formatString(str, options = {capitalize: true, inSentence: false
         if (str === "balance") {
             result += " with ";
         } else if (str === "exports") {
-            result += " to ";
-        } else if (str === "imports") {
             result += " from ";
+        } else if (str === "imports") {
+            result += " to ";
         }
     }
 

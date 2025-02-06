@@ -1,23 +1,24 @@
 export const theme_Flat = `
 /* Options */
 :scope {
-  color: #3b99fc;
-  width: 240px;
+  color: #3b5fc0;
+  width: 100%;
 }
 
 :scope {
   position: relative;
-  display: inline-block;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
   --thumb-size: 15px;
   --thumb-radius: calc(var(--thumb-size) / 2);
-  padding: var(--thumb-radius) 0;
-  margin: 2px;
   vertical-align: middle;
 }
 
 :scope .range-track {
   box-sizing: border-box;
   position: relative;
+  width: 100%;
   height: 7px;
   background-color: hsl(0, 0%, 80%);
   overflow: visible;
@@ -61,7 +62,7 @@ export const theme_Flat = `
   top: -4px;
   border-radius: 100%;
   border: 1px solid hsl(0,0%,55%);
-  cursor: default;
+  cursor: pointer;
   margin: 0;
 }
 :scope .thumb:active {

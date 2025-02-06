@@ -1,29 +1,41 @@
 import * as Plot from "npm:@observablehq/plot";
-import {utcYear} from "npm:d3-time"
-import {timeFormat} from "npm:d3-time-format"
+import {utcYear} from "npm:d3-time";
+import {timeFormat} from "npm:d3-time-format";
 import {groupData} from "./groupData.js";
 import {formatValue} from "./formatValue.js";
-import {colorPalette} from "./colorPalette.js";
+import {ONEPalette} from "./ONEPalette.js";
 import {formatString} from "./formatString.js"
+import {getCurrencyLabel} from "./getCurrencyLabel.js";
 
-export function plotSingle(data, country, partner, timeRange, aggregation, categories, unit, width) {
+export function plotSingle(query, currency, width) {
 
-    let plotData = data.filter(
-        (d) =>
-            d.country === country &&
-            d.partner === partner &&
-            d.year >= timeRange[0] &&
-            d.year <= timeRange[1] &&
-            d[unit] != null
-        );
+    const arrayData = query.toArray()
+        .map((row) => ({
+            ...row,
+            year: new Date(row.year, 1, 1), // Ensure year is just the integer
+        }))
+        .reduce((acc, { year, imports, exports, balance }) => {
+            // Initialize the accumulator for each year if not already initialized
+            if (!acc[year]) {
+                acc[year] = { year, exports: 0, imports: 0, balance: 0 };
+            }
 
-    if (aggregation === "All products") {
-        plotData = plotData.filter((d) => d.category === "All products");
-    } else {
-        plotData = plotData.filter((d) => categories.includes(d.category));
-    }
+            // Sum up exports, imports, and balance
+            acc[year].exports += exports;
+            acc[year].imports += imports;
+            acc[year].balance += balance;
 
-    const dataByYear = groupData(plotData, ["date"], unit)
+            return acc;
+        }, {});
+
+    // Convert the object into an array with the desired format
+    const plotData = Object.values(arrayData)
+        .flatMap(yearData => [
+            { Year: yearData.year, Flow: 'exports', Value: yearData.exports },
+            { Year: yearData.year, Flow: 'imports', Value: yearData.imports },
+            { Year: yearData.year, Flow: 'balance', Value: yearData.balance }
+        ])
+        .sort((a, b) => a.Year - b.Year);
 
     const formatYear = timeFormat("%Y")
 
@@ -46,56 +58,67 @@ export function plotSingle(data, country, partner, timeRange, aggregation, categ
         },
         y: {
             inset: 5,
-            label: unit === "pct_gdp" ? "% GDP" : "Million USD",
+            label: getCurrencyLabel(currency, {}),
             tickSize: 0,
             ticks: 4,
             grid: true
         },
         color: {
-            domain: ["imports", "exports"],
-            range: [colorPalette.imports, colorPalette.exports]
+            domain: ["imports", "exports", "balance"],
+            range: [ONEPalette.teal, ONEPalette.orange, ONEPalette.burgundy]
         },
         marks: [
 
-            // Bars for imports and exports
+            // Imports/exports bars
             Plot.rectY(
-                plotData, {
-                    x: "date",
-                    y: unit,
-                    fill: "flow",
-                    title: (d) => `${formatYear(d.date)} ${formatString(d.flow)}\n${d.category}\n${formatValue(d[unit]).label}${unit === "pct_gdp" ? " %" : " USD M"}`,
-                    tip: true,
-                    opacity: .6
+                plotData.filter((d) => d.Flow !== 'balance'), {
+                    x: "Year",
+                    y: "Value",
+                    fill: "Flow",
+                    opacity: .75,
+                    // // title: (d) => `${formatYear(d.Year)} ${formatString(d.Flow)}\nUS$ ${formatValue(d.Value).label} M`,
+                    // tip: {
+                    //     lineHeight: 1.25,
+                    //     fontSize: 12
+                    // }
                 }
             ),
 
-            // reactivity
-            Plot.rectY(
-                plotData,
-                Plot.pointer({
-                    x: "date",
-                    y: unit,
-                    opacity: 1,
-                    fill: "flow",
+            // Horizontal line at 0
+            Plot.ruleY(
+                [0], {
                     stroke: "black",
-                    strokeWidth: 1
-                })
+                    strokeWidth: .5
+                }
             ),
 
-            // Horizontal line at 0
-            Plot.ruleY([0], {
-                stroke: "black",
-                strokeWidth: 1
-            }),
-
             // Line for balance
-            Plot.line(dataByYear, {
-                x: "date",
-                y: "balance",
-                curve: "catmull-rom",
-                stroke: colorPalette.balance,
-                strokeWidth: 2
-            })
+            Plot.line(
+                plotData.filter((d) => d.Flow === 'balance'), {
+                    x: "Year",
+                    y: "Value",
+                    stroke: "Flow",
+                    curve: "catmull-rom",
+                    strokeWidth: 2
+                }
+            ),
+
+            Plot.tip(plotData,
+                Plot.pointer({
+                    x: "Year",
+                    y: "Value",
+                    fill: "Flow",
+                    format: {
+                        fill: (d) => formatString(d),
+                        x: (d) => formatYear(d),
+                        y: (d) => `${formatValue(d).label}`,
+                        stroke: true
+                    },
+                    lineHeight: 1.25,
+                    fontSize: 12
+                })
+            )
+
         ]
     })
 }

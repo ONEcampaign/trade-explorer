@@ -1,9 +1,9 @@
 import {html} from "npm:htl"
 import {hex2rgb} from "./hex2rgb.js"
-import {colorPalette} from "./colorPalette.js"
+import {ONEPalette} from "./ONEPalette.js"
 import {formatValue} from "./formatValue.js";
 
-export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
+export function sparkbar(fillColor, alignment, globalMin, globalMax) {
     const range = globalMax - globalMin;
     const zeroPosition = Math.abs(globalMin) / range;
 
@@ -14,8 +14,8 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
             alignment === "center"
                 ? `
           position: absolute;
-          height: 80%; /* Reduced height */
-          top: 10%;    /* Center the reduced bar vertically */
+          height: 80%;
+          top: 10%;
           background: ${hex2rgb(fillColor, 0.4)};
           width: ${barWidth}%;
           ${
@@ -26,8 +26,8 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
         `
                 : `
           position: absolute;
-          height: 80%; /* Reduced height */
-          top: 10%;    /* Center the reduced bar vertically */
+          height: 80%;
+          top: 10%;
           background: ${hex2rgb(fillColor, 0.4)};
           width: ${barWidth}%;
           ${alignment === "right" ? "right: 0;" : "left: 0;"};
@@ -40,7 +40,7 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
           position: absolute;
           height: 100%;
           width: 1px;
-          background: ${hex2rgb(colorPalette.midGrey, 0.5)};
+          background: ${hex2rgb(ONEPalette.midGrey, 0.5)};
           left: ${zeroPosition * 100}%;
         `
                 : alignment === "right"
@@ -48,14 +48,14 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
           position: absolute;
           height: 100%;
           width: 1px;
-          background: ${hex2rgb(colorPalette.midGrey, 0.5)};
+          background: ${hex2rgb(ONEPalette.midGrey, 0.5)};
           right: 0;
         `
                     : `
           position: absolute;
           height: 100%;
           width: 1px;
-          background: ${hex2rgb(colorPalette.midGrey, 0.5)};
+          background: ${hex2rgb(ONEPalette.midGrey, 0.5)};
           left: 0;
         `;
 
@@ -74,7 +74,7 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
       height: var(--size-l);
       background: none;
       display: flex;
-      z-index: -1;
+      z-index: 0;
       align-items: center;
       justify-content: ${textAlignment};
       box-sizing: border-box;">
@@ -85,7 +85,7 @@ export function sparkbar(data, fillColor, alignment, globalMin, globalMax) {
           z-index: 0;
           font-size: var(--size-s);
           color: black;
-          text-shadow: .5px .5px 0 ${colorPalette.lightGrey};
+          text-shadow: .5px .5px 0 ${ONEPalette.lightGrey};
           padding: 0 3px;">
           ${formatValue(x).label}
         </span>

@@ -1,61 +1,54 @@
 import * as Inputs from "npm:@observablehq/inputs";
-import {schemeObservable10} from "npm:d3-scale-chromatic"
-import {groupData} from "./groupData.js"
-import {reshapeDataForTable} from "./reshapeDataForTable.js"
-import {getLimits} from "./getLimits.js"
-import {sparkbar} from "./sparkbar.js"
-import {formatString} from "./formatString.js"
+import {schemeObservable10} from "npm:d3-scale-chromatic";
+import {groupData} from "./groupData.js";
+import {reshapeDataForTable} from "./reshapeDataForTable.js";
+import {getLimits} from "./getLimits.js";
+import {sparkbar} from "./sparkbar.js";
+import {formatString} from "./formatString.js";
 
-export function tableMulti(data, countries, partner, timeRange, aggregation, categories, unit, flow, groupKey, width) {
+export function tableMulti(query, width) {
 
-    const isYearTable = groupKey === "year";
+    const arrayData = query.toArray()
+        .map((row) => ({
+            ...row,
+            year: new Date(row.year, 1, 1)
+        }))
 
-    let filteredData = data.filter(
-        (d) =>
-            countries.includes(d.country) &&
-            d.partner === partner &&
-            d[unit] != null
-    );
+    const columns = Object.keys(arrayData[0]);
+    const nonValueColumns = ['year', 'country', 'category'];
+    const flow = columns.find(col => !nonValueColumns.includes(col));
 
-    if (isYearTable) {
-        if  (aggregation === "All products") {
-            filteredData = filteredData.filter((d) => d.category === "All products")
-        } else {
-            filteredData = filteredData.filter((d) => categories.includes(d.category))
+    // Grouping and summing logic, with the dynamic value column
+    const groupedData = arrayData.reduce((acc, { category, country, [flow]: value }) => {
+        const key = `${category}-${country}`;
+
+        if (!acc[key]) {
+            acc[key] = { category, country, [flow]: 0 };
         }
-    } else  {
-        filteredData = filteredData.filter(
-            (d) =>
-                d.year >= timeRange[0] &&
-                d.year <= timeRange[1] &&
-                d.category !== "All products"
-        )
-    }
 
-    const groupedData = groupData(
-        filteredData,
-        [groupKey, "country"],
-        unit
-    )
+        acc[key][flow] += value;
 
-    const tableData = reshapeDataForTable(groupedData, flow, groupKey);
+        return acc;
+    }, {});
 
-    const limits = getLimits(tableData); // Get min and max values for sparkbars
+    const arrayGroupedData = Object.values(groupedData)
+        .sort((a, b) => a.year - b.year);
+
+    const tableData = reshapeDataForTable(arrayGroupedData, flow, "category");
+
+    const limits = getLimits(tableData);
 
     const colors = schemeObservable10;
 
     return Inputs.table(tableData, {
-        sort: isYearTable ? "year" : undefined, // Sort by year if grouping by year
-        reverse: isYearTable ? "year" : undefined,
         format: {
-            [groupKey]: (x) => x, // General formatter for groupKey (year or category)
+            category: (x) => x, // General formatter for groupKey (year or category)
             ...Object.fromEntries(
                 Object.keys(tableData[0]) // Get all columns
-                    .filter((key) => key !== groupKey) // Exclude the grouping key (year or category)
+                    .filter((key) => key !== "category") // Exclude the grouping key (year or category)
                     .map((key, index) => [
                         key,
                         sparkbar(
-                            tableData,
                             colors[index % colors.length], // Cycle through colors
                             "center",
                             limits[0],
@@ -65,11 +58,12 @@ export function tableMulti(data, countries, partner, timeRange, aggregation, cat
             )
         },
         header: {
-            [groupKey]: formatString(groupKey)
+            category: formatString("category")
         },
         align: {
-            [groupKey]: "left"
+            category: "left"
         },
-        width: width - 25
+        width: width,
+        height: width * .5
     });
 }

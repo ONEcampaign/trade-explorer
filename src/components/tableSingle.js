@@ -1,62 +1,52 @@
 import * as Inputs from "npm:@observablehq/inputs";
-import {groupData} from "./groupData.js"
-import {getLimits} from "./getLimits.js"
-import {sparkbar} from "./sparkbar.js"
-import {colorPalette} from "./colorPalette.js"
-import {formatString} from "./formatString.js"
+import {groupData} from "./groupData.js";
+import {getLimits} from "./getLimits.js";
+import {sparkbar} from "./sparkbar.js";
+import {ONEPalette} from "./ONEPalette.js";
+import {formatString} from "./formatString.js";
 
-export function tableSingle(data, country, partner, timeRange, aggregation, categories, unit, groupKey, width) {
+export function tableSingle(query, width) {
 
-    const isYearTable = groupKey === "year";
+    const arrayData = query.toArray()
+        .map((row) => row.toJSON())
+        .reduce((acc, { category, imports, exports, balance }) => {
 
-    let filteredData = data.filter(
-        (d) =>
-            d.country === country &&
-            d.partner === partner &&
-            d[unit] != null
-    );
+            if (!acc[category]) {
+                acc[category] = { category, imports: 0, exports: 0, balance: 0 };
+            }
 
-    if (isYearTable) {
-        if  (aggregation === "All products") {
-            filteredData = filteredData.filter((d) => d.category === "All products")
-        } else {
-            filteredData = filteredData.filter((d) => categories.includes(d.category))
-        }
-    } else  {
-        filteredData = filteredData.filter(
-            (d) =>
-                d.year >= timeRange[0] &&
-                d.year <= timeRange[1] &&
-                d.category !== "All products"
-        )
-    }
+            acc[category].imports += imports;
+            acc[category].exports += exports;
+            acc[category].balance += balance;
 
-    const tableData = groupData(filteredData, [groupKey], unit);
+            return acc;
+        }, {});
 
-    const limits = getLimits(tableData); // Get min and max values for sparkbars
+
+    // Convert the object into an array with the desired format
+    const tableData = Object.values(arrayData);
+
+    const limits = getLimits(tableData);
 
     return Inputs.table(tableData, {
-        sort: isYearTable ? "year" : "exports", // Sort by year or exports
+        sort: "exports", // Sort by year or exports
         reverse: true, // Reverse sort only for category-based tables
         format: {
-            [groupKey]: (x) => x,
+            year: (x) => x,
             imports: sparkbar(
-                tableData,
-                colorPalette.imports,
+                ONEPalette.teal,
                 "right",
                 limits[0],
                 limits[1]
             ),
             exports: sparkbar(
-                tableData,
-                colorPalette.exports,
+                ONEPalette.orange,
                 "left",
                 limits[0],
                 limits[1]
             ),
             balance: sparkbar(
-                tableData,
-                colorPalette.balance,
+                ONEPalette.burgundy,
                 "center",
                 limits[0],
                 limits[1]
@@ -64,19 +54,20 @@ export function tableSingle(data, country, partner, timeRange, aggregation, cate
         },
         header: {
             ...Object.fromEntries(
-                Object.keys(tableData[0]) // Get all columns
+                Object.keys(tableData[0])
                     .map((key) => [
                         key,
-                        formatString(key) // Call formatString for each key
+                        formatString(key)
                     ])
             )
         },
         align: {
-            [groupKey]: "left",
+            year: "left",
             imports: "right",
             exports: "left",
             balance: "center"
         },
-        width: width - 25
+        width: width,
+        height: width * .5
     });
 }
