@@ -1,0 +1,296 @@
+{
+  "Algeria": {
+    "groups": ["African countries", "Northern African countries"]
+  },
+  "Angola": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Australia" : {
+    "groups": ["G20 countries"]
+  },
+  "Austria": {
+    "groups": ["EU27 countries"]
+  },
+  "Argentina" : {
+    "groups": ["G20 countries"]
+  },
+  "Belgium": {
+    "groups": ["EU27 countries"]
+  },
+  "Benin": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Botswana": {
+    "groups": ["African countries", "Southern African countries", "Sub-saharan countries"]
+  },
+  "Brazil": {
+    "groups": ["G20 countries", "BRICS countries"]
+  },
+  "Bulgaria": {
+    "groups": ["EU27 countries"]
+  },
+  "Burkina Faso": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Burundi": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Cabo Verde": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Cameroon": {
+    "groups": ["African countries", "Middle African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Canada": {
+    "groups": ["G7 countries", "G20 countries"]
+  },
+  "Central African Rep.": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Chad": {
+    "groups": ["African countries", "Middle African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "China": {
+    "groups": ["G20 countries", "BRICS countries"]
+  },
+  "Comoros": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Congo": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Croatia": {
+    "groups": ["EU27 countries"]
+  },
+  "Cyprus": {
+    "groups": ["EU27 countries"]
+  },
+  "Czechia": {
+    "groups": ["EU27 countries"]
+  },
+  "Côte d'Ivoire": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Dem. Rep. of the Congo": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Denmark": {
+    "groups": ["EU27 countries"]
+  },
+  "Djibouti": {
+    "groups": ["African countries", "Eastern African countries", "Horn of Africa countries", "Sub-saharan countries"]
+  },
+  "Egypt": {
+    "groups": ["African countries", "Northern African countries", "BRICS countries"]
+  },
+  "Equatorial Guinea": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Eritrea": {
+    "groups": ["African countries", "Eastern African countries", "Horn of Africa countries", "Sub-saharan countries"]
+  },
+  "Estonia": {
+    "groups": ["EU27 countries"]
+  },
+  "Eswatini": {
+    "groups": ["African countries", "Southern African countries", "Sub-saharan countries"]
+  },
+  "Ethiopia": {
+    "groups": ["African countries", "Eastern African countries", "Horn of Africa countries", "Sub-saharan countries", "BRICS countries"]
+  },
+  "Finland": {
+    "groups": ["EU27 countries"]
+  },
+  "France": {
+    "groups": ["EU27 countries", "G7 countries", "G20 countries"]
+  },
+  "Gabon": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Gambia": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Germany": {
+    "groups": ["EU27 countries", "G7 countries", "G20 countries"]
+  },
+  "Ghana": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Greece": {
+    "groups": ["EU27 countries"]
+  },
+  "Guinea": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Guinea-Bissau": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Hungary": {
+    "groups": ["EU27 countries"]
+  },
+  "India": {
+    "groups": ["G20 countries", "BRICS countries"]
+  },
+  "Indonesia": {
+    "groups": ["G20 countries", "BRICS countries"]
+  },
+  "Ireland": {
+    "groups": ["EU27 countries"]
+  },
+  "Iran" : {
+    "groups": ["BRICS countries"]
+  },
+  "Italy": {
+    "groups": ["EU27 countries", "G7 countries", "G20 countries"]
+  },
+  "Japan": {
+    "groups": ["G7 countries", "G20 countries"]
+  },
+  "Kenya": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Latvia": {
+    "groups": ["EU27 countries"]
+  },
+  "Lesotho": {
+    "groups": ["African countries", "Southern African countries", "Sub-saharan countries"]
+  },
+  "Liberia": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Libya": {
+    "groups": ["African countries", "Northern African countries"]
+  },
+  "Lithuania": {
+    "groups": ["EU27 countries"]
+  },
+  "Luxembourg": {
+    "groups": ["EU27 countries"]
+  },
+  "Madagascar": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Malawi": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Mali": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Malta": {
+    "groups": ["EU27 countries"]
+  },
+  "Mauritania": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Mauritius": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Mexico": {
+    "groups": ["G20 countries"]
+  },
+  "Morocco": {
+    "groups": ["African countries", "Northern African countries"]
+  },
+  "Mozambique": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Namibia": {
+    "groups": ["African countries", "Southern African countries", "Sub-saharan countries"]
+  },
+  "Netherlands": {
+    "groups": ["EU27 countries"]
+  },
+  "Niger": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Nigeria": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Poland": {
+    "groups": ["EU27 countries"]
+  },
+  "Portugal": {
+    "groups": ["EU27 countries"]
+  },
+  "Rep. of Korea": {
+    "groups": ["G20 countries"]
+  },
+  "Romania": {
+    "groups": ["EU27 countries"]
+  },
+  "Russian Federation": {
+    "groups": ["G20 countries", "BRICS countries"]
+  },
+  "Rwanda": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Sao Tome and Principe": {
+    "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
+  },
+  "Saudi Arabia": {
+    "groups": ["G20 countries"]
+  },
+  "Senegal": {
+    "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
+  },
+  "Seychelles": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Sierra Leone": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Slovakia": {
+    "groups": ["EU27 countries"]
+  },
+  "Slovenia": {
+    "groups": ["EU27 countries"]
+  },
+  "Somalia": {
+    "groups": ["African countries", "Eastern African countries", "Horn of Africa countries", "Sub-saharan countries"]
+  },
+  "South Africa": {
+    "groups": ["African countries", "Southern African countries", "Sub-saharan countries", "G20 countries"]
+  },
+  "South Sudan": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Sudan": {
+    "groups": ["African countries", "Northern African countries", "Sub-saharan countries"]
+  },
+  "Spain": {
+    "groups": ["EU27 countries"]
+  },
+  "Sweden": {
+    "groups": ["EU27 countries"]
+  },
+  "Togo": {
+    "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
+  },
+  "Tunisia": {
+    "groups": ["African countries", "Northern African countries"]
+  },
+  "Türkiye": {
+    "groups": ["G20 countries"]
+  },
+  "USA": {
+    "groups": ["G7 countries", "G20 countries"]
+  },
+  "Uganda": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "United Arab Emirates": {
+    "groups": ["BRICS countries"]
+  },
+  "United Kingdom": {
+    "groups": ["G7 countries", "G20 countries"]
+  },
+  "United Rep. of Tanzania": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Zambia": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Zimbabwe": {
+    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  }
+}

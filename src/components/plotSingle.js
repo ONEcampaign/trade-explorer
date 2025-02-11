@@ -4,7 +4,7 @@ import {timeFormat} from "npm:d3-time-format";
 import {formatValue} from "./formatValue.js";
 import {ONEPalette} from "./ONEPalette.js";
 import {formatString} from "./formatString.js"
-import {getCurrencyLabel} from "./getCurrencyLabel.js";
+import {getUnitLabel} from "./getUnitLabel.js";
 
 export function plotSingle(query, currency, width) {
 
@@ -57,7 +57,7 @@ export function plotSingle(query, currency, width) {
         },
         y: {
             inset: 5,
-            label: getCurrencyLabel(currency, {}),
+            label: getUnitLabel(currency, {}),
             tickSize: 0,
             ticks: 4,
             grid: true

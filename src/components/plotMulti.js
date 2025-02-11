@@ -3,7 +3,7 @@ import {utcYear} from "npm:d3-time"
 import {timeFormat} from "npm:d3-time-format"
 import {formatValue} from "./formatValue.js";
 import {jitterLabels} from "./jitterLabels.js";
-import {getCurrencyLabel} from "./getCurrencyLabel.js";
+import {getUnitLabel} from "./getUnitLabel.js";
 
 export function plotMulti(query, flow, currency, width) {
 
@@ -23,7 +23,7 @@ export function plotMulti(query, flow, currency, width) {
                 if (!acc[key]) {
                     acc[key] = { Year, Partner, [flow]: 0 };
                 }
-                acc[key].balance += item[flow];
+                acc[key][flow] += item[flow];
 
                 return acc;
             }, {})
@@ -54,7 +54,7 @@ export function plotMulti(query, flow, currency, width) {
         },
         y: {
             inset: 5,
-            label: getCurrencyLabel(currency, {}),
+            label: getUnitLabel(currency, {}),
             tickSize: 0,
             ticks: 4,
             grid: true

@@ -23,7 +23,7 @@ export function tableMulti(query, flow, width) {
                 if (!acc[key]) {
                     acc[key] = { category, partner, [flow]: 0 };
                 }
-                acc[key].balance += item[flow];
+                acc[key][flow] += item[flow];
 
                 return acc;
             }, {})

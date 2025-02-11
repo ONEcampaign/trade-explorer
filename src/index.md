@@ -8,7 +8,7 @@ import {timeRange, categories, groupMappings} from "./components/inputValues.js"
 import {rangeInput} from "./components/rangeInput.js";
 
 import {formatString} from "./components/formatString.js";
-import {getCurrencyLabel} from "./components/getCurrencyLabel.js"
+import {getUnitLabel} from "./components/getUnitLabel.js"
 
 import {plotSingle} from "./components/plotSingle.js";
 import {tableSingle} from "./components/tableSingle.js";
@@ -29,9 +29,9 @@ const oneLogo = FileAttachment("./ONE-logo-black.png").href;
 
 ```js
 const db = DuckDBClient.of({
-    trade: FileAttachment("./data/trade.parquet"),
-    conversion_table: FileAttachment("./data/conversions.parquet")
-
+    trade: FileAttachment("./data/scripts/trade.parquet"),
+    conversion_table: FileAttachment("./data/scripts/conversion_table.csv"),
+    gdp_table: FileAttachment("./data/scripts/gdp_table.csv"),
 });
 ```
 
@@ -48,6 +48,7 @@ const countrySingleInput = Inputs.select(
     {
         label: "Country",
         sort: true,
+        value: "African countries"
     })
 
 // Partner Input
@@ -55,7 +56,8 @@ const partnerSingleInput = Inputs.select(
     countries,
     {
         label: "Partner",
-        sort: true
+        sort: true,
+        value: "France"
     }
 );
 
@@ -86,6 +88,8 @@ function updateOptionsSingle() {
 updateOptionsSingle();
 countrySingleInput.addEventListener("input", updateOptionsSingle);
 
+console.log(partnerSingleInput)
+
 const countrySingle = Generators.input(countrySingleInput);
 const partnerSingle = Generators.input(partnerSingleInput);
 
@@ -102,18 +106,19 @@ const timeRangeSingleInput = rangeInput(
 const timeRangeSingle = Generators.input(timeRangeSingleInput)
 
 // Currency Input
-const currencySingleInput = Inputs.select(
+const unitSingleInput = Inputs.select(
     new Map([
         ["US Dollars", "usd"],
         ["Canada Dollars", "cad"],
         ["Euros", "eur"],
-        ["British pounds", "gbp"]
+        ["British pounds", "gbp"],
+        ["% of GDP", "gdp"]
     ]),
     {
-        label: "Currency"
+        label: "Unit"
     }
 );
-const currencySingle = Generators.input(currencySingleInput)
+const unitSingle = Generators.input(unitSingleInput)
 
 // Prices Input
 const pricesSingleInput = Inputs.radio(
@@ -259,8 +264,10 @@ const partnerSingleSQLList = partnerSingleList
     .map(c => `'${escapeSQL(c)}'`)
     .join(", ");
 
-
-const currencyColumnSingle = `${currencySingle}_${pricesSingle}`;
+const isPctGdp = unitSingle === "gdp" ? true : false
+const unitColumnSingle = isPctGdp
+    ? "usd_constant" 
+    : `${unitSingle}_${pricesSingle}`;
 
 const querySingleString = `
     WITH filtered AS (
@@ -300,19 +307,37 @@ const querySingleString = `
         FROM exports e
         FULL OUTER JOIN imports i
         ON e.year = i.year AND e.category = i.category
+    ),
+    gdp AS (
+        SELECT year, SUM (gdp_constant) AS gdp
+        FROM gdp_table
+        WHERE country in (${countrySingleSQLList}) 
+        GROUP BY year
     )
     SELECT 
         t.year,
         t.category,
         '${countrySingle}' AS country,
         '${partnerSingle}' AS partner,
-        (t.exports * c.${currencyColumnSingle}) AS exports,
-        (t.imports * c.${currencyColumnSingle}) AS imports,
-        (t.balance * c.${currencyColumnSingle}) AS balance
+        CASE 
+            WHEN ${isPctGdp} THEN (t.exports * c.${unitColumnSingle}) / g.gdp * 100
+            ELSE (t.exports * c.${unitColumnSingle})
+        END AS exports,
+        CASE 
+            WHEN ${isPctGdp} THEN (t.imports * c.${unitColumnSingle}) / g.gdp * 100
+            ELSE (t.imports * c.${unitColumnSingle})
+        END AS imports,
+        CASE 
+            WHEN ${isPctGdp} THEN (t.balance * c.${unitColumnSingle}) / g.gdp * 100
+            ELSE (t.balance * c.${unitColumnSingle})
+        END AS balance
     FROM trade_data t
     LEFT JOIN conversion_table c
     ON t.year = c.year
+    LEFT JOIN gdp g
+    ON t.year = g.year
     ORDER BY t.year ASC, category ASC;
+
 `;
 
 const querySingleParams = [timeRangeSingle[0], timeRangeSingle[1]];
@@ -451,24 +476,10 @@ const selectAbout = () => viewSelection.value = "About"
         </a>
     </div>
     <h1 class="title-text">
-        's trade data explorer
+        Trade explorer
     </h1>
 </div>
 
-<div class="intro-container">
-    <div class="view-button-intro ${viewSelection === 'Single' ? 'active' : ''}">
-        ${Inputs.button("Single Country", {reduce: selectSingle})}
-        <span>
-            allows you to explore trade between a country and trading partner.
-        </span>
-    </div>
-    <div class="view-button-intro ${viewSelection === 'Multi' ? 'active' : ''}">
-        ${Inputs.button("Multi Country", {reduce: selectMulti})}
-        <span>
-            lets you compare trade of a country with multiple trading partners.
-        </span>
-    </div>
-</div>
 
 <div class="header card">
     <div class="view-button ${viewSelection === 'Single' ? 'active' : ''}">
@@ -491,7 +502,7 @@ const selectAbout = () => viewSelection.value = "About"
             ${partnerSingleInput}
         </div>
         <div class="settings-group">
-            ${currencySingleInput}
+            ${unitSingleInput}
         </div>
         <div class="settings-group">
             ${pricesSingleInput}
@@ -512,16 +523,18 @@ const selectAbout = () => viewSelection.value = "About"
                     <span class="balance-subtitle-label">trade balance</span>
                 </h3>
                 ${resize((width) =>
-                    plotSingle(querySingle, currencySingle, width)
+                    plotSingle(querySingle, unitSingle, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                pricesSingle === "constant" 
-                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencySingle, {})}.</span>`
-                                : html`<span>All values in current ${getCurrencyLabel(currencySingle, {})}.</span>`
+                                unitSingle === "gdp"
+                                ? html`<span>All values as percentage of ${countrySingle}'s GDP.</span>`
+                                : pricesSingle === "constant" 
+                                    ? html`<span>All values in constant 2015 ${getUnitLabel(unitSingle, {})}.</span>`
+                                    : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
                         </p>
@@ -564,12 +577,15 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                pricesSingle === "constant"
-                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencySingle, {})}.</span>`
-                                : html`<span>All values in current ${getCurrencyLabel(currencySingle, {})}.</span>`
+                                unitSingle === "gdp"
+                                ? html`<span>All values as percentage of ${countrySingle}'s GDP.</span>`
+                                : pricesSingle === "constant"
+                                    ? html`<span>All values in constant 2015 ${getUnitLabel(unitSingle, {})}.</span>`
+                                    : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
-                        </p>                    </div>
+                        </p>                 
+                    </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
                             <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
@@ -639,8 +655,8 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                                 pricesMulti === "constant"
-                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencyMulti, {})}.</span>`
-                                : html`<span>All values in current ${getCurrencyLabel(currencyMulti, {})}.</span>`
+                                ? html`<span>All values in constant 2015 ${getUnitLabel(currencyMulti, {})}.</span>`
+                                : html`<span>All values in current ${getUnitLabel(currencyMulti, {})}.</span>`
                             }
                             ${
                                 flowMulti === "exports"
@@ -687,8 +703,8 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                                 pricesMulti === "constant"
-                                ? html`<span>All values in constant 2015 ${getCurrencyLabel(currencyMulti, {})}.</span>`
-                                : html`<span>All values in current ${getCurrencyLabel(currencyMulti, {})}.</span>`
+                                ? html`<span>All values in constant 2015 ${getUnitLabel(currencyMulti, {})}.</span>`
+                                : html`<span>All values in current ${getUnitLabel(currencyMulti, {})}.</span>`
                             }
                             ${
                                 flowMulti === "exports"
@@ -732,11 +748,15 @@ const selectAbout = () => viewSelection.value = "About"
         </h2>
         
         <p class="normal-text">
-            Begin by selecting a country/group from the <span style="font-style: italic">Country</span> dropdown menu. All trade figures are presented from the selected country's perspective; If you choose Botswana, exports represent goods and services flowing out of Botswana to the selected partner, while imports represent inflows into Botswana. In this sense, exports are always positive, reflecting incoming revenue, while imports are negative.        
+            The tool provides two different views for exploring international trade data. <span class="italic-span">Single Country</span> allows you to explore trade between a selected country and a single trading partner. <span class="italic-span">Multi Country</span> lets you compare a country’s trade with multiple partners simultaneously.
+        </p>
+
+        <p class="normal-text">
+            Begin by selecting a country or group from the <span class="italic-span">Country</span> dropdown menu. All trade figures are presented from the selected country’s perspective. For example, if you choose Botswana, exports represent goods and services flowing out of Botswana to the selected partner, while imports represent inflows into Botswana. In this sense, exports are displayed as positive values, indicating revenue from outgoing goods and services, while imports are shown as negative values, reflecting expenditures on incoming goods and services.
         </p>
         
         <p class="normal-text">
-            You can then select a trading partner, adjust the currency, prices and time range. In addition to these controls, the <span style="font-style: italic">Multi Country</span> view allows you to select multiple trading partners by dragging or Shift-clicking. You can select/deselect an individual partner by Command-clicking it. Since this view presents multiple countries, you can only visualize a single trade flow at once.
+            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners by dragging or Shift-clicking, and select/deselect an individual partner by Command-clicking. Since this view presents multiple countries, you can only visualize a single trade flow (either exports, imports or trade balance) at once, allowing for clearer comparisons across partners.
         </p>
         
         <h2 class="section-header">
