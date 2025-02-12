@@ -161,7 +161,6 @@ function updateOptionsMulti() {
     const countryList = groupMappings[countryMultiInput.value]
     const partnerList = partnersMultiInput.value.flatMap(group => groupMappings[group] || [group]);
     if (countryList.some(country => partnerList.includes(country))) {
-        console.log("OVERLAAAAP")
         partnersMultiInput.value = countries.filter(group => {
             let elements = groupMappings[group] || [group];
             return !elements.some(country => countryList.includes(country));
@@ -792,7 +791,7 @@ const selectAbout = () => viewSelection.value = "About"
         </p>
 
         <p class="normal-text">
-            The data preparation scripts are included in the <span style="font-family: monospace">scripts</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repository</a>.
+            The data preparation scripts are located in the <span style="font-family: monospace">src/data</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repository</a>.
         </p>
 
         <h2 class="section-header">
@@ -813,7 +812,7 @@ const selectAbout = () => viewSelection.value = "About"
         </h2>
 
         <p class="normal-text">
-            Refer your questions or suggestions to miguel.haroruiz[at]one[dot]org
+            For questions or suggestions, please contact miguel.haroruiz[at]one[dot]org
         </p>
         
     </div>

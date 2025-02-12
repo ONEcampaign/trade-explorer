@@ -1,6 +1,5 @@
 import * as Inputs from "npm:@observablehq/inputs";
 import {schemeObservable10} from "npm:d3-scale-chromatic";
-import {groupData} from "./groupData.js";
 import {reshapeDataForTable} from "./reshapeDataForTable.js";
 import {getLimits} from "./getLimits.js";
 import {sparkbar} from "./sparkbar.js";
@@ -16,7 +15,31 @@ export function tableMulti(query, flow, width) {
 
     const isGDP = arrayData[0].unit === "share of gdp";
 
-    const groupedData = groupData(arrayData, isGDP,  "category-partner");
+    let groupedData = Object.values(
+        arrayData.reduce((acc, { category, partner, imports, exports, balance, gdp }) => {
+            let key = `${category}||${partner}`; // Unique key for category-partner grouping
+
+            if (!acc[key]) {
+                acc[key] = { category, partner, imports: 0, exports: 0, balance: 0, gdp: 0 };
+            }
+
+            acc[key][flow] += { imports, exports, balance }[flow];
+
+            if (isGDP) {
+                acc[key].gdp += gdp;
+            }
+
+            return acc;
+        }, {})
+    );
+
+    groupedData.forEach(entry => {
+        if (isGDP) {
+            entry[flow] = (entry[flow] / entry.gdp) * 100;
+        }
+        delete entry.gdp;
+    });
+
 
     const tableData = reshapeDataForTable(groupedData, flow, "category");
 

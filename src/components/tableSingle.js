@@ -3,7 +3,6 @@ import {getLimits} from "./getLimits.js";
 import {sparkbar} from "./sparkbar.js";
 import {ONEPalette} from "./ONEPalette.js";
 import {formatString} from "./formatString.js";
-import {groupData} from "./groupData.js";
 
 export function tableSingle(query, width) {
 
@@ -12,9 +11,33 @@ export function tableSingle(query, width) {
 
     const isGDP = arrayData[0].unit === "share of gdp";
 
-    const groupedData = groupData(arrayData, isGDP,  "category");
+    let tableData = Object.values(
+        arrayData.reduce((acc, { category, imports, exports, balance, gdp }) => {
+            if (!acc[category]) {
+                acc[category] = { category, imports: 0, exports: 0, balance: 0, gdp: 0 };
+            }
 
-    const tableData = Object.values(groupedData);
+            acc[category].imports += imports;
+            acc[category].exports += exports;
+            acc[category].balance += balance;
+
+            if (isGDP) {
+                acc[category].gdp += gdp;
+            }
+
+            return acc;
+        }, {})
+    );
+
+
+    tableData.forEach(entry => {
+        if (isGDP) {
+            entry.imports = (entry.imports / entry.gdp) * 100;
+            entry.exports = (entry.exports / entry.gdp) * 100;
+            entry.balance = (entry.balance / entry.gdp) * 100;
+        }
+        delete entry.gdp;
+    });
 
     const limits = getLimits(tableData);
 

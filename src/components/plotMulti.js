@@ -7,7 +7,7 @@ import {getUnitLabel} from "./getUnitLabel.js";
 
 export function plotMulti(query, flow, width) {
 
-    const arrayData = query.toArray()
+    let arrayData = query.toArray()
         .map((row) => ({
             ...row,
             year: new Date(row.year, 1, 1)
@@ -16,26 +16,36 @@ export function plotMulti(query, flow, width) {
     const isGDP = arrayData[0].unit === "share of gdp";
     const unit = isGDP ? "gdp" : arrayData[0].unit.split(" ")[1];
 
-    function groupData(data, flow) {
-        return Object.values(
-            data.reduce((acc, item) => {
-                const Year = new Date(item.year);
-                const Partner = item.partner;
-                const key = `${Year}-${Partner}`;
-                const factor = isGDP ? (100 / item.gdp) : 1;
+    arrayData = arrayData.reduce((acc, { year, partner, imports, exports, balance, gdp }) => {
+        let key = `${year}||${partner}`; // Unique key for grouping by year-partner
 
-                if (!acc[key]) {
-                    acc[key] = { Year, Partner, [flow]: 0 };
-                }
-                acc[key][flow] += item[flow] * factor;
+        if (!acc[key]) {
+            acc[key] = { year, partner, imports: 0, exports: 0, balance: 0, gdp: 0 };
+        }
 
-                return acc;
-            }, {})
-        );
-    }
+        acc[key][flow] += { imports, exports, balance }[flow];
 
-    const plotData = groupData(arrayData, flow)
-        .sort((a, b) => a.year - b.year);
+        if (isGDP) {
+            acc[key].gdp += gdp;
+        }
+
+        return acc;
+    }, {});
+
+    // Convert the object into an array with the desired format
+    const plotData = Object.values(arrayData)
+        .map(({ year, partner, imports, exports, balance, gdp }) => {
+            let value = { imports, exports, balance }[flow];
+            const factor = isGDP && gdp ? (100 / gdp) : 1;
+
+            return {
+                Year: year,
+                Partner: partner,
+                Flow: flow,
+                Value: value * factor
+            };
+        })
+        .sort((a, b) => a.Year - b.Year);
 
     const formatYear = timeFormat("%Y");
 
@@ -76,7 +86,7 @@ export function plotMulti(query, flow, width) {
             // Lines for each country
             Plot.line(plotData, {
                 x: "Year",
-                y: flow,
+                y: "Value",
                 z: "Partner",
                 curve: "catmull-rom",
                 stroke: "Partner",
@@ -87,13 +97,13 @@ export function plotMulti(query, flow, width) {
             Plot.text(
                 jitterLabels(
                     plotData,
-                    flow,
+                    "Value",
                     "Year",
                     "Partner",
                 ),
                 {
                     x: "Year",
-                    y: flow,
+                    y: "Value",
                     fill: "Partner",
                     text: "Partner",
                     fontSize: 12,
@@ -106,7 +116,7 @@ export function plotMulti(query, flow, width) {
             Plot.tip(plotData,
                 Plot.pointer({
                     x: "Year",
-                    y: flow,
+                    y: "Value",
                     fill: "Partner",
                     format: {
                         fill: true,

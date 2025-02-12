@@ -14,7 +14,7 @@ export function plotSingle(query, width) {
             year: new Date(row.year, 1, 1), // Ensure year is just the integer
         }))
     
-    const isGDP = arrayData[0].unit === "share of gpd";
+    const isGDP = arrayData[0].unit === "share of gdp";
     const unit = isGDP ? "gdp" : arrayData[0].unit.split(" ")[1];
 
     arrayData = arrayData.reduce((acc, { year, imports, exports, balance, gdp }) => {
