@@ -752,7 +752,7 @@ const selectAbout = () => viewSelection.value = "About"
 
 <div class="view-box ${viewSelection === 'About' ? 'active' : ''}">
     
-    <div class="card">
+    <div class="card methodology">
         
         <h2 class="section-header">
             How to use

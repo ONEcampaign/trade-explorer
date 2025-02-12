@@ -326,6 +326,18 @@ select, input {
 }
 
 /* Methodology */
+
+.card.methodology {
+    max-width: 700px;
+    margin: auto;
+    padding: 2em 0;
+}
+
+.card.methodology > * {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
 .section-header {
     font-size: var(--size-l) !important;
     margin: 30px 0 10px !important;
