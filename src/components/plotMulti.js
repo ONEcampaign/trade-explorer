@@ -5,7 +5,7 @@ import {formatValue} from "./formatValue.js";
 import {jitterLabels} from "./jitterLabels.js";
 import {getUnitLabel} from "./getUnitLabel.js";
 
-export function plotMulti(query, flow, currency, width) {
+export function plotMulti(query, flow, width) {
 
     const arrayData = query.toArray()
         .map((row) => ({
@@ -13,17 +13,21 @@ export function plotMulti(query, flow, currency, width) {
             year: new Date(row.year, 1, 1)
         }))
 
+    const isGDP = arrayData[0].unit === "share of gdp";
+    const unit = isGDP ? "gdp" : arrayData[0].unit.split(" ")[1];
+
     function groupData(data, flow) {
         return Object.values(
             data.reduce((acc, item) => {
                 const Year = new Date(item.year);
                 const Partner = item.partner;
                 const key = `${Year}-${Partner}`;
+                const factor = isGDP ? (100 / item.gdp) : 1;
 
                 if (!acc[key]) {
                     acc[key] = { Year, Partner, [flow]: 0 };
                 }
-                acc[key][flow] += item[flow];
+                acc[key][flow] += item[flow] * factor;
 
                 return acc;
             }, {})
@@ -54,7 +58,7 @@ export function plotMulti(query, flow, currency, width) {
         },
         y: {
             inset: 5,
-            label: getUnitLabel(currency, {}),
+            label: getUnitLabel(unit, {}),
             tickSize: 0,
             ticks: 4,
             grid: true

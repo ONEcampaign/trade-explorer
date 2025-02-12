@@ -3,27 +3,18 @@ import {getLimits} from "./getLimits.js";
 import {sparkbar} from "./sparkbar.js";
 import {ONEPalette} from "./ONEPalette.js";
 import {formatString} from "./formatString.js";
+import {groupData} from "./groupData.js";
 
 export function tableSingle(query, width) {
 
     const arrayData = query.toArray()
         .map((row) => row.toJSON())
-        .reduce((acc, { category, imports, exports, balance }) => {
 
-            if (!acc[category]) {
-                acc[category] = { category, imports: 0, exports: 0, balance: 0 };
-            }
+    const isGDP = arrayData[0].unit === "share of gdp";
 
-            acc[category].imports += imports;
-            acc[category].exports += exports;
-            acc[category].balance += balance;
+    const groupedData = groupData(arrayData, isGDP,  "category");
 
-            return acc;
-        }, {});
-
-
-    // Convert the object into an array with the desired format
-    const tableData = Object.values(arrayData);
+    const tableData = Object.values(groupedData);
 
     const limits = getLimits(tableData);
 

@@ -62,14 +62,20 @@ const partnerSingleInput = Inputs.select(
 );
 
 function updateOptionsSingle() {
+    
+    const countryList = groupMappings[countrySingleInput.value]
+    const partnerList = groupMappings[partnerSingleInput.value]
+    if (countryList.some(country => partnerList.includes(country))) {
+        let nonOverlapping = countries.find(group => {
+            let elements = groupMappings[group] || [group];
+            return !elements.some(country => countryList.includes(country));
+        });
+        partnerSingleInput.value = nonOverlapping
+    } 
     for (const o of partnerSingleInput.querySelectorAll("option")) {
-        const g = groups[o.value]
-        const v = groupMappings[countrySingleInput.value]
-        if (g.some(item => v.includes(item))) {
+        const groupList = groups[o.value]
+        if (countryList.some(item => groupList.includes(item))) {
             o.setAttribute("disabled", "disabled");
-            if (partnerSingleInput.value === countrySingleInput.value) {
-                partnerSingleInput.value = countries.find(d => d !== countrySingleInput.value);
-            }
         }
         else o.removeAttribute("disabled");
     }
@@ -77,18 +83,14 @@ function updateOptionsSingle() {
     for (const o of countrySingleInput.querySelectorAll("option")) {
         if (countries[o.value] === partnerSingleInput.value) {
             o.setAttribute("disabled", "disabled");
-            if (countrySingleInput.value === partnerSingleInput.value) {
-                countrySingleInput.value = countries.find(d => d !== partnerSingleInput.value);
-            }
         }
         else o.removeAttribute("disabled");
     }
+    
 }
 
 updateOptionsSingle();
 countrySingleInput.addEventListener("input", updateOptionsSingle);
-
-console.log(partnerSingleInput)
 
 const countrySingle = Generators.input(countrySingleInput);
 const partnerSingle = Generators.input(partnerSingleInput);
@@ -155,14 +157,21 @@ const partnersMultiInput = Inputs.select(
     })
 
 function updateOptionsMulti() {
+
+    const countryList = groupMappings[countryMultiInput.value]
+    const partnerList = partnersMultiInput.value.flatMap(group => groupMappings[group] || [group]);
+    if (countryList.some(country => partnerList.includes(country))) {
+        console.log("OVERLAAAAP")
+        partnersMultiInput.value = countries.filter(group => {
+            let elements = groupMappings[group] || [group];
+            return !elements.some(country => countryList.includes(country));
+        }).slice(0, 3);
+    }
+    
     for (const o of partnersMultiInput.querySelectorAll("option")) {        
-        const g = groups[o.value]
-        const v = groupMappings[countryMultiInput.value]
-        if (g.some(item => v.includes(item))) {
+        const groupList = groups[o.value]
+        if (groupList.some(item => countryList.includes(item))) {
             o.setAttribute("disabled", "disabled");
-            if (partnersMultiInput.value === countryMultiInput.value) {
-                partnersMultiInput.value = countries.find(d => d !== countryMultiInput.value);
-            }
         }
         else o.removeAttribute("disabled");
     }
@@ -170,12 +179,10 @@ function updateOptionsMulti() {
     for (const o of countryMultiInput.querySelectorAll("option")) {
         if (countries[o.value] === partnersMultiInput.value) {
             o.setAttribute("disabled", "disabled");
-            if (countryMultiInput.value === partnersMultiInput.value) {
-                countryMultiInput.value = countries.find(d => d !== partnersMultiInput.value);
-            }
         }
         else o.removeAttribute("disabled");
     }
+    
 }
 
 updateOptionsMulti();
@@ -211,18 +218,20 @@ const flowMultiInput = Inputs.radio(
 const flowMulti = Generators.input(flowMultiInput)
 
 // Currency Input
-const currencyMultiInput = Inputs.select(
+const unitMultiInput = Inputs.select(
     new Map([
         ["US Dollars", "usd"],
         ["Canada Dollars", "cad"],
         ["Euros", "eur"],
-        ["British pounds", "gbp"]
+        ["British pounds", "gbp"],
+        ["% of GDP", "gdp"]
     ]),
     {
-        label: "Currency"
+        label: "Currency",
+        value: "gdp"
     }
 );
-const currencyMulti = Generators.input(currencyMultiInput)
+const unitMulti = Generators.input(unitMultiInput)
 
 // Prices Input
 const pricesMultiInput = Inputs.radio(
@@ -264,8 +273,8 @@ const partnerSingleSQLList = partnerSingleList
     .map(c => `'${escapeSQL(c)}'`)
     .join(", ");
 
-const isPctGdp = unitSingle === "gdp" ? true : false
-const unitColumnSingle = isPctGdp
+const isGdpSingle = unitSingle === "gdp" ? true : false
+const unitColumnSingle = isGdpSingle
     ? "usd_constant" 
     : `${unitSingle}_${pricesSingle}`;
 
@@ -317,27 +326,22 @@ const querySingleString = `
     SELECT 
         t.year,
         t.category,
-        '${countrySingle}' AS country,
-        '${partnerSingle}' AS partner,
+        '${escapeSQL(countrySingle)}' AS country,
+        '${escapeSQL(partnerSingle)}' AS partner,
+        (t.exports * c.${unitColumnSingle}) AS exports,
+        (t.imports * c.${unitColumnSingle}) AS imports,
+        (t.balance * c.${unitColumnSingle}) AS balance,
+        g.gdp AS gdp,
         CASE 
-            WHEN ${isPctGdp} THEN (t.exports * c.${unitColumnSingle}) / g.gdp * 100
-            ELSE (t.exports * c.${unitColumnSingle})
-        END AS exports,
-        CASE 
-            WHEN ${isPctGdp} THEN (t.imports * c.${unitColumnSingle}) / g.gdp * 100
-            ELSE (t.imports * c.${unitColumnSingle})
-        END AS imports,
-        CASE 
-            WHEN ${isPctGdp} THEN (t.balance * c.${unitColumnSingle}) / g.gdp * 100
-            ELSE (t.balance * c.${unitColumnSingle})
-        END AS balance
+            WHEN ${isGdpSingle} THEN 'share of gdp'
+            ELSE '${pricesSingle} ${unitSingle} million'
+        END AS unit
     FROM trade_data t
     LEFT JOIN conversion_table c
     ON t.year = c.year
     LEFT JOIN gdp g
     ON t.year = g.year
     ORDER BY t.year ASC, category ASC;
-
 `;
 
 const querySingleParams = [timeRangeSingle[0], timeRangeSingle[1]];
@@ -354,13 +358,17 @@ const countryMultiSQLList = countryMultiList.map(escapeSQL).map(c => `'${c}'`).j
 const partnersMultiSQLList = partnersMultiList.map(escapeSQL).map(c => `'${c}'`).join(", ");
 
 // Define currency column
-const currencyColumnMulti = `${currencyMulti}_${pricesMulti}`;
+const isGdpMulti = unitMulti === "gdp" ? true : false
+const unitColumnMulti = isGdpMulti
+    ? "usd_constant"
+    : `${unitMulti}_${pricesMulti}`;
 
 // Define flow column selection
-const flowColumn = flowMulti === 'exports' ? `COALESCE(SUM(e.exports), 0)` :
-    flowMulti === 'imports' ?                 `COALESCE(SUM(i.imports), 0) * -1` :
-        flowMulti === 'balance' ?              `COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0)` :
-            null;
+const flowColumn = flowMulti === 'exports' 
+    ? `COALESCE(SUM(e.exports), 0)` 
+    : flowMulti === 'imports' 
+        ? `COALESCE(SUM(i.imports), 0) * -1` 
+        : `COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0)` 
 
 // Generate CASE statement for importer/exporter mappings
 function caseStatement(name) {
@@ -429,18 +437,31 @@ const queryMultiString = `
             GROUP BY COALESCE(e.year, i.year), 
                      COALESCE(e.partner, i.partner), 
                      COALESCE(e.category, i.category)
+    ),
+    gdp AS (
+        SELECT year, SUM (gdp_constant) AS gdp
+        FROM gdp_table
+        WHERE country in (${countryMultiSQLList}) 
+        GROUP BY year
     )
     SELECT
         t.year,
-        '${countryMulti}' AS country,
+        '${escapeSQL(countryMulti)}' AS country,
         t.partner,
         t.category,
-        (t.exports * c.${currencyColumnMulti}) AS exports,
-        (t.imports * c.${currencyColumnMulti}) AS imports,
-        (t.balance * c.${currencyColumnMulti}) AS balance
+        (t.exports * c.${unitColumnMulti}) AS exports,
+        (t.imports * c.${unitColumnMulti}) AS imports,
+        (t.balance * c.${unitColumnMulti}) AS balance,
+        g.gdp AS gdp,
+        CASE 
+            WHEN ${isGdpMulti} THEN 'share of gdp'
+            ELSE '${pricesMulti} ${unitMulti} million'
+        END AS unit
     FROM trade_data t
     LEFT JOIN conversion_table c
-    ON t.year = c.year
+    ON t.year = c.year    
+    LEFT JOIN gdp g
+    ON t.year = g.year
     ORDER BY t.year ASC, category ASC, partner ASC;
 `;
 
@@ -454,18 +475,6 @@ const viewSelection = Mutable("Single")
 const selectSingle = () => viewSelection.value = "Single";
 const selectMulti = () => viewSelection.value = "Multi";
 const selectAbout = () => viewSelection.value = "About"
-```
-
-```js
-// const moreSettingsSingle = Mutable(false)
-// const showMoreSettingsSingle = () => {
-//     moreSettingsSingle.value = !moreSettingsSingle.value;
-// };
-//
-// const moreSettingsMulti = Mutable(false)
-// const showMoreSettingsMulti = () => {
-//     moreSettingsMulti.value = !moreSettingsMulti.value;
-// };
 ```
 
 ```html
@@ -493,7 +502,6 @@ const selectAbout = () => viewSelection.value = "About"
     </div>
 </div>
 
-
 <div class="view-box ${viewSelection === 'Single' ? 'active' : ''}">
 
     <div class="card settings">
@@ -503,9 +511,9 @@ const selectAbout = () => viewSelection.value = "About"
         </div>
         <div class="settings-group">
             ${unitSingleInput}
+            ${isGdpSingle ? html`` : pricesSingleInput}
         </div>
         <div class="settings-group">
-            ${pricesSingleInput}
             ${timeRangeSingleInput}
         </div>
     </div>
@@ -523,17 +531,17 @@ const selectAbout = () => viewSelection.value = "About"
                     <span class="balance-subtitle-label">trade balance</span>
                 </h3>
                 ${resize((width) =>
-                    plotSingle(querySingle, unitSingle, width)
+                    plotSingle(querySingle, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                unitSingle === "gdp"
+                                isGdpSingle
                                 ? html`<span>All values as percentage of ${countrySingle}'s GDP.</span>`
                                 : pricesSingle === "constant" 
-                                    ? html`<span>All values in constant 2015 ${getUnitLabel(unitSingle, {})}.</span>`
+                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
@@ -577,10 +585,10 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                unitSingle === "gdp"
+                                isGdpSingle
                                 ? html`<span>All values as percentage of ${countrySingle}'s GDP.</span>`
                                 : pricesSingle === "constant"
-                                    ? html`<span>All values in constant 2015 ${getUnitLabel(unitSingle, {})}.</span>`
+                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
@@ -621,12 +629,12 @@ const selectAbout = () => viewSelection.value = "About"
             ${partnersMultiInput}
         </div>
         <div class="settings-group">
-            ${currencyMultiInput}
-            ${flowMultiInput}
+            ${unitMultiInput}
+            ${isGdpMulti ? html`` : pricesMultiInput}
         </div>
         <div class="settings-group">
-            ${pricesMultiInput}
             ${timeRangeMultiInput}
+            ${flowMultiInput}
         </div>
     </div>
 
@@ -647,16 +655,18 @@ const selectAbout = () => viewSelection.value = "About"
                     }
                 </h3>
                 ${resize((width) =>
-                    plotMulti(queryMulti, flowMulti, currencyMulti, width)
+                    plotMulti(queryMulti, flowMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                pricesMulti === "constant"
-                                ? html`<span>All values in constant 2015 ${getUnitLabel(currencyMulti, {})}.</span>`
-                                : html`<span>All values in current ${getUnitLabel(currencyMulti, {})}.</span>`
+                                isGdpMulti
+                                ? html`<span>All values as percentage of ${countryMulti}'s GDP.</span>`
+                                : pricesSingle === "constant"
+                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
+                                    : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
                             }
                             ${
                                 flowMulti === "exports"
@@ -702,16 +712,18 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                pricesMulti === "constant"
-                                ? html`<span>All values in constant 2015 ${getUnitLabel(currencyMulti, {})}.</span>`
-                                : html`<span>All values in current ${getUnitLabel(currencyMulti, {})}.</span>`
+                                isGdpMulti
+                                ? html`<span>All values as percentage of ${countryMulti}'s GDP.</span>`
+                                : pricesSingle === "constant"
+                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
+                                    : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
                             }
                             ${
                                 flowMulti === "exports"
                                 ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
                                 : flowMulti === "imports"
                                     ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                                    : html`<span></span>`
+                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
@@ -795,6 +807,14 @@ const selectAbout = () => viewSelection.value = "About"
             .map(([group, countries]) => html`<li><span class="group-name" ">${group}</span>: ${countries.join(", ")}.</li>`)
             }
         </ul>
+
+        <h2 class="section-header">
+            Contact
+        </h2>
+
+        <p class="normal-text">
+            Refer your questions or suggestions to miguel.haroruiz[at]one[dot]org
+        </p>
         
     </div>
     

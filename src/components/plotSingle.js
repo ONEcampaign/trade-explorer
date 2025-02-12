@@ -6,34 +6,44 @@ import {ONEPalette} from "./ONEPalette.js";
 import {formatString} from "./formatString.js"
 import {getUnitLabel} from "./getUnitLabel.js";
 
-export function plotSingle(query, currency, width) {
+export function plotSingle(query, width) {
 
-    const arrayData = query.toArray()
+    let arrayData = query.toArray()
         .map((row) => ({
             ...row,
             year: new Date(row.year, 1, 1), // Ensure year is just the integer
         }))
-        .reduce((acc, { year, imports, exports, balance }) => {
-            // Initialize the accumulator for each year if not already initialized
-            if (!acc[year]) {
-                acc[year] = { year, exports: 0, imports: 0, balance: 0 };
-            }
+    
+    const isGDP = arrayData[0].unit === "share of gpd";
+    const unit = isGDP ? "gdp" : arrayData[0].unit.split(" ")[1];
 
-            // Sum up exports, imports, and balance
-            acc[year].exports += exports;
-            acc[year].imports += imports;
-            acc[year].balance += balance;
+    arrayData = arrayData.reduce((acc, { year, imports, exports, balance, gdp }) => {
+        // Initialize the accumulator for each year if not already initialized
+        if (!acc[year]) {
+            acc[year] = { year: year, exports: 0, imports: 0, balance: 0, gdp: 0 };
+        }
 
-            return acc;
-        }, {});
+        // Sum up exports, imports, balance, and gdp
+        acc[year].exports += exports;
+        acc[year].imports += imports;
+        acc[year].balance += balance;
+        acc[year].gdp = gdp; // Assuming GDP remains constant for the year
+
+        return acc;
+    }, {});
 
     // Convert the object into an array with the desired format
     const plotData = Object.values(arrayData)
-        .flatMap(yearData => [
-            { Year: yearData.year, Flow: 'exports', Value: yearData.exports },
-            { Year: yearData.year, Flow: 'imports', Value: yearData.imports },
-            { Year: yearData.year, Flow: 'balance', Value: yearData.balance }
-        ])
+        .flatMap(yearData => {
+            const { year, exports, imports, balance, gdp } = yearData;
+            const factor = isGDP && gdp ? (100 / gdp) : 1;
+
+            return [
+                { Year: year, Flow: 'exports', Value: exports * factor },
+                { Year: year, Flow: 'imports', Value: imports * factor },
+                { Year: year, Flow: 'balance', Value: balance * factor }
+            ];
+        })
         .sort((a, b) => a.Year - b.Year);
 
     const formatYear = timeFormat("%Y")
@@ -57,7 +67,7 @@ export function plotSingle(query, currency, width) {
         },
         y: {
             inset: 5,
-            label: getUnitLabel(currency, {}),
+            label: getUnitLabel(unit, {}),
             tickSize: 0,
             ticks: 4,
             grid: true
@@ -74,12 +84,8 @@ export function plotSingle(query, currency, width) {
                     x: "Year",
                     y: "Value",
                     fill: "Flow",
-                    opacity: .75,
-                    // // title: (d) => `${formatYear(d.Year)} ${formatString(d.Flow)}\nUS$ ${formatValue(d.Value).label} M`,
-                    // tip: {
-                    //     lineHeight: 1.25,
-                    //     fontSize: 12
-                    // }
+                    filter: d => d.balance !== 'balance',
+                    opacity: .75
                 }
             ),
 

@@ -9,20 +9,25 @@ export function getUnitLabel(unit, {
     if (unit === "gdp") {
         prefix = "";
         suffix = "% of GDP"
-    } else {
+    }
+    else {
         if (long) {
             suffix = "Million"
-        } else (
+        }
+        else (
             suffix = "M"
         )
 
         if (unit === "usd") {
             prefix = "US$"
-        } else if (unit === "eur") {
+        }
+        else if (unit === "eur") {
             prefix = "€"
-        } else if (unit === "cad") {
+        }
+        else if (unit === "cad") {
             prefix =  "CA$"
-        } else if (unit === "gbp") {
+        }
+        else if (unit === "gbp") {
             prefix = "£"
         }
 
@@ -30,7 +35,8 @@ export function getUnitLabel(unit, {
 
     if (value === "") {
         return `${prefix} ${suffix}`
-    } else {
+    }
+    else {
         return `${prefix} ${value} ${suffix}`
     }
 

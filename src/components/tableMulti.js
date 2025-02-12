@@ -1,5 +1,6 @@
 import * as Inputs from "npm:@observablehq/inputs";
 import {schemeObservable10} from "npm:d3-scale-chromatic";
+import {groupData} from "./groupData.js";
 import {reshapeDataForTable} from "./reshapeDataForTable.js";
 import {getLimits} from "./getLimits.js";
 import {sparkbar} from "./sparkbar.js";
@@ -13,24 +14,9 @@ export function tableMulti(query, flow, width) {
             year: new Date(row.year, 1, 1)
         }))
 
-    function groupData(data, flow) {
-        return Object.values(
-            data.reduce((acc, item) => {
-                const category = item.category;
-                const partner = item.partner;
-                const key = `${category}-${partner}`;
+    const isGDP = arrayData[0].unit === "share of gdp";
 
-                if (!acc[key]) {
-                    acc[key] = { category, partner, [flow]: 0 };
-                }
-                acc[key][flow] += item[flow];
-
-                return acc;
-            }, {})
-        );
-    }
-
-    const groupedData = groupData(arrayData, flow)
+    const groupedData = groupData(arrayData, isGDP,  "category-partner");
 
     const tableData = reshapeDataForTable(groupedData, flow, "category");
 
