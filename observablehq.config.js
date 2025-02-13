@@ -1,9 +1,9 @@
 // See https://observablehq.com/framework/config for documentation.
 export default {
 
-  title: "Trade Data Explorer",
+  title: "Trade Explorer",
 
-  head: '<link rel="icon" href="observable.png" type="image/png" sizes="32x32">' +
+  head: '<link rel="icon" href="ONE-logo-favicon.png" type="image/png" sizes="32x32">' +
       '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />',
 
   root: "src",

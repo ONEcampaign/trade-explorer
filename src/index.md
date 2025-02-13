@@ -113,7 +113,7 @@ const timeRangeSingleInput = rangeInput(
     })
 const timeRangeSingle = Generators.input(timeRangeSingleInput)
 
-// Currency Input
+// Unit Input
 const unitSingleInput = Inputs.select(
     new Map([
         ["US Dollars", "usd"],
@@ -226,7 +226,7 @@ const flowMultiInput = Inputs.radio(
 )
 const flowMulti = Generators.input(flowMultiInput)
 
-// Currency Input
+// Unit Input
 const unitMultiInput = Inputs.select(
     new Map([
         ["US Dollars", "usd"],
@@ -236,7 +236,7 @@ const unitMultiInput = Inputs.select(
         ["Share of GDP", "gdp"]
     ]),
     {
-        label: "Currency",
+        label: "Unit",
         value: "gdp"
     }
 );
@@ -368,7 +368,7 @@ const partnersMultiSQLList = partnersMultiList.length > 0
     ? partnersMultiList.map(escapeSQL).map(c => `'${c}'`).join(", ")
     : "'NO_MATCH'"; // Fallback value that will never match
 
-// Define currency column
+// Define unit column
 const isGdpMulti = unitMulti === "gdp" ? true : false
 const unitColumnMulti = isGdpMulti
     ? "usd_constant"
@@ -489,7 +489,8 @@ const selectAbout = () => viewSelection.value = "About"
 ```
 
 ```html
-<div class="title-container">
+
+<div class="title-container" xmlns="http://www.w3.org/1999/html">
     <div class="title-logo">
         <a href="https://data.one.org/" target="_blank">
             <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
@@ -530,7 +531,7 @@ const selectAbout = () => viewSelection.value = "About"
     </div>
 
     <div class="grid grid-cols-2">
-        
+
         <div class="card">
             <div class="plot-container" id="single-plot">
                 <h2 class="plot-title">
@@ -542,18 +543,20 @@ const selectAbout = () => viewSelection.value = "About"
                     <span class="balance-subtitle-label">trade balance</span>
                 </h3>
                 ${resize((width) =>
-                    plotSingle(querySingle, width)
+                plotSingle(querySingle, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                                href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
+                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                isGdpSingle
-                                ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
-                                : pricesSingle === "constant" 
-                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
-                                    : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
+                            isGdpSingle
+                            ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
+                            : pricesSingle === "constant"
+                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
+                            : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
                         </p>
@@ -567,15 +570,15 @@ const selectAbout = () => viewSelection.value = "About"
             </div>
             <div class="download-panel">
                 ${Inputs.button(
-                    "Download plot", {
-                        reduce: () => downloadPNG(
-                            'single-plot',
-                                formatString(
-                                    `Trade between ${countrySingle} and ${partnerSingle}`,
-                                    { capitalize: false, fileMode: true }
-                                )
-                        )
-                    }
+                "Download plot", {
+                reduce: () => downloadPNG(
+                'single-plot',
+                formatString(
+                `Trade between ${countrySingle} and ${partnerSingle}`,
+                { capitalize: false, fileMode: true }
+                )
+                )
+                }
                 )}
             </div>
         </div>
@@ -586,24 +589,27 @@ const selectAbout = () => viewSelection.value = "About"
                     ${`Trade between ${countrySingle} and ${partnerSingle}`}
                 </h2>
                 <h3 class="table-subtitle">
-                    By product category,  ${timeRangeSingle[0] === timeRangeSingle[1] ? timeRangeSingle[0] : `${timeRangeSingle[0]}-${timeRangeSingle[1]}`}
+                    By product category, ${timeRangeSingle[0] === timeRangeSingle[1] ? timeRangeSingle[0] :
+                    `${timeRangeSingle[0]}-${timeRangeSingle[1]}`}
                 </h3>
                 ${resize((width) =>
-                    tableSingle(querySingle, width)
+                tableSingle(querySingle, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                                href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
+                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                isGdpSingle
-                                ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
-                                : pricesSingle === "constant"
-                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
-                                    : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
+                            isGdpSingle
+                            ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
+                            : pricesSingle === "constant"
+                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
+                            : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
-                        </p>                 
+                        </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
@@ -614,21 +620,21 @@ const selectAbout = () => viewSelection.value = "About"
             </div>
             <div class="download-panel">
                 ${Inputs.button(
-                    "Download data", {
-                        reduce: () => downloadXLSX(
-                            querySingle,
-                            formatString(
-                                `trade between ${countrySingle} and ${partnerSingle}`,
-                                { capitalize: false, fileMode: true }
-                            )
-                        )
-                    }
+                "Download data", {
+                reduce: () => downloadXLSX(
+                querySingle,
+                formatString(
+                `trade between ${countrySingle} and ${partnerSingle}`,
+                { capitalize: false, fileMode: true }
+                )
+                )
+                }
                 )}
             </div>
         </div>
-        
+
     </div>
-    
+
 </div>
 
 
@@ -650,41 +656,43 @@ const selectAbout = () => viewSelection.value = "About"
     </div>
 
     <div class="grid grid-cols-2">
-        
+
         <div class="card">
-            <div  class="plot-container" id="multi-plot">
+            <div class="plot-container" id="multi-plot">
                 <h2 class="plot-title">
                     ${formatString(flowMulti, {inSentence: true, capitalize: true})} ${countryMulti}
                 </h2>
                 <h3 class="plot-subtitle">
                     ${
-                        flowMulti === "exports"
-                            ? "to selected trading partners"
-                            : flowMulti === "imports"
-                                ? "from selected trading partners"
-                                : "Selected trading partners"
+                    flowMulti === "exports"
+                    ? "to selected trading partners"
+                    : flowMulti === "imports"
+                    ? "from selected trading partners"
+                    : "Selected trading partners"
                     }
                 </h3>
                 ${resize((width) =>
-                    plotMulti(queryMulti, flowMulti, width)
+                plotMulti(queryMulti, flowMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                                href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
+                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                isGdpMulti
-                                ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
-                                : pricesSingle === "constant"
-                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
-                                    : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
+                            isGdpMulti
+                            ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
+                            : pricesSingle === "constant"
+                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
+                            : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
                             }
                             ${
-                                flowMulti === "exports"
-                                ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
-                                : flowMulti === "imports"
-                                    ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
+                            flowMulti === "exports"
+                            ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
+                            : flowMulti === "imports"
+                            ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
+                            : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
@@ -697,12 +705,12 @@ const selectAbout = () => viewSelection.value = "About"
             </div>
             <div class="download-panel">
                 ${Inputs.button(
-                    "Download plot", {
-                        reduce: () => downloadPNG(
-                            'multi-plot',
-                            formatString(flowMulti + " " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
-                        )
-                    }
+                "Download plot", {
+                reduce: () => downloadPNG(
+                'multi-plot',
+                formatString(flowMulti + " " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
+                )
+                }
                 )}
             </div>
         </div>
@@ -713,28 +721,31 @@ const selectAbout = () => viewSelection.value = "About"
                     ${formatString(flowMulti, {inSentence: true, capitalize: true})} ${countryMulti}
                 </h2>
                 <h3 class="table-subtitle">
-                    By product category,  ${timeRangeMulti[0] === timeRangeMulti[1] ? timeRangeMulti[0] : `${timeRangeMulti[0]}-${timeRangeMulti[1]}`}
+                    By product category, ${timeRangeMulti[0] === timeRangeMulti[1] ? timeRangeMulti[0] :
+                    `${timeRangeMulti[0]}-${timeRangeMulti[1]}`}
                 </h3>
                 ${resize((width) =>
-                    tableMulti(queryMulti, flowMulti, width)
+                tableMulti(queryMulti, flowMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank" rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                                href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
+                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
                         <p class="plot-note">
                             ${
-                                isGdpMulti
-                                ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
-                                : pricesSingle === "constant"
-                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
-                                    : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
+                            isGdpMulti
+                            ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
+                            : pricesSingle === "constant"
+                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
+                            : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
                             }
                             ${
-                                flowMulti === "exports"
-                                ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
-                                : flowMulti === "imports"
-                                    ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
+                            flowMulti === "exports"
+                            ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
+                            : flowMulti === "imports"
+                            ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
+                            : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
@@ -747,63 +758,52 @@ const selectAbout = () => viewSelection.value = "About"
             </div>
             <div class="download-panel">
                 ${Inputs.button(
-                    "Download data", {
-                        reduce: () => downloadXLSX(
-                            queryMulti,
-                            formatString("trade with " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
-                        )
-                    }
+                "Download data", {
+                reduce: () => downloadXLSX(
+                queryMulti,
+                formatString("trade with " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
+                )
+                }
                 )}
             </div>
         </div>
-        
+
     </div>
-        
+
 </div>
 
 
 <div class="view-box ${viewSelection === 'About' ? 'active' : ''}">
-    
+
     <div class="card methodology">
-        
+
         <h2 class="section-header">
             How to use
         </h2>
-        
+
         <p class="normal-text">
-            The tool provides two different views for exploring international trade data. <span class="italic-span">Single Country</span> allows you to explore trade between a selected country and a single trading partner. <span class="italic-span">Multi Country</span> lets you compare a country’s trade with multiple partners simultaneously.
+            The tool provides two options to analyze international trade data. <span
+                class="italic-span">Single Country</span> allows you to explore trade between a selected country and a
+            single trading partner. <span class="italic-span">Multi Country</span> lets you compare a country’s trade
+            with multiple partners simultaneously.
         </p>
 
         <p class="normal-text">
-            Begin by selecting a country or group from the <span class="italic-span">Country</span> dropdown menu. All trade figures are presented from the selected country’s perspective. For example, if you choose Botswana, exports represent goods and services flowing out of Botswana to the selected partner, while imports represent inflows into Botswana. In this sense, exports are displayed as positive values, indicating revenue from outgoing goods and services, while imports are shown as negative values, reflecting expenditures on incoming goods and services.
-        </p>
-        
-        <p class="normal-text">
-            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners by dragging or Shift-clicking, and select/deselect an individual partner by Command-clicking. Since this view presents multiple countries, you can only visualize a single trade flow (either exports, imports or trade balance) at once, allowing for clearer comparisons across partners.
-        </p>
-        
-        <h2 class="section-header">
-            Methodology
-        </h2>
-
-        <p class="normal-text">
-            Trade data is retrieved from CEPII's
-            <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">BACI database</a>,
-            and grouped by product category according to
-            <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">HS Nomenclature</a>,
-            with each section forming a category.
+            Begin by selecting a country or group from the <span class="italic-span">Country</span> dropdown menu. All
+            trade figures are presented from the selected country’s perspective. For example, if you choose Botswana, exports represent goods and services flowing out of Botswana to
+            the selected partner, while imports represent inflows into Botswana. In this sense, exports are shown as
+            positive values, indicating revenue from outgoing goods and services, while imports are negative
+            values, reflecting expenditures on incoming goods and services.
         </p>
 
         <p class="normal-text">
-            The original trade figures are presented in current US$. We use the <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a> package to convert them into other currencies and constant prices.
+            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. Since this view presents
+            multiple countries, you can only visualize a single trade flow (either exports, imports or trade balance) at
+            once, allowing for clearer comparisons across partners.
         </p>
 
         <p class="normal-text">
-            Figures expressed as a share of GDP are based on World Economic Outlook GDP data, retrieved via the <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a>. When data is grouped by year (e.g., in plots), the share of GDP refers to the GDP of the selected country or country group for that specific year. When grouped by product category (e.g., in tables), it refers to the combined GDP of the selected country or country group over the chosen time period.
-        </p>
-
-        <p class="normal-text">
-            The data preparation scripts are located in the <span style="font-family: monospace">src/data</span> directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub repository</a>.
+            To ensure that the data shown is accurate, certain options will be disabled depending on the selected country and partner(s). For instance, if France is selected as country, you won't be able to select France, EU 27 countries, G7 countries or G20 countries as partner, as these options overlap with France..  
         </p>
 
         <h2 class="section-header">
@@ -815,9 +815,44 @@ const selectAbout = () => viewSelection.value = "About"
             Object.entries(groupMappings)
             .filter(([_, countries]) => countries.length > 1)
             .sort(([a], [b]) => a.localeCompare(b)) // Sort alphabetically by group name
-            .map(([group, countries]) => html`<li><span class="group-name" ">${group}</span>: ${countries.join(", ")}.</li>`)
+            .map(([group, countries]) => html`
+            <li><span class="group-name" ">${group}</span>: ${countries.join(", ")}.</li>
+            `)
             }
         </ul>
+
+        <h2 class="section-header">
+            Methodology
+        </h2>
+
+        <p class="normal-text">
+            Trade data is retrieved from CEPII's
+            <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">BACI database</a>,
+            and grouped by product category according to
+            <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">HS
+                Nomenclature</a>,
+            with each section forming a category.
+        </p>
+
+        <p class="normal-text">
+            The original trade figures are presented in current US$. We use the <a
+                href="https://github.com/jm-rivera/pydeflate">pydeflate</a> package to convert them into other
+            currencies and constant prices.
+        </p>
+
+        <p class="normal-text">
+            Figures expressed as a share of GDP are based on World Economic Outlook GDP data, retrieved via the <a
+                href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a>. When data is
+            grouped by year (e.g., in plots), the share of GDP refers to the GDP of the selected country or country
+            group for that specific year. When grouped by product category (e.g., in tables), it refers to the combined
+            GDP of the selected country or country group over the chosen time period.
+        </p>
+
+        <p class="normal-text">
+            The data preparation scripts are located in the <span style="font-family: monospace">src/data</span>
+            directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub
+            repository</a>.
+        </p>
 
         <h2 class="section-header">
             Contact
@@ -826,8 +861,8 @@ const selectAbout = () => viewSelection.value = "About"
         <p class="normal-text">
             For questions or suggestions, please contact miguel.haroruiz[at]one[dot]org
         </p>
-        
+
     </div>
-    
+
 </div>
 ```
