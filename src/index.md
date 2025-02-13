@@ -67,11 +67,14 @@ function updateOptionsSingle() {
     const countryList = groupMappings[countrySingleInput.value]
     const partnerList = groupMappings[partnerSingleInput.value]
     if (countryList.some(country => partnerList.includes(country))) {
-        let nonOverlapping = countries.find(group => {
+        partnerSingleInput.value = countries
+            .find(group => {
             let elements = groupMappings[group] || [group];
             return !elements.some(country => countryList.includes(country));
-        });
-        partnerSingleInput.value = nonOverlapping
+        })
+        // Pick 5 random items that don't overlap
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 1);
     } 
     for (const o of partnerSingleInput.querySelectorAll("option")) {
         const groupList = groups[o.value]
@@ -82,7 +85,8 @@ function updateOptionsSingle() {
     }
 
     for (const o of countrySingleInput.querySelectorAll("option")) {
-        if (countries[o.value] === partnerSingleInput.value) {
+        const groupList = groups[o.value]
+        if (groupList.some(item => partnerList.includes(item))) {
             o.setAttribute("disabled", "disabled");
         }
         else o.removeAttribute("disabled");
@@ -92,6 +96,7 @@ function updateOptionsSingle() {
 
 updateOptionsSingle();
 countrySingleInput.addEventListener("input", updateOptionsSingle);
+partnerSingleInput.addEventListener("input", updateOptionsSingle);
 
 const countrySingle = Generators.input(countrySingleInput);
 const partnerSingle = Generators.input(partnerSingleInput);
@@ -147,16 +152,6 @@ const countryMultiInput = Inputs.select(
         value: "Canada"
     })
 
-// Partner Input
-// const partnersMultiInput = Inputs.select(
-//     countries,
-//     {
-//         label: "Partner",
-//         multiple: 5,
-//         sort: true,
-//         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
-//     })
-
 const partnersMultiInput = multiSelect(
     countries,
     {
@@ -164,36 +159,43 @@ const partnersMultiInput = multiSelect(
         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"],
 }   )
 
-// function updateOptionsMulti() {
-//
-//     const countryList = groupMappings[countryMultiInput.value]
-//     const partnerList = partnersMultiInput.value.flatMap(group => groupMappings[group] || [group]);
-//     if (countryList.some(country => partnerList.includes(country))) {
-//         partnersMultiInput.value = countries.filter(group => {
-//             let elements = groupMappings[group] || [group];
-//             return !elements.some(country => countryList.includes(country));
-//         }).slice(0, 3);
-//     }
-//    
-//     for (const o of partnersMultiInput.querySelectorAll("option")) {        
-//         const groupList = groups[o.value]
-//         if (groupList.some(item => countryList.includes(item))) {
-//             o.setAttribute("disabled", "disabled");
-//         }
-//         else o.removeAttribute("disabled");
-//     }
-//
-//     for (const o of countryMultiInput.querySelectorAll("option")) {
-//         if (countries[o.value] === partnersMultiInput.value) {
-//             o.setAttribute("disabled", "disabled");
-//         }
-//         else o.removeAttribute("disabled");
-//     }
-//    
-// }
-//
-// updateOptionsMulti();
-// countryMultiInput.addEventListener("input", updateOptionsMulti);
+
+function updateOptionsMulti() {
+
+    const countryList = groupMappings[countryMultiInput.value]
+    const partnerList = partnersMultiInput.value.flatMap(group => groupMappings[group] || [group]);
+    if (countryList.some(country => partnerList.includes(country))) {
+        partnersMultiInput.value = countries
+            .filter(group => {
+                let elements = groupMappings[group] || [group];
+                return !elements.some(country => countryList.includes(country));
+            })
+            // Pick 5 random items that don't overlap
+            .sort(() => Math.random() - 0.5) 
+            .slice(0, 5);
+    }
+   
+    for (const o of partnersMultiInput.querySelectorAll("option")) {        
+        const groupList = groupMappings[o.value]
+        if (groupList.some(item => countryList.includes(item))) {
+            o.setAttribute("disabled", "disabled");
+        }
+        else o.removeAttribute("disabled");
+    }
+
+    for (const o of countryMultiInput.querySelectorAll("option")) {
+        const groupList = groups[o.value]
+        if (groupList.some(item => partnerList.includes(item))) {
+            o.setAttribute("disabled", "disabled");
+        }
+        else o.removeAttribute("disabled");
+    }
+   
+}
+
+updateOptionsMulti();
+countryMultiInput.addEventListener("input", updateOptionsMulti);
+partnersMultiInput.addEventListener("input", updateOptionsMulti);
 
 const countryMulti = Generators.input(countryMultiInput);
 const partnersMulti = Generators.input(partnersMultiInput);
