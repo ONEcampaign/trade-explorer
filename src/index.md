@@ -6,6 +6,7 @@ import {setCustomColors} from "./components/setCustomColors.js";
 import {timeRange, categories, groupMappings} from "./components/inputValues.js";
 
 import {rangeInput} from "./components/rangeInput.js";
+import {multiSelect} from "./components/multiSelect.js";
 
 import {formatString} from "./components/formatString.js";
 import {getUnitLabel} from "./components/getUnitLabel.js"
@@ -147,45 +148,52 @@ const countryMultiInput = Inputs.select(
     })
 
 // Partner Input
-const partnersMultiInput = Inputs.select(
+// const partnersMultiInput = Inputs.select(
+//     countries,
+//     {
+//         label: "Partner",
+//         multiple: 5,
+//         sort: true,
+//         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
+//     })
+
+const partnersMultiInput = multiSelect(
     countries,
     {
         label: "Partner",
-        multiple: 5,
-        sort: true,
-        value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"]
-    })
+        value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"],
+}   )
 
-function updateOptionsMulti() {
-
-    const countryList = groupMappings[countryMultiInput.value]
-    const partnerList = partnersMultiInput.value.flatMap(group => groupMappings[group] || [group]);
-    if (countryList.some(country => partnerList.includes(country))) {
-        partnersMultiInput.value = countries.filter(group => {
-            let elements = groupMappings[group] || [group];
-            return !elements.some(country => countryList.includes(country));
-        }).slice(0, 3);
-    }
-    
-    for (const o of partnersMultiInput.querySelectorAll("option")) {        
-        const groupList = groups[o.value]
-        if (groupList.some(item => countryList.includes(item))) {
-            o.setAttribute("disabled", "disabled");
-        }
-        else o.removeAttribute("disabled");
-    }
-
-    for (const o of countryMultiInput.querySelectorAll("option")) {
-        if (countries[o.value] === partnersMultiInput.value) {
-            o.setAttribute("disabled", "disabled");
-        }
-        else o.removeAttribute("disabled");
-    }
-    
-}
-
-updateOptionsMulti();
-countryMultiInput.addEventListener("input", updateOptionsMulti);
+// function updateOptionsMulti() {
+//
+//     const countryList = groupMappings[countryMultiInput.value]
+//     const partnerList = partnersMultiInput.value.flatMap(group => groupMappings[group] || [group]);
+//     if (countryList.some(country => partnerList.includes(country))) {
+//         partnersMultiInput.value = countries.filter(group => {
+//             let elements = groupMappings[group] || [group];
+//             return !elements.some(country => countryList.includes(country));
+//         }).slice(0, 3);
+//     }
+//    
+//     for (const o of partnersMultiInput.querySelectorAll("option")) {        
+//         const groupList = groups[o.value]
+//         if (groupList.some(item => countryList.includes(item))) {
+//             o.setAttribute("disabled", "disabled");
+//         }
+//         else o.removeAttribute("disabled");
+//     }
+//
+//     for (const o of countryMultiInput.querySelectorAll("option")) {
+//         if (countries[o.value] === partnersMultiInput.value) {
+//             o.setAttribute("disabled", "disabled");
+//         }
+//         else o.removeAttribute("disabled");
+//     }
+//    
+// }
+//
+// updateOptionsMulti();
+// countryMultiInput.addEventListener("input", updateOptionsMulti);
 
 const countryMulti = Generators.input(countryMultiInput);
 const partnersMulti = Generators.input(partnersMultiInput);
@@ -629,11 +637,11 @@ const selectAbout = () => viewSelection.value = "About"
         </div>
         <div class="settings-group">
             ${unitMultiInput}
-            ${isGdpMulti ? html`` : pricesMultiInput}
+            ${flowMultiInput}
         </div>
         <div class="settings-group">
+            ${isGdpMulti ? html`` : pricesMultiInput}
             ${timeRangeMultiInput}
-            ${flowMultiInput}
         </div>
     </div>
 

@@ -40,7 +40,6 @@
     border-left: 1px black solid;
     padding: 10px 20px;
     margin: auto 0;
-    /*line-height: .8;*/
 }
 
 
@@ -54,6 +53,7 @@
 .view-button > form {
     display: block !important;
     width: auto !important;
+    margin: auto !important;
 }
 
 .view-button form button{
@@ -95,54 +95,20 @@ select, input {
 }
 
 .card.settings {
+    padding: 2em;
     display: flex;
     flex-flow: row wrap;
-    align-items: baseline;
     justify-content: space-around;
-    padding: 20px 40px;
-    gap: 40px;
 }
 
 .settings-group {
     box-sizing: border-box;
-    /*flex: 2;*/
     display: flex;
     flex-flow: column wrap;
     gap: 20px;
+    min-width: 200px;
 }
 
-/*.settings-button{*/
-/*    width: 95px;*/
-/*    !*flex: 1;*!*/
-/*}*/
-
-/*.settings-button > form > button {*/
-/*    border: none;*/
-/*    background-color: transparent;*/
-/*    cursor: pointer;*/
-/*    padding: 0;*/
-/*}*/
-
-/*.settings-button > form > button::after {*/
-/*    content: "arrow_right";*/
-/*    font-family: 'Material Symbols Outlined';*/
-/*    display: inline-block;*/
-/*    vertical-align: middle;*/
-/*    font-size: 20px;*/
-/*    padding-bottom: 2px;*/
-/*}*/
-
-/*.settings-button.active > form > button::after {*/
-/*    content: "arrow_drop_down";*/
-/*}*/
-
-/*.settings-button > form > button:hover {*/
-/*    text-decoration: underline;*/
-/*}*/
-
-.settings-group:last-of-type {
-    /*flex: 3;*/
-}
 
 .range-input > label {
     flex-shrink: 0;
@@ -162,15 +128,16 @@ select, input {
     box-sizing: border-box;
     display: flex;
     gap: 10px;
-    flex-flow: row wrap;
+    flex-direction: column;
     align-items: start !important;
+    width: auto !important;
+    margin: 0 !important;
 }
 
 .settings-group > form > div {
     display: flex;
     flex-flow: row wrap;
     align-items: flex-start !important;
-    gap: 5px
 }
 
 .settings-group form > label {
@@ -182,6 +149,13 @@ select, input {
 .settings-group form > select {
     max-width: 200px !important;
 }
+
+form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
+    display: flex;
+    flex-flow: column wrap;
+    gap: 10px;
+}
+
 
 .more-settings {
     display: flex;
@@ -364,4 +338,35 @@ select, input {
 }
 .group-name {
     font-weight: bold;
+}
+
+/* Responsive design */
+
+@media (max-width: 800px) {
+    .card.settings {
+        justify-content: space-between;
+        row-gap: 20px;
+    }
+}
+
+
+@media (max-width: 600px) {
+    .title-text {
+        font-size: calc(var(--size-xl) * 1.25);
+    }
+    .card.header {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 10px
+    }
+    .card.settings {
+        flex-direction: column;
+        justify-content: center;
+        align-items: start;
+        gap: 20px
+    }
+    .settings-group {
+        gap: 20px !important;
+    }
 }

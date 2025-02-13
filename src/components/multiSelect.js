@@ -43,7 +43,7 @@ export function multiSelect(data, options = {}) {
     const labelEl = label ? html`<label for="${id}">${label}</label>` : "";
     const datalistEl = html`<datalist id=${datalistId}></datalist>`;
 
-    const form = html`<form class="${ns} ${blockClass}" style="width: 41em" disabled=${disabled}>
+    const form = html`<form class="${ns} ${blockClass}" disabled=${disabled}>
         ${labelEl}
 
         <div class="${blockClass}__wrapper">
@@ -295,7 +295,8 @@ function attachStyles(placeOfUseInvalidation) {
         border: 1px solid var(--color-border);
         border-radius: var(--border-radius-100);
         background-color: var(--color-bg);
-        width: 100%;
+        box-sizing: border-box;
+        width: 200px;
       }
 
       .${blockClass}__selected-items {
