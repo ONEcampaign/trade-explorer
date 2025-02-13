@@ -120,7 +120,7 @@ const unitSingleInput = Inputs.select(
         ["Canada Dollars", "cad"],
         ["Euros", "eur"],
         ["British pounds", "gbp"],
-        ["% of GDP", "gdp"]
+        ["Share of GDP", "gdp"]
     ]),
     {
         label: "Unit"
@@ -233,7 +233,7 @@ const unitMultiInput = Inputs.select(
         ["Canada Dollars", "cad"],
         ["Euros", "eur"],
         ["British pounds", "gbp"],
-        ["% of GDP", "gdp"]
+        ["Share of GDP", "gdp"]
     ]),
     {
         label: "Currency",
@@ -364,7 +364,9 @@ const countryMultiList = getCountryList(countryMulti);
 const partnersMultiList = getCountryList(partnersMulti);
 
 const countryMultiSQLList = countryMultiList.map(escapeSQL).map(c => `'${c}'`).join(", ");
-const partnersMultiSQLList = partnersMultiList.map(escapeSQL).map(c => `'${c}'`).join(", ");
+const partnersMultiSQLList = partnersMultiList.length > 0
+    ? partnersMultiList.map(escapeSQL).map(c => `'${c}'`).join(", ")
+    : "'NO_MATCH'"; // Fallback value that will never match
 
 // Define currency column
 const isGdpMulti = unitMulti === "gdp" ? true : false
@@ -548,7 +550,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                                 isGdpSingle
-                                ? html`<span>All values as percentage of ${countrySingle}'s GDP.</span>`
+                                ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
                                 : pricesSingle === "constant" 
                                     ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -595,7 +597,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                                 isGdpSingle
-                                ? html`<span>All values as percentage of ${countrySingle}'s GDP.</span>`
+                                ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
                                 : pricesSingle === "constant"
                                     ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -672,7 +674,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                                 isGdpMulti
-                                ? html`<span>All values as percentage of ${countryMulti}'s GDP.</span>`
+                                ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
                                 : pricesSingle === "constant"
                                     ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
@@ -722,7 +724,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                                 isGdpMulti
-                                ? html`<span>All values as percentage of ${countryMulti}'s GDP.</span>`
+                                ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
                                 : pricesSingle === "constant"
                                     ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
@@ -797,7 +799,7 @@ const selectAbout = () => viewSelection.value = "About"
         </p>
 
         <p class="normal-text">
-            Figures expressed as a percentage of GDP are calculated by dividing the trade value (in 2015 constant USD) by the GDP (also in 2015 constant USD) for that specific year and country. GDP figures are taken from the World Economic Outlook via the <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a> package and converted from current to 2015 constant USD using pydeflate.
+            Figures expressed as a share of GDP are based on World Economic Outlook GDP data, retrieved via the <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a>. When data is grouped by year (e.g., in plots), the share of GDP refers to the GDP of the selected country or country group for that specific year. When grouped by product category (e.g., in tables), it refers to the combined GDP of the selected country or country group over the chosen time period.
         </p>
 
         <p class="normal-text">
