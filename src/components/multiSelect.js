@@ -289,6 +289,7 @@ function attachStyles(placeOfUseInvalidation) {
 
       .${blockClass} input[type="text"] {
         width: inherit;
+        border-block-start: 1px solid var(--color-border);
       }
 
       .${blockClass}__wrapper {
@@ -306,7 +307,7 @@ function attachStyles(placeOfUseInvalidation) {
         margin: 0;
       }
       .${blockClass}__selected-items:not(:empty) {
-        border-block-end: 1px solid var(--color-border);
+        border-block-start: none;
         padding: 0.25rem;
       }
       .${blockClass}__selected-item {
