@@ -334,6 +334,7 @@ function attachStyles(placeOfUseInvalidation) {
         line-height: 1;
         border-inline-start: 1px solid var(--color-border);
         color: var(--color-icon);
+        cursor: pointer;
       }
 
       .${blockClass}__remove:hover:not([disabled]),

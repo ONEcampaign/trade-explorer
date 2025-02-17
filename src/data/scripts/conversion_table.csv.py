@@ -13,75 +13,74 @@ from src.data.config import (
 
 set_pydeflate_path(PATHS.PYDEFLATE)
 
+codes = {
+    "USA": "usd",
+    "CAN": "cad",
+    "FRA": "eur",
+    "GBR": "gbp"
+}
 
-def current_to_constant():
+def create_df():
 
-    df = pd.DataFrame(
+    return pd.DataFrame(
         {
             "year": range(time_range[0], time_range[1] + 1),
-            "iso_code": "USA",
-            "usd_current": [1] * (time_range[1] - time_range[0] + 1),
+            "value": 1
         }
     )
 
-    df_usd = imf_gdp_deflate(
-        data=df,
-        base_year=base_year,
-        id_column="iso_code",
-        source_currency="USD",
-        target_currency="USD",
-        year_column="year",
-        value_column="usd_current",
-        target_value_column="usd_constant",
-    )
+def deflate_current_usd():
 
-    return df_usd
+    df = create_df()
 
+    for country, code in codes.items():
 
-def multi_currency(df):
+        df["iso_code"] = country
 
-    currencies = {"CAN": "cad", "FRA": "eur", "GBR": "gbp"}
-
-    df_conversion = df
-    for country, code in currencies.items():
-
-        df_conversion["iso_code"] = "USA"
-
-        df_conversion = imf_exchange(
-            data=df_conversion,
-            source_currency="USD",
-            id_column="iso_code",
+        df = imf_gdp_deflate(
+            data=df,
+            base_year=base_year,
+            source_currency="USA",
             target_currency=country,
             year_column="year",
-            value_column="usd_current",
+            id_column="iso_code",
+            value_column="value",
+            target_value_column=f"{code}_constant"
+        )
+
+    df.drop(columns=["value", "iso_code"], inplace=True)
+
+    return df
+
+def convert_currencies():
+
+    df = create_df()
+
+    for country, code in codes.items():
+
+        df["iso_code"] = country
+
+        df = imf_exchange(
+            data=df,
+            source_currency="USA",
+            target_currency=country,
+            year_column="year",
+            id_column="iso_code",
+            value_column="value",
             target_value_column=f"{code}_current",
         )
 
-        df_conversion["iso_code"] = country
+    df.drop(columns=["value", "iso_code"], inplace=True)
 
-        df_conversion = imf_gdp_deflate(
-            base_year=base_year,
-            data=df_conversion,
-            source_currency=country,
-            id_column="iso_code",
-            target_currency=country,
-            year_column="year",
-            value_column=f"{code}_current",
-            target_value_column=f"{code}_constant",
-        )
-
-    df_conversion = df_conversion.drop(columns=["iso_code"])
-
-    return df_conversion
-
+    return df
 
 def get_conversion_table():
+    constant_df = deflate_current_usd()
+    current_df = convert_currencies()
 
-    df = current_to_constant()
-    df_conversion = multi_currency(df)
+    df = constant_df.merge(current_df, on="year", how="outer", validate="one_to_one")
 
-    df_conversion.to_csv(sys.stdout, index=False)
-
+    df.to_csv(sys.stdout, index=False)
 
 if __name__ == "__main__":
     logger.info("Creating currency conversions table")

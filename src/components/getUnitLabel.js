@@ -37,7 +37,7 @@ export function getUnitLabel(unit, {
         return `${prefix} ${suffix}`
     }
     else {
-        return `${prefix} ${value} ${suffix}`
+        return `${prefix}${value} ${suffix}`
     }
 
 }
