@@ -341,27 +341,10 @@ const querySingleString = `
         COALESCE(e.category, i.category) AS category,
         '${escapeSQL(countrySingle)}' AS country,
         '${escapeSQL(partnerSingle)}' AS partner,
-        CASE 
-            WHEN ${isGdpSingle} THEN e.exports / g.gdp * 100 
-            ELSE e.exports 
-        END AS exports,
-        CASE 
-            WHEN ${isGdpSingle} THEN (i.imports / g.gdp * 100) * -1 
-            ELSE i.imports * -1 
-        END AS imports,
-        (
-            CASE 
-                WHEN ${isGdpSingle} THEN e.exports / g.gdp * 100 
-                ELSE e.exports 
-            END
-        ) 
-        - 
-        (
-            CASE 
-                WHEN ${isGdpSingle} THEN i.imports / g.gdp * 100 
-                ELSE i.imports
-            END
-        ) AS balance,
+        e.exports exports,
+        i.imports * -1 AS imports,
+        (e.exports - i.imports) AS balance,
+        g.gdp AS gdp,
         CASE 
             WHEN ${isGdpSingle} THEN 'share of gdp'
             ELSE '${pricesSingle} ${unitSingle} million'
@@ -473,27 +456,10 @@ const queryMultiString = `
         '${escapeSQL(countryMulti)}' AS country,
         COALESCE(e.partner, i.partner) AS partner,
         COALESCE(e.category, i.category) AS category,
-        CASE 
-            WHEN ${isGdpMulti} THEN SUM(e.exports) / SUM(g.gdp) * 100 
-            ELSE SUM(e.exports) 
-        END AS exports,
-        CASE 
-            WHEN ${isGdpMulti} THEN (SUM(i.imports) / SUM(g.gdp) * 100) * -1 
-            ELSE SUM(i.imports) * -1 
-        END AS imports,
-        (
-            CASE 
-                WHEN ${isGdpMulti} THEN SUM(e.exports) / SUM(g.gdp) * 100 
-                ELSE SUM(e.exports) 
-            END
-        ) 
-        - 
-        (
-            CASE 
-                WHEN ${isGdpMulti} THEN SUM(i.imports) / SUM(g.gdp) * 100 
-                ELSE SUM(i.imports)
-            END
-        ) AS balance,
+        SUM(e.exports) AS exports,
+        SUM(i.imports) * -1 AS imports,
+        (SUM(e.exports) - SUM(i.imports)) AS balance,
+        g.gdp AS gdp,
         CASE 
             WHEN ${isGdpMulti} THEN 'share of gdp'
             ELSE '${pricesMulti} ${unitMulti} million'
@@ -507,7 +473,8 @@ const queryMultiString = `
         ON COALESCE(e.year, i.year) = g.year
         GROUP BY COALESCE(e.year, i.year), 
                  COALESCE(e.partner, i.partner), 
-                 COALESCE(e.category, i.category)
+                 COALESCE(e.category, i.category),
+                 g.gdp
 `;
 
 const queryMultiParams = [timeRangeMulti[0], timeRangeMulti[1]];
