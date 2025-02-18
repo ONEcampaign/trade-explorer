@@ -548,13 +548,15 @@ const selectAbout = () => viewSelection.value = "About"
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                        <p class="plot-source">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                                rel="noopener noreferrer">BACI: International trade database at the Product-level</a>. 
+                            CEPII
+                        </p>
                         <p class="plot-note">
                             ${
                             isGdpSingle
-                            ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
+                            ? html`<span>All values as a share of ${countrySingle}'s GDP.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -598,13 +600,15 @@ const selectAbout = () => viewSelection.value = "About"
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                        <p class="plot-source">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                                rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
+                            CEPII
+                        </p>
                         <p class="plot-note">
                             ${
                             isGdpSingle
-                            ? html`<span>All values as share of ${countrySingle}'s GDP.</span>`
+                            ? html`<span>All values as a share of ${countrySingle}'s GDP.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -677,13 +681,15 @@ const selectAbout = () => viewSelection.value = "About"
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                        <p class="plot-source">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                                rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
+                            CEPII
+                        </p>
                         <p class="plot-note">
                             ${
                             isGdpMulti
-                            ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
+                            ? html`<span>All values as a share of ${countryMulti}'s GDP.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
@@ -730,13 +736,15 @@ const selectAbout = () => viewSelection.value = "About"
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: Gaulier and Zignago (2010) <a
+                        <p class="plot-source">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                                rel="noopener noreferrer">BACI Database</a>. CEPII</p>
+                                rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
+                            CEPII
+                        </p>
                         <p class="plot-note">
                             ${
                             isGdpMulti
-                            ? html`<span>All values as share of ${countryMulti}'s GDP.</span>`
+                            ? html`<span>All values as a share of ${countryMulti}'s GDP.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
