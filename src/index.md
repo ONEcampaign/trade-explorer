@@ -31,7 +31,8 @@ const oneLogo = FileAttachment("./ONE-logo-black.png").href;
 ```js
 const db = DuckDBClient.of({
     trade: FileAttachment("./data/scripts/trade.parquet"),
-    conversion_table: FileAttachment("./data/scripts/conversion_table.csv"),
+    current_conversion_table: FileAttachment("./data/scripts/current_conversion_table.csv"),
+    constant_conversion_table: FileAttachment("./data/scripts/constant_conversion_table.csv"),
     gdp_table: FileAttachment("./data/scripts/gdp_table.csv"),
 });
 ```
@@ -282,10 +283,13 @@ const partnerSingleSQLList = partnerSingleList
     .map(c => `'${escapeSQL(c)}'`)
     .join(", ");
 
-const isGdpSingle = unitSingle === "gdp" ? true : false
+const isGdpSingle = unitSingle === "gdp" ? true : false;
 const unitColumnSingle = isGdpSingle
-    ? "usd_constant" 
+    ? "usd_constant"
     : `${unitSingle}_${pricesSingle}`;
+const conversionTableSingle = isGdpSingle
+    ? "constant_conversion_table"
+    : `${pricesSingle}_conversion_table`
 
 const querySingleString = `
     WITH filtered AS (
@@ -302,55 +306,71 @@ const querySingleString = `
         UNPIVOT (value FOR category IN (${unpivotColumns}))
     ),
     exports AS (
-        SELECT year, category, SUM(value) AS exports
-        FROM unpivoted
-        WHERE exporter IN (${countrySingleSQLList}) 
-        AND importer IN (${partnerSingleSQLList})
-        GROUP BY year, category
+        SELECT u.year, u.category, SUM(u.value * c.factor) AS exports
+        FROM unpivoted u
+        JOIN conversion c 
+            ON u.year = c.year
+            ${pricesSingle === "constant" | isGdpSingle ? "AND u.exporter = c.country" : ""}  
+        WHERE u.exporter IN (${countrySingleSQLList}) 
+        AND u.importer IN (${partnerSingleSQLList})
+        GROUP BY u.year, u.category
     ),
     imports AS (
-        SELECT year, category, SUM(value) AS imports
-        FROM unpivoted
-        WHERE importer IN (${countrySingleSQLList}) 
-        AND exporter IN (${partnerSingleSQLList})
-        GROUP BY year, category
+        SELECT u.year, u.category, SUM(u.value * c.factor) AS imports
+        FROM unpivoted u
+        JOIN conversion c 
+            ON u.year = c.year
+            ${pricesSingle === "constant" | isGdpSingle ? "AND u.importer = c.country" : ""}  
+        WHERE u.importer IN (${countrySingleSQLList}) 
+        AND u.exporter IN (${partnerSingleSQLList})
+        GROUP BY u.year, u.category
     ),
-    trade_data AS (
-        SELECT 
-            COALESCE(e.year, i.year) AS year,
-            COALESCE(e.category, i.category) AS category,
-            COALESCE(e.exports, 0) AS exports,
-            COALESCE(i.imports, 0) * -1 AS imports,
-            COALESCE(e.exports, 0) - COALESCE(i.imports, 0) AS balance
-        FROM exports e
-        FULL OUTER JOIN imports i
-        ON e.year = i.year AND e.category = i.category
+    conversion AS (
+        SELECT year, ${pricesSingle === "constant" | isGdpSingle ? "country," : ""} ${unitColumnSingle} AS factor 
+        FROM ${conversionTableSingle}
+        ${pricesSingle === "constant" | isGdpSingle ? `WHERE country IN (${countrySingleSQLList})` :""}
     ),
     gdp AS (
-        SELECT year, SUM (gdp_constant) AS gdp
+        SELECT year, SUM(gdp_constant) AS gdp
         FROM gdp_table
-        WHERE country in (${countrySingleSQLList}) 
+        WHERE country IN (${countrySingleSQLList})
         GROUP BY year
     )
     SELECT 
-        t.year,
-        t.category,
+        COALESCE(e.year, i.year) AS year,
+        COALESCE(e.category, i.category) AS category,
         '${escapeSQL(countrySingle)}' AS country,
         '${escapeSQL(partnerSingle)}' AS partner,
-        (t.exports * c.${unitColumnSingle}) AS exports,
-        (t.imports * c.${unitColumnSingle}) AS imports,
-        (t.balance * c.${unitColumnSingle}) AS balance,
-        g.gdp AS gdp,
+        CASE 
+            WHEN ${isGdpSingle} THEN e.exports / g.gdp * 100 
+            ELSE e.exports 
+        END AS exports,
+        CASE 
+            WHEN ${isGdpSingle} THEN (i.imports / g.gdp * 100) * -1 
+            ELSE i.imports * -1 
+        END AS imports,
+        (
+            CASE 
+                WHEN ${isGdpSingle} THEN e.exports / g.gdp * 100 
+                ELSE e.exports 
+            END
+        ) 
+        - 
+        (
+            CASE 
+                WHEN ${isGdpSingle} THEN i.imports / g.gdp * 100 
+                ELSE i.imports
+            END
+        ) AS balance,
         CASE 
             WHEN ${isGdpSingle} THEN 'share of gdp'
             ELSE '${pricesSingle} ${unitSingle} million'
         END AS unit
-    FROM trade_data t
-    LEFT JOIN conversion_table c
-    ON t.year = c.year
+    FROM exports e
+    FULL OUTER JOIN imports i
+        ON e.year = i.year AND e.category = i.category
     LEFT JOIN gdp g
-    ON t.year = g.year
-    ORDER BY t.year ASC, category ASC;
+        ON COALESCE(e.year, i.year) = g.year;
 `;
 
 const querySingleParams = [timeRangeSingle[0], timeRangeSingle[1]];
@@ -373,6 +393,9 @@ const isGdpMulti = unitMulti === "gdp" ? true : false
 const unitColumnMulti = isGdpMulti
     ? "usd_constant"
     : `${unitMulti}_${pricesMulti}`;
+const conversionTableMulti = isGdpMulti
+    ? "constant_conversion_table"
+    : `${pricesMulti}_conversion_table`
 
 // Define flow column selection
 const flowColumn = flowMulti === 'exports' 
@@ -403,77 +426,88 @@ const queryMultiString = `
         UNPIVOT (value FOR category IN (${unpivotColumns}))
     ),
     exports AS (
-        SELECT year, 
-               partner,
-               category, 
-               SUM(value) AS exports
+        SELECT year, partner, category, SUM(exports) AS exports
         FROM (
-            SELECT year, importer, category, value, 
-                   unnest(ARRAY[ ${caseStatement("importer")} ]) AS partner
-            FROM unpivoted
-            WHERE exporter IN (${countryMultiSQLList}) 
-            AND importer IN (${partnersMultiSQLList})
+            SELECT u.year, u.category, SUM(u.value * c.factor) AS exports, 
+                   unnest(ARRAY[ ${caseStatement("u.importer")} ]) AS partner
+            FROM unpivoted u
+            JOIN conversion c 
+                ON u.year = c.year
+                ${pricesMulti === "constant" | isGdpMulti ? "AND u.exporter = c.country" : ""} 
+            WHERE u.exporter IN (${countryMultiSQLList}) 
+            AND u.importer IN (${partnersMultiSQLList})
+            GROUP BY u.year, u.importer, u.category
         ) expanded
         WHERE partner IS NOT NULL
         GROUP BY year, partner, category
     ),
     imports AS (
-        SELECT year, 
-               partner,
-               category, 
-               SUM(value) AS imports
+        SELECT year, partner, category, SUM(imports) AS imports
         FROM (
-            SELECT year, exporter, category, value, 
-                   unnest(ARRAY[ ${caseStatement("exporter")} ]) AS partner
-            FROM unpivoted
-            WHERE importer IN (${countryMultiSQLList}) 
-            AND exporter IN (${partnersMultiSQLList})
+            SELECT u.year, u.category, SUM(u.value * c.factor) AS imports, 
+                   unnest(ARRAY[ ${caseStatement("u.exporter")} ]) AS partner
+            FROM unpivoted u
+            JOIN conversion c 
+                ON u.year = c.year
+                ${pricesMulti === "constant" | isGdpMulti ? "AND u.importer = c.country" : ""} 
+            WHERE u.importer IN (${countryMultiSQLList}) 
+            AND u.exporter IN (${partnersMultiSQLList})
+            GROUP BY u.year, u.exporter, u.category
         ) expanded
         WHERE partner IS NOT NULL
         GROUP BY year, partner, category
     ),
-    trade_data AS (
-        SELECT 
-            COALESCE(e.year, i.year) AS year,
-            COALESCE(e.partner, i.partner) AS partner,
-            COALESCE(e.category, i.category) AS category,
-            COALESCE(SUM(e.exports), 0) AS exports,
-            COALESCE(SUM(i.imports), 0) * -1 AS imports,
-            COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0) AS balance
-        FROM exports e
-        FULL OUTER JOIN imports i
-        ON e.year = i.year 
-        AND e.partner = i.partner 
-        AND e.category = i.category 
-            GROUP BY COALESCE(e.year, i.year), 
-                     COALESCE(e.partner, i.partner), 
-                     COALESCE(e.category, i.category)
+    conversion AS (
+        SELECT year, ${pricesMulti === "constant" | isGdpMulti ? "country," : ""} ${unitColumnMulti} AS factor 
+        FROM ${conversionTableMulti}
+        ${pricesMulti === "constant" | isGdpMulti ? `WHERE country IN (${countryMultiSQLList})` :""}
     ),
     gdp AS (
-        SELECT year, SUM (gdp_constant) AS gdp
+        SELECT year, SUM(gdp_constant) AS gdp
         FROM gdp_table
-        WHERE country in (${countryMultiSQLList}) 
+        WHERE country IN (${countryMultiSQLList})
         GROUP BY year
     )
-    SELECT
-        t.year,
+    SELECT 
+        COALESCE(e.year, i.year) AS year,
         '${escapeSQL(countryMulti)}' AS country,
-        t.partner,
-        t.category,
-        (t.exports * c.${unitColumnMulti}) AS exports,
-        (t.imports * c.${unitColumnMulti}) AS imports,
-        (t.balance * c.${unitColumnMulti}) AS balance,
-        g.gdp AS gdp,
+        COALESCE(e.partner, i.partner) AS partner,
+        COALESCE(e.category, i.category) AS category,
+        CASE 
+            WHEN ${isGdpMulti} THEN SUM(e.exports) / SUM(g.gdp) * 100 
+            ELSE SUM(e.exports) 
+        END AS exports,
+        CASE 
+            WHEN ${isGdpMulti} THEN (SUM(i.imports) / SUM(g.gdp) * 100) * -1 
+            ELSE SUM(i.imports) * -1 
+        END AS imports,
+        (
+            CASE 
+                WHEN ${isGdpMulti} THEN SUM(e.exports) / SUM(g.gdp) * 100 
+                ELSE SUM(e.exports) 
+            END
+        ) 
+        - 
+        (
+            CASE 
+                WHEN ${isGdpMulti} THEN SUM(i.imports) / SUM(g.gdp) * 100 
+                ELSE SUM(i.imports)
+            END
+        ) AS balance,
         CASE 
             WHEN ${isGdpMulti} THEN 'share of gdp'
             ELSE '${pricesMulti} ${unitMulti} million'
-        END AS unit
-    FROM trade_data t
-    LEFT JOIN conversion_table c
-    ON t.year = c.year    
+        END AS unit          
+    FROM exports e
+    FULL OUTER JOIN imports i
+    ON e.year = i.year 
+        AND e.partner = i.partner 
+        AND e.category = i.category 
     LEFT JOIN gdp g
-    ON t.year = g.year
-    ORDER BY t.year ASC, category ASC, partner ASC;
+        ON COALESCE(e.year, i.year) = g.year
+        GROUP BY COALESCE(e.year, i.year), 
+                 COALESCE(e.partner, i.partner), 
+                 COALESCE(e.category, i.category)
 `;
 
 const queryMultiParams = [timeRangeMulti[0], timeRangeMulti[1]];
@@ -523,7 +557,7 @@ const selectAbout = () => viewSelection.value = "About"
         </div>
         <div class="settings-group">
             ${unitSingleInput}
-            ${isGdpSingle ? html`` : pricesSingleInput}
+            ${pricesSingleInput}
         </div>
         <div class="settings-group">
             ${timeRangeSingleInput}

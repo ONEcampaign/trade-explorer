@@ -8,11 +8,7 @@ import country_converter as coco
 import bblocks_data_importers as bbdata
 from pydeflate import imf_gdp_deflate, set_pydeflate_path
 
-from src.data.config import (
-    logger,
-    PATHS, time_range,
-    base_year
-)
+from src.data.config import logger, PATHS, time_range, base_year
 
 set_pydeflate_path(PATHS.PYDEFLATE)
 

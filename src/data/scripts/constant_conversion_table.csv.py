@@ -1,5 +1,6 @@
 import sys
-
+from socket import create_server
+import json
 import pandas as pd
 from bblocks import add_iso_codes_column
 from pydeflate import imf_gdp_deflate, set_pydeflate_path
@@ -8,37 +9,47 @@ from src.data.config import logger, PATHS, time_range, base_year
 
 set_pydeflate_path(PATHS.PYDEFLATE)
 
-codes = {"USA": "usd", "CAN": "cad", "FRA": "eur", "GBR": "gbp"}
+
+# def get_iso_codes() -> pd.DataFrame:
+#     data = (
+#         pd.read_json(PATHS.COUNTRIES)
+#         .T.reset_index()
+#         .rename(columns={"index": "Country"})
+#     )
+#
+#     data = add_iso_codes_column(data, "Country", id_type="regex")
+#
+#     return data.iso_code.unique().tolist()
 
 
-def get_iso_codes() -> pd.DataFrame:
-    data = (
-        pd.read_json(PATHS.COUNTRIES)
-        .T.reset_index()
-        .rename(columns={"index": "Country"})
-    )
+def create_df():
+    with open(PATHS.COUNTRIES) as f:
+        data = json.load(f)
 
-    data = add_iso_codes_column(data, "Country", id_type="regex")
+    country_list = list(data.keys())
 
-    return data.iso_code.unique().tolist()
-
-
-def deflate_current_usd():
-    data = pd.DataFrame(
+    df = pd.DataFrame(
         index=pd.MultiIndex.from_product(
-            [range(time_range[0], time_range[1] + 1), get_iso_codes()],
-            names=["year", "iso_code"],
+            [range(time_range[0], time_range[1] + 1), country_list],
+            names=["year", "country"],
         )
     ).reset_index()
 
-    # Add 'value' column
-    data["value"] = 1
+    df = add_iso_codes_column(df, "country", id_type="regex")
 
-    # Deflate usd
+    df["value"] = 1
 
+    return df
+
+
+def deflate_current_usd():
+
+    df = create_df()
+
+    codes = {"USA": "usd", "CAN": "cad", "FRA": "eur", "GBR": "gbp"}
     for country, code in codes.items():
-        data = imf_gdp_deflate(
-            data=data,
+        df = imf_gdp_deflate(
+            data=df,
             base_year=base_year,
             source_currency="USA",
             target_currency=country,
@@ -48,7 +59,7 @@ def deflate_current_usd():
             target_value_column=f"{code}_constant",
         )
 
-    return data.drop(columns=["value"]).dropna(thresh=4, axis="rows")
+    return df.drop(columns=["value", "iso_code"]).dropna(thresh=4, axis="rows")
 
 
 def get_conversion_table():
