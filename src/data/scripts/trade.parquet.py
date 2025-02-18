@@ -7,12 +7,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from src.data.config import (
-    logger,
-    PATHS,
-    baci_version,
-    time_range
-)
+from src.data.config import logger, PATHS, baci_version, time_range
 
 
 def load_mappings():
