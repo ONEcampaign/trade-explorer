@@ -103,7 +103,7 @@ export function plotSingle(query, width) {
                     x: "Year",
                     y: "Value",
                     stroke: "Flow",
-                    curve: "catmull-rom",
+                    curve: "monotone-x",
                     strokeWidth: 2
                 }
             ),

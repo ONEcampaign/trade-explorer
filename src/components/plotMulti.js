@@ -88,7 +88,7 @@ export function plotMulti(query, flow, width) {
                 x: "Year",
                 y: "Value",
                 z: "Partner",
-                curve: "catmull-rom",
+                curve: "monotone-x",
                 stroke: "Partner",
                 strokeWidth: 2
             }),
