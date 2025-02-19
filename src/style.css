@@ -335,7 +335,7 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     padding-left: 30px;
 }
 
-.group-list > li {
+.group-list > span > li {
     margin-bottom: 10px;
 }
 .group-name {

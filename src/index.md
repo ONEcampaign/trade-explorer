@@ -156,7 +156,7 @@ const countryMultiInput = Inputs.select(
 const partnersMultiInput = multiSelect(
     countries,
     {
-        label: "Partner",
+        label: "Partners",
         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"],
 }   )
 
@@ -791,28 +791,31 @@ const selectAbout = () => viewSelection.value = "About"
         </h2>
 
         <p class="normal-text">
-            The tool provides two options to analyze international trade data. <span
+            The tool provides two options to analyze international trade data; <span
                 class="italic-span">Single Country</span> allows you to explore trade between a selected country and a
-            single trading partner. <span class="italic-span">Multi Country</span> lets you compare a country’s trade
+            single trading partner, whereas <span class="italic-span">Multi Country</span> lets you compare a country’s trade
             with multiple partners simultaneously.
         </p>
 
         <p class="normal-text">
-            Begin by selecting a country or group from the <span class="italic-span">Country</span> dropdown menu. All
-            trade figures are presented from the selected country’s perspective. For example, if you choose Botswana, exports represent goods and services flowing out of Botswana to
-            the selected partner, while imports represent inflows into Botswana. In this sense, exports are shown as
-            positive values, indicating revenue from outgoing goods and services, while imports are negative
-            values, reflecting expenditures on incoming goods and services.
+            Begin by selecting a country or country group from the <span class="italic-span">Country</span> dropdown menu. All
+            trade figures are presented from the selected country’s perspective. For example, if you choose Botswana, 
+            exports represent goods and services flowing out of Botswana to the selected partner, while imports represent 
+            inflows into Botswana. In this sense, exports are shown as positive values, indicating revenue from outgoing
+            goods and services, while imports are negative values, reflecting expenditures on incoming goods and services.
         </p>
 
         <p class="normal-text">
-            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. Since this view presents
-            multiple countries, you can only visualize a single trade flow (either exports, imports or trade balance) at
-            once, allowing for clearer comparisons across partners.
+            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. To allow for cleaner 
+            comparisons across them, you can only visualize a single trade flow (exports, imports or trade balance) at
+            a time.
         </p>
 
         <p class="normal-text">
-            To ensure that the data shown is accurate, certain options will be disabled depending on the selected country and partner(s). For instance, if France is selected as country, you won't be able to select France, EU 27 countries, G7 countries or G20 countries as partner, as these options overlap with France..  
+            To ensure that the data shown is accurate, certain options will be disabled depending on the selected <span class="italic-span">Country</span> and
+            <span class="italic-span">Partner(s)</span>. For instance, if France is selected as <span class="italic-span">Country</span>, you won't be able to 
+            select France, EU27 countries, G7 countries or G20 countries as <span class="italic-span">Partner</span>, as these 
+            options overlap with France.  
         </p>
 
         <h2 class="section-header">
