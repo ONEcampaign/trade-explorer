@@ -576,7 +576,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                             isGdpSingle
-                            ? html`<span>All values as a share of ${countrySingle}'s GDP.</span>`
+                            ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -628,7 +628,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                             isGdpSingle
-                            ? html`<span>All values as a share of ${countrySingle}'s GDP.</span>`
+                            ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -710,7 +710,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                             isGdpMulti
-                            ? html`<span>All values as a share of ${countryMulti}'s GDP.</span>`
+                            ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
@@ -765,7 +765,7 @@ const selectAbout = () => viewSelection.value = "About"
                         <p class="plot-note">
                             ${
                             isGdpMulti
-                            ? html`<span>All values as a share of ${countryMulti}'s GDP.</span>`
+                            ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
                             : pricesSingle === "constant"
                             ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                             : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
