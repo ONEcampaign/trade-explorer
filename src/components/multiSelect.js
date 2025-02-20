@@ -1,4 +1,4 @@
-import * as Inputs from "npm:@observablehq/inputs";
+import {text} from "npm:@observablehq/inputs";
 import {html} from "npm:htl"
 
 export function multiSelect(data, options = {}) {
@@ -178,7 +178,7 @@ function getValues(data, valueof) {
     return values;
 }
 
-const ns = Inputs.text().classList[0]
+const ns = text().classList[0]
 
 // Function to replace "oi-" with "yams-"
 function getMsns(ns) {

@@ -1,23 +1,16 @@
 ```js
 import {DuckDBClient} from "npm:@observablehq/duckdb";
 
-import {setCustomColors} from "./components/setCustomColors.js";
-
+import {setCustomColors} from "./components/colors.js"
+import {getUnitLabel, formatString} from "./components/utils.js"
 import {timeRange, categories, groupMappings} from "./components/inputValues.js";
 
 import {rangeInput} from "./components/rangeInput.js";
 import {multiSelect} from "./components/multiSelect.js";
 
-import {formatString} from "./components/formatString.js";
-import {getUnitLabel} from "./components/getUnitLabel.js"
+import {plotSingle, plotMulti, tableSingle, tableMulti} from "./components/visuals.js";
 
-import {plotSingle} from "./components/plotSingle.js";
-import {tableSingle} from "./components/tableSingle.js";
-import {plotMulti} from "./components/plotMulti.js";
-import {tableMulti} from "./components/tableMulti.js";
-
-import {downloadPNG} from './components/downloadPNG.js';
-import {downloadXLSX} from "./components/downloadXLSX.js";
+import {downloadPNG, downloadXLSX} from './components/downloads.js';
 ```
 
 ```js 
@@ -360,6 +353,10 @@ const querySingleParams = [timeRangeSingle[0], timeRangeSingle[1]];
 
 const querySingle = await db.query(querySingleString, querySingleParams);
 
+const dataSingle = querySingle.toArray()
+    .map((row) => ({
+        ...row
+    }))
 
 //  MULTI COUNTRY VIEW
 
@@ -480,6 +477,11 @@ const queryMultiString = `
 const queryMultiParams = [timeRangeMulti[0], timeRangeMulti[1]];
 
 const queryMulti = await db.query(queryMultiString, queryMultiParams);
+
+const dataMulti = queryMulti.toArray()
+    .map((row) => ({
+        ...row
+    }))
 ```
 
 ```js
@@ -490,7 +492,6 @@ const selectAbout = () => viewSelection.value = "About"
 ```
 
 ```html
-
 <div class="title-container" xmlns="http://www.w3.org/1999/html">
     <div class="title-logo">
         <a href="https://data.one.org/" target="_blank">
@@ -539,12 +540,12 @@ const selectAbout = () => viewSelection.value = "About"
                     ${`Trade between ${countrySingle} and ${partnerSingle}`}
                 </h2>
                 <h3 class="plot-subtitle">
-                    <span class="export-subtitle-label">Exports</span>,
-                    <span class="import-subtitle-label">imports</span> and
-                    <span class="balance-subtitle-label">trade balance</span>
+                    <span class="export-label subtitle-label">Exports</span>,
+                    <span class="import-label subtitle-label">imports</span> and
+                    <span class="balance-label subtitle-label">trade balance</span>
                 </h3>
                 ${resize((width) =>
-                plotSingle(querySingle, width)
+                plotSingle(dataSingle, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
@@ -596,7 +597,7 @@ const selectAbout = () => viewSelection.value = "About"
                     `${timeRangeSingle[0]}-${timeRangeSingle[1]}`}
                 </h3>
                 ${resize((width) =>
-                tableSingle(querySingle, width)
+                tableSingle(dataSingle, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
@@ -627,7 +628,7 @@ const selectAbout = () => viewSelection.value = "About"
                 ${Inputs.button(
                 "Download data", {
                 reduce: () => downloadXLSX(
-                querySingle,
+                dataSingle,
                 formatString(
                 `trade between ${countrySingle} and ${partnerSingle}`,
                 { capitalize: false, fileMode: true }
@@ -677,7 +678,7 @@ const selectAbout = () => viewSelection.value = "About"
                     }
                 </h3>
                 ${resize((width) =>
-                plotMulti(queryMulti, flowMulti, width)
+                plotMulti(dataMulti, flowMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
@@ -732,7 +733,7 @@ const selectAbout = () => viewSelection.value = "About"
                     `${timeRangeMulti[0]}-${timeRangeMulti[1]}`}
                 </h3>
                 ${resize((width) =>
-                tableMulti(queryMulti, flowMulti, width)
+                tableMulti(dataMulti, flowMulti, width)
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
@@ -769,7 +770,7 @@ const selectAbout = () => viewSelection.value = "About"
                 ${Inputs.button(
                 "Download data", {
                 reduce: () => downloadXLSX(
-                queryMulti,
+                dataMulti,
                 formatString("trade with " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
                 )
                 }

@@ -188,25 +188,24 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     margin-bottom: 30px;
 }
 
-[class$="subtitle-label"] {
+.subtitle-label {
     padding: 1px 5px;
     border-radius: 4px;
-    opacity: .85;
 }
 
-.export-subtitle-label {
-    background-color: var(--orange);
+.export-label {
+    background-color: var(--exports);
     color: var(--dimGrey);
 }
-
-.import-subtitle-label {
-    background-color: var(--teal);
+.import-label {
+    background-color: var(--imports);
     color: var(--lightGrey);
+
 }
-
-.balance-subtitle-label {
-    background-color: var(--burgundy);
+.balance-label {
+    background-color: var(--balance);
     color: var(--lightGrey);
+
 }
 
 .bottom-panel {
