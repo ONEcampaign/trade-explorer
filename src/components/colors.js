@@ -15,7 +15,6 @@ const ONEPalette = {
     purple1: "#73175A",
     purple2: "#991E79",
     purple4: "#D733AB",
-
 };
 
 export const customPalette = {

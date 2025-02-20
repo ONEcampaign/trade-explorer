@@ -95,18 +95,6 @@ partnerSingleInput.addEventListener("input", updateOptionsSingle);
 const countrySingle = Generators.input(countrySingleInput);
 const partnerSingle = Generators.input(partnerSingleInput);
 
-// Time Input
-const timeRangeSingleInput = rangeInput(
-    {
-        min: timeRange[0],
-        max: timeRange[1],
-        step: 1,
-        value: [timeRange[1] - 10, timeRange[1]],
-        label: "Time range",
-        enableTextInput: true
-    })
-const timeRangeSingle = Generators.input(timeRangeSingleInput)
-
 // Unit Input
 const unitSingleInput = Inputs.select(
     new Map([
@@ -122,6 +110,15 @@ const unitSingleInput = Inputs.select(
 );
 const unitSingle = Generators.input(unitSingleInput)
 
+// Category Input
+const categorySingleInput = Inputs.select(
+    ["All", ...categories], {
+        label: "Category",
+        value: "All"
+    }
+);
+const categorySingle = Generators.input(categorySingleInput)
+
 // Prices Input
 const pricesSingleInput = Inputs.radio(
     new Map([
@@ -135,6 +132,17 @@ const pricesSingleInput = Inputs.radio(
 );
 const pricesSingle = Generators.input(pricesSingleInput)
 
+// Time Input
+const timeRangeSingleInput = rangeInput(
+    {
+        min: timeRange[0],
+        max: timeRange[1],
+        step: 1,
+        value: [timeRange[1] - 10, timeRange[1]],
+        label: "Time range",
+        enableTextInput: true
+    })
+const timeRangeSingle = Generators.input(timeRangeSingleInput)
 
 // MULTI COUNTRY VIEW
 // Country Input
@@ -194,32 +202,6 @@ partnersMultiInput.addEventListener("input", updateOptionsMulti);
 const countryMulti = Generators.input(countryMultiInput);
 const partnersMulti = Generators.input(partnersMultiInput);
 
-// Time Input
-const timeRangeMultiInput = rangeInput(
-    {
-        min: timeRange[0],
-        max: timeRange[1],
-        step: 1,
-        value: [timeRange[1] - 10, timeRange[1]],
-        label: "Time range",
-        enableTextInput: true
-    })
-const timeRangeMulti = Generators.input(timeRangeMultiInput)
-
-// Flow input
-const flowMultiInput = Inputs.radio(
-    new Map([
-        ["Trade balance", "balance"],
-        ["Exports", "exports"],
-        ["Imports", "imports"]
-    ]),
-    {
-        label: "Trade flow",
-        value: "balance"
-    }
-)
-const flowMulti = Generators.input(flowMultiInput)
-
 // Unit Input
 const unitMultiInput = Inputs.select(
     new Map([
@@ -236,6 +218,29 @@ const unitMultiInput = Inputs.select(
 );
 const unitMulti = Generators.input(unitMultiInput)
 
+// Flow input
+const flowMultiInput = Inputs.select(
+    new Map([
+        ["Trade balance", "balance"],
+        ["Exports", "exports"],
+        ["Imports", "imports"]
+    ]),
+    {
+        label: "Trade flow",
+        value: "balance"
+    }
+)
+const flowMulti = Generators.input(flowMultiInput)
+
+// Category Input
+const categoryMultiInput = Inputs.select(
+    ["All", ...categories], {
+        label: "Category",
+        value: "All"
+    }
+);
+const categoryMulti = Generators.input(categoryMultiInput)
+
 // Prices Input
 const pricesMultiInput = Inputs.radio(
     new Map([
@@ -248,6 +253,18 @@ const pricesMultiInput = Inputs.radio(
     }
 );
 const pricesMulti = Generators.input(pricesMultiInput)
+
+// Time Input
+const timeRangeMultiInput = rangeInput(
+    {
+        min: timeRange[0],
+        max: timeRange[1],
+        step: 1,
+        value: [timeRange[1] - 10, timeRange[1]],
+        label: "Time range",
+        enableTextInput: true
+    })
+const timeRangeMulti = Generators.input(timeRangeMultiInput)
 ```
 
 ```js
@@ -296,10 +313,10 @@ const querySingleString = `
     unpivoted AS (
         SELECT year, exporter, importer, category, value
         FROM filtered
-        UNPIVOT (value FOR category IN (${unpivotColumns}))
+        UNPIVOT (value FOR category IN (${categorySingle === "All" ? unpivotColumns : `'${categorySingle}'`}))
     ),
     exports AS (
-        SELECT u.year, u.category, SUM(u.value * c.factor) AS exports
+        SELECT u.year, u.category, SUM(u.value * c.factor * 1.1 / 1.1) AS exports -- Multipliying and diving by the same number other than 1 converts from Uint1Array to float
         FROM unpivoted u
         JOIN conversion c 
             ON u.year = c.year
@@ -334,9 +351,9 @@ const querySingleString = `
         COALESCE(e.category, i.category) AS category,
         '${escapeSQL(countrySingle)}' AS country,
         '${escapeSQL(partnerSingle)}' AS partner,
-        e.exports AS exports,
-        i.imports * -1 AS imports,
-        (e.exports - i.imports) AS balance,
+        COALESCE(e.exports, 0) AS exports,
+        COALESCE(i.imports, 0) * -1 AS imports,
+        COALESCE(e.exports, 0) - COALESCE(i.imports, 0) AS balance,
         g.gdp AS gdp,
         CASE 
             WHEN ${isGdpSingle} THEN 'share of gdp'
@@ -403,7 +420,7 @@ const queryMultiString = `
     unpivoted AS (
         SELECT year, exporter, importer, category, value
         FROM filtered
-        UNPIVOT (value FOR category IN (${unpivotColumns}))
+        UNPIVOT (value FOR category IN (${categoryMulti === "All" ? unpivotColumns : `'${categoryMulti}'`}))
     ),
     exports AS (
         SELECT year, partner, category, SUM(exports) AS exports
@@ -424,7 +441,7 @@ const queryMultiString = `
     imports AS (
         SELECT year, partner, category, SUM(imports) AS imports
         FROM (
-            SELECT u.year, u.category, SUM(u.value * c.factor) AS imports, 
+            SELECT u.year, u.category, SUM(u.value * c.factor * 1.1 / 1.1) AS imports, -- Multipliying and diving by the same number other than 1 converts from Uint1Array to float
                    unnest(ARRAY[ ${caseStatement("u.exporter")} ]) AS partner
             FROM unpivoted u
             JOIN conversion c 
@@ -453,9 +470,9 @@ const queryMultiString = `
         '${escapeSQL(countryMulti)}' AS country,
         COALESCE(e.partner, i.partner) AS partner,
         COALESCE(e.category, i.category) AS category,
-        SUM(e.exports) AS exports,
-        SUM(i.imports) * -1 AS imports,
-        (SUM(e.exports) - SUM(i.imports)) AS balance,
+        SUM(COALESCE(e.exports, 0)) AS exports,
+        SUM(COALESCE(i.imports, 0)) * -1 AS imports,
+        (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0))) AS balance,
         g.gdp AS gdp,
         CASE 
             WHEN ${isGdpMulti} THEN 'share of gdp'
@@ -492,6 +509,7 @@ const selectAbout = () => viewSelection.value = "About"
 ```
 
 ```html
+
 <div class="title-container" xmlns="http://www.w3.org/1999/html">
     <div class="title-logo">
         <a href="https://data.one.org/" target="_blank">
@@ -525,9 +543,10 @@ const selectAbout = () => viewSelection.value = "About"
         </div>
         <div class="settings-group">
             ${unitSingleInput}
-            ${pricesSingleInput}
+            ${categorySingleInput}
         </div>
         <div class="settings-group">
+            ${isGdpSingle ? html`` : pricesSingleInput}
             ${timeRangeSingleInput}
         </div>
     </div>
@@ -551,7 +570,7 @@ const selectAbout = () => viewSelection.value = "About"
                     <div class="text-section">
                         <p class="plot-source">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
-                                rel="noopener noreferrer">BACI: International trade database at the Product-level</a>. 
+                                rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
                             CEPII
                         </p>
                         <p class="plot-note">
@@ -653,11 +672,12 @@ const selectAbout = () => viewSelection.value = "About"
         </div>
         <div class="settings-group">
             ${unitMultiInput}
-            ${flowMultiInput}
+            ${categoryMultiInput}
         </div>
         <div class="settings-group">
             ${isGdpMulti ? html`` : pricesMultiInput}
             ${timeRangeMultiInput}
+            ${flowMultiInput}
         </div>
     </div>
 
@@ -794,29 +814,37 @@ const selectAbout = () => viewSelection.value = "About"
         <p class="normal-text">
             The tool provides two options to analyze international trade data; <span
                 class="italic-span">Single Country</span> allows you to explore trade between a selected country and a
-            single trading partner, whereas <span class="italic-span">Multi Country</span> lets you compare a country’s trade
+            single trading partner, whereas <span class="italic-span">Multi Country</span> lets you compare a country’s
+            trade
             with multiple partners simultaneously.
         </p>
 
         <p class="normal-text">
-            Begin by selecting a country or country group from the <span class="italic-span">Country</span> dropdown menu. All
-            trade figures are presented from the selected country’s perspective. For example, if you choose Botswana, 
-            exports represent goods and services flowing out of Botswana to the selected partner, while imports represent 
+            Begin by selecting a country or country group from the <span class="italic-span">Country</span> dropdown
+            menu. All
+            trade figures are presented from the selected country’s perspective. For example, if you choose Botswana,
+            exports represent goods and services flowing out of Botswana to the selected partner, while imports
+            represent
             inflows into Botswana. In this sense, exports are shown as positive values, indicating revenue from outgoing
-            goods and services, while imports are negative values, reflecting expenditures on incoming goods and services.
+            goods and services, while imports are negative values, reflecting expenditures on incoming goods and
+            services.
         </p>
 
         <p class="normal-text">
-            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. To allow for cleaner 
+            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. To allow for
+            cleaner
             comparisons across them, you can only visualize a single trade flow (exports, imports or trade balance) at
             a time.
         </p>
 
         <p class="normal-text">
-            To ensure that the data shown is accurate, certain options will be disabled depending on the selected <span class="italic-span">Country</span> and
-            <span class="italic-span">Partner(s)</span>. For instance, if France is selected as <span class="italic-span">Country</span>, you won't be able to 
-            select France, EU27 countries, G7 countries or G20 countries as <span class="italic-span">Partner</span>, as these 
-            options overlap with France.  
+            To ensure that the data shown is accurate, certain options will be disabled depending on the selected <span
+                class="italic-span">Country</span> and
+            <span class="italic-span">Partner(s)</span>. For instance, if France is selected as <span
+                class="italic-span">Country</span>, you won't be able to
+            select France, EU27 countries, G7 countries or G20 countries as <span class="italic-span">Partner</span>, as
+            these
+            options overlap with France.
         </p>
 
         <h2 class="section-header">
@@ -840,30 +868,31 @@ const selectAbout = () => viewSelection.value = "About"
 
         <p class="normal-text">
             Trade data is retrieved from CEPII's
-            <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">BACI database</a>,
+            <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">BACI database</a>
             and grouped by product category according to
-            <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">HS
-                Nomenclature</a>,
-            with each section forming a category.
+            <a href="https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition/hs-nomenclature-2022-edition.aspx">
+                HS Nomenclature</a>,
+            with each HS section forming a category.
         </p>
 
         <p class="normal-text">
-            The original trade figures are presented in current US$. We use the <a
-                href="https://github.com/jm-rivera/pydeflate">pydeflate</a> package to convert them into other
-            currencies and constant prices.
+            The original trade figures are presented in current US Dollars. They are converted into other currencies and
+            constant prices via
+            <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a>.
         </p>
 
         <p class="normal-text">
-            Figures expressed as a share of GDP are based on World Economic Outlook GDP data, retrieved via the <a
-                href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a>. When data is
-            grouped by year (e.g., in plots), the share of GDP refers to the GDP of the selected country or country
+            Figures expressed as a share of GDP are based on World Economic Outlook GDP data, retrieved via the
+            <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a>.
+            When data is grouped by year (e.g., in plots), the share of GDP refers to the GDP of the selected country or
+            country
             group for that specific year. When grouped by product category (e.g., in tables), it refers to the combined
             GDP of the selected country or country group over the chosen time period.
         </p>
 
         <p class="normal-text">
             The data preparation scripts are located in the <span style="font-family: monospace">src/data</span>
-            directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer">GitHub
+            directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer"> GitHub
             repository</a>.
         </p>
 
@@ -872,7 +901,7 @@ const selectAbout = () => viewSelection.value = "About"
         </h2>
 
         <p class="normal-text">
-            For questions or suggestions, please contact miguel.haroruiz[at]one[dot]org
+            For questions or suggestions, please contact miguel.haroruiz[at]one[dot]org.
         </p>
 
     </div>

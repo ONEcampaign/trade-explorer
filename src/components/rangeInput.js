@@ -20,9 +20,9 @@ export function rangeInput(options = {}) {
     const clamp = (a, b, v) => (v < a ? a : v > b ? b : v);
 
     const inputMin = html`<input type="number" id="min-input"  min=${min} max=${defaultValue[1]} step=${step} value=${defaultValue[0]} />`;
-    inputMin.style = "width:5em; margin-right: var(--size-xs)";
+    inputMin.style = "width:5em; margin-right: var(--size-xs); padding: 0 2.5px";
     const inputMax = html`<input type="number" id="max-input"  min=${defaultValue[0]} max=${max} step=${step} value=${defaultValue[1]} />`;
-    inputMax.style = "width:5em; margin-left: var(--size-xs)";
+    inputMax.style = "width:5em; margin-left: var(--size-xs); padding: 0 2.5px";
 
     // Will be used to sanitize values while avoiding floating point issues.
     const input = html`<input type=range ${{ min, max, step }}>`;
