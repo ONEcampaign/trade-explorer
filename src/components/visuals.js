@@ -384,6 +384,8 @@ export function tableMulti(data, flow, width) {
 
   const limits = getLimits(tableData);
 
+  console.log(limits);
+
   const colors = schemeObservable10;
 
   return table(tableData, {
@@ -416,11 +418,12 @@ export function tableMulti(data, flow, width) {
 }
 
 function sparkbar(fillColor, alignment, globalMin, globalMax) {
-  const range = globalMax - globalMin;
+  const range = Math.abs(globalMax) + Math.abs(globalMin);
   const zeroPosition = Math.abs(globalMin) / range;
 
   return (x) => {
-    const barWidth = (100 * Math.abs(x)) / range;
+    const barWidth = Math.min(100, (100 * Math.abs(x)) / range);
+
 
     const barStyle =
       alignment === "center"
