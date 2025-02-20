@@ -6,6 +6,7 @@ import ftfy
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from decimal import Decimal, ROUND_HALF_EVEN
 
 from src.data.config import logger, PATHS, baci_version, time_range
 
@@ -62,19 +63,30 @@ def filter_and_aggregate_data(
     df["value"] /= 1_000  # Convert from thousands to millions
     return df
 
+def to_decimal(val, precision=2):
+    quantizer = Decimal("1." + "0" * precision)
+    return Decimal(str(val)).quantize(quantizer, rounding=ROUND_HALF_EVEN)
+
 
 def generate_parquet(df):
 
-    columns = df.columns.tolist()
-    categories = [col for col in columns if col not in ["year", "exporter", "importer"]]
+    cols = df.columns.tolist()
+    category_cols = ["year", "exporter", "importer"]
+    decimal_cols = [col for col in cols if col not in category_cols]
+
+    for col in category_cols:
+        df[col] = df[col].astype('category')
+
+    for col in decimal_cols:
+        df[col] = df[col].apply(lambda x: to_decimal(x))
 
     base_schema = [
-        ("year", pa.int16()),
+        ("year", pa.dictionary(pa.int8(), pa.int16())),
         ("exporter", pa.dictionary(index_type=pa.int8(), value_type=pa.string())),
         ("importer", pa.dictionary(index_type=pa.int8(), value_type=pa.string())),
     ]
 
-    dynamic_schema = [(col, pa.float32()) for col in categories]
+    dynamic_schema = [(col,  pa.decimal128(8, 2)) for col in decimal_cols]
 
     schema = pa.schema(base_schema + dynamic_schema)
 
@@ -180,5 +192,5 @@ def generate_input_values():
 
 
 if __name__ == "__main__":
-    # generate_input_values()
+    generate_input_values()
     process_trade_data()
