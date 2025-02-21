@@ -54,13 +54,7 @@
     justify-content: space-around;
 }
 
-.view-button > form {
-    display: block !important;
-    width: auto !important;
-    margin: auto !important;
-}
-
-.view-button form button{
+.view-button {
     border: none;
     background: none;
     font-size: var(--size-xl);
@@ -70,19 +64,20 @@
     transition: all 0.3s ease-in-out;
 }
 
-.view-button form button:hover {
+.view-button:hover {
     color: dimgray;
     transform: scale(1.1);
 }
 
-.view-button.active form button:hover {
+.view-button.active:hover {
     color: dimgray;
     transform: scale(1);
 }
 
-.view-button.active form button {
+.view-button.active {
     color: black;
 }
+
 
 /* View Box */
 .view-box {
@@ -110,9 +105,19 @@ select, input {
     display: flex;
     flex-flow: column wrap;
     gap: 20px;
-    min-width: 200px;
 }
 
+
+.settings-group > form,
+.range-input {
+    box-sizing: border-box;
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+    align-items: start !important;
+    width: 225px !important;
+    margin: 0 !important;
+}
 
 .range-input > label {
     flex-shrink: 0;
@@ -123,18 +128,7 @@ select, input {
 }
 
 .range-input >  div {
-    width: 200px;
-}
-
-.settings-group > form,
-.range-input {
-    box-sizing: border-box;
-    display: flex;
-    gap: 10px;
-    flex-direction: column;
-    align-items: start !important;
-    width: 200px !important;
-    margin: 0 !important;
+    width: 100%;
 }
 
 .settings-group > form > div {
@@ -150,7 +144,7 @@ select, input {
 }
 
 .settings-group form > select {
-    max-width: 200px !important;
+    width: 100% !important;
 }
 
 form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
@@ -189,22 +183,26 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 }
 
 .subtitle-label {
-    padding: 1px 5px;
-    border-radius: 4px;
+    /*padding: 1px 5px;*/
+    /*border-radius: 4px;*/
+    font-weight: bold;
+    text-shadow: .5px .5px 1px var(--neutralGrey);
 }
 
 .export-label {
-    background-color: var(--exports);
-    color: var(--dimGrey);
+    /*background-color: var(--exports);*/
+    /*color: var(--dimGrey);*/
+    color: var(--exports);
 }
 .import-label {
-    background-color: var(--imports);
-    color: var(--lightGrey);
-
+    /*background-color: var(--imports);*/
+    /*color: var(--lightGrey);*/
+    color: var(--imports);
 }
 .balance-label {
-    background-color: var(--balance);
-    color: var(--lightGrey);
+    /*background-color: var(--balance);*/
+    /*color: var(--lightGrey);*/
+    color: var(--balance);
 
 }
 
@@ -334,7 +332,7 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     padding-left: 30px;
 }
 
-.group-list > span > li {
+.group-list > li {
     margin-bottom: 10px;
 }
 .group-name {
@@ -353,7 +351,8 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
         width: 90%;
         margin: 0 auto;
     }
-    .settings-group > * {
+    .settings-group > form,
+    .range-input {
         width: 200px !important;
     }
 }

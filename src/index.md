@@ -18,10 +18,6 @@ setCustomColors();
 ```
 
 ```js
-const oneLogo = FileAttachment("./ONE-logo-black.png").href;
-```
-
-```js
 const db = DuckDBClient.of({
     trade: FileAttachment("./data/scripts/trade.parquet"),
     current_conversion_table: FileAttachment("./data/scripts/current_conversion_table.csv"),
@@ -502,18 +498,29 @@ const dataMulti = queryMulti.toArray()
 ```
 
 ```js
-const viewSelection = Mutable("Single")
-const selectSingle = () => viewSelection.value = "Single";
-const selectMulti = () => viewSelection.value = "Multi";
-const selectAbout = () => viewSelection.value = "About"
+// Handle view selection
+document.querySelectorAll('.view-button').forEach(button => {
+    button.addEventListener('click', function() {
+        // Remove 'active' class from all buttons
+        document.querySelectorAll('.view-button').forEach(btn => btn.classList.remove('active'));
+
+        // Remove 'active' class from all view divs
+        document.querySelectorAll('#single-view, #multi-view, #about-view').forEach(view => view.classList.remove('active'));
+
+        // Add 'active' class to the clicked button
+        this.classList.add('active');
+
+        // Determine which view div to activate
+        const viewId = this.id.replace('-button', '-view');
+        document.getElementById(viewId)?.classList.add('active');
+    });
+});
+
 ```
-
-```html
-
 <div class="title-container" xmlns="http://www.w3.org/1999/html">
     <div class="title-logo">
         <a href="https://data.one.org/" target="_blank">
-            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
+            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
         </a>
     </div>
     <h1 class="title-text">
@@ -523,19 +530,12 @@ const selectAbout = () => viewSelection.value = "About"
 
 
 <div class="header card">
-    <div class="view-button ${viewSelection === 'Single' ? 'active' : ''}">
-        ${Inputs.button("Single Country", {reduce: selectSingle})}
-    </div>
-    <div class="view-button ${viewSelection === 'Multi' ? 'active' : ''}">
-        ${Inputs.button("Multi Country", {reduce: selectMulti})}
-    </div>
-    <div class="view-button ${viewSelection === 'About' ? 'active' : ''}">
-        ${Inputs.button("About", {reduce: selectAbout})}
-    </div>
+    <button id="single-button" class="view-button active">Single Country</button>
+    <button id="multi-button" class="view-button">Multi Country</button>
+    <button id="about-button" class="view-button">About</button>
 </div>
 
-<div class="view-box ${viewSelection === 'Single' ? 'active' : ''}">
-
+<div id="single-view" class="view-box active">
     <div class="card settings">
         <div class="settings-group">
             ${countrySingleInput}
@@ -546,13 +546,11 @@ const selectAbout = () => viewSelection.value = "About"
             ${categorySingleInput}
         </div>
         <div class="settings-group">
-            ${isGdpSingle ? html`` : pricesSingleInput}
+            ${isGdpSingle ? html` ` : pricesSingleInput}
             ${timeRangeSingleInput}
         </div>
     </div>
-
     <div class="grid grid-cols-2">
-
         <div class="card">
             <div class="plot-container" id="single-plot">
                 <h2 class="plot-title">
@@ -563,9 +561,11 @@ const selectAbout = () => viewSelection.value = "About"
                     <span class="import-label subtitle-label">imports</span> and
                     <span class="balance-label subtitle-label">trade balance</span>
                 </h3>
-                ${resize((width) =>
-                plotSingle(dataSingle, width)
-                )}
+                ${
+                    resize(
+                        (width) => plotSingle(dataSingle, width)
+                    )
+                }
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: <a
@@ -575,37 +575,38 @@ const selectAbout = () => viewSelection.value = "About"
                         </p>
                         <p class="plot-note">
                             ${
-                            isGdpSingle
-                            ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
-                            : pricesSingle === "constant"
-                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
-                            : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
+                                isGdpSingle
+                                    ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
+                                    : pricesSingle === "constant"
+                                        ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
+                                        : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
                         </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
-                            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
+                            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
                         </a>
                     </div>
                 </div>
             </div>
             <div class="download-panel">
-                ${Inputs.button(
-                "Download plot", {
-                reduce: () => downloadPNG(
-                'single-plot',
-                formatString(
-                `Trade between ${countrySingle} and ${partnerSingle}`,
-                { capitalize: false, fileMode: true }
-                )
-                )
+                ${
+                    Inputs.button(
+                        "Download plot", {
+                            reduce: () => downloadPNG(
+                                'single-plot',
+                                formatString(
+                                    `Trade between ${countrySingle} and ${partnerSingle}`,
+                                    { capitalize: false, fileMode: true }
+                                )
+                            )
+                        }
+                    )
                 }
-                )}
             </div>
         </div>
-
         <div class="card">
             <div class="plot-container" id="single-table">
                 <h2 class="table-title">
@@ -627,44 +628,43 @@ const selectAbout = () => viewSelection.value = "About"
                         </p>
                         <p class="plot-note">
                             ${
-                            isGdpSingle
-                            ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
-                            : pricesSingle === "constant"
-                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
-                            : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
+                                isGdpSingle
+                                    ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
+                                    : pricesSingle === "constant"
+                                        ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
+                                        : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
                             }
                             <span>Exports refer to the value of goods traded from ${countrySingle} to ${partnerSingle}.</span>
                         </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
-                            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
+                            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
                         </a>
                     </div>
                 </div>
             </div>
             <div class="download-panel">
-                ${Inputs.button(
-                "Download data", {
-                reduce: () => downloadXLSX(
-                dataSingle,
-                formatString(
-                `trade between ${countrySingle} and ${partnerSingle}`,
-                { capitalize: false, fileMode: true }
-                )
-                )
+                ${
+                    Inputs.button(
+                        "Download data", {
+                            reduce: () => downloadXLSX(
+                                dataSingle,
+                                formatString(
+                                    `trade between ${countrySingle} and ${partnerSingle}`,
+                                    { capitalize: false, fileMode: true }
+                                )
+                            )
+                        }
+                    )
                 }
-                )}
             </div>
         </div>
-
     </div>
-
 </div>
 
 
-<div class="view-box ${viewSelection === 'Multi' ? 'active' : ''}">
-
+<div id="multi-view" class="view-box">
     <div class="card settings">
         <div class="settings-group">
             ${countryMultiInput}
@@ -675,14 +675,12 @@ const selectAbout = () => viewSelection.value = "About"
             ${categoryMultiInput}
         </div>
         <div class="settings-group">
-            ${isGdpMulti ? html`` : pricesMultiInput}
+            ${isGdpMulti ? html` ` : pricesMultiInput}
             ${timeRangeMultiInput}
             ${flowMultiInput}
         </div>
     </div>
-
     <div class="grid grid-cols-2">
-
         <div class="card">
             <div class="plot-container" id="multi-plot">
                 <h2 class="plot-title">
@@ -690,16 +688,18 @@ const selectAbout = () => viewSelection.value = "About"
                 </h2>
                 <h3 class="plot-subtitle">
                     ${
-                    flowMulti === "exports"
-                    ? "to selected trading partners"
-                    : flowMulti === "imports"
-                    ? "from selected trading partners"
-                    : "Selected trading partners"
+                        flowMulti === "exports"
+                            ? "to selected trading partners"
+                            : flowMulti === "imports"
+                                ? "from selected trading partners"
+                                : "Selected trading partners"
                     }
                 </h3>
-                ${resize((width) =>
-                plotMulti(dataMulti, flowMulti, width)
-                )}
+                ${
+                    resize(
+                        (width) => plotMulti(dataMulti, flowMulti, width)
+                    )
+                }
                 <div class="bottom-panel">
                     <div class="text-section">
                         <p class="plot-source">Source: <a
@@ -709,40 +709,41 @@ const selectAbout = () => viewSelection.value = "About"
                         </p>
                         <p class="plot-note">
                             ${
-                            isGdpMulti
-                            ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
-                            : pricesSingle === "constant"
-                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
-                            : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
+                                isGdpMulti
+                                ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
+                                : pricesSingle === "constant"
+                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
+                                    : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
                             }
                             ${
-                            flowMulti === "exports"
-                            ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
-                            : flowMulti === "imports"
-                            ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                            : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
+                                flowMulti === "exports"
+                                ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
+                                : flowMulti === "imports"
+                                    ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
+                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
-                            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
+                            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
                         </a>
                     </div>
                 </div>
             </div>
             <div class="download-panel">
-                ${Inputs.button(
-                "Download plot", {
-                reduce: () => downloadPNG(
-                'multi-plot',
-                formatString(flowMulti + " " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
-                )
+                ${
+                    Inputs.button(
+                        "Download plot", {
+                            reduce: () => downloadPNG(
+                                'multi-plot',
+                                formatString(flowMulti + " " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
+                            )
+                        }
+                    )
                 }
-                )}
             </div>
         </div>
-
         <div class="card">
             <div class="plot-container" id="multi-table">
                 <h2 class="table-title">
@@ -764,53 +765,50 @@ const selectAbout = () => viewSelection.value = "About"
                         </p>
                         <p class="plot-note">
                             ${
-                            isGdpMulti
-                            ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
-                            : pricesSingle === "constant"
-                            ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
-                            : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
+                                isGdpMulti
+                                ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
+                                : pricesSingle === "constant"
+                                    ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
+                                    : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
                             }
                             ${
-                            flowMulti === "exports"
-                            ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
-                            : flowMulti === "imports"
-                            ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                            : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
+                                flowMulti === "exports"
+                                ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
+                                : flowMulti === "imports"
+                                    ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
+                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
                     <div class="logo-section">
                         <a href="https://data.one.org/" target="_blank">
-                            <img src=${oneLogo} alt="A black circle with ONE written in white thick letters.">
+                            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
                         </a>
                     </div>
                 </div>
             </div>
             <div class="download-panel">
-                ${Inputs.button(
-                "Download data", {
-                reduce: () => downloadXLSX(
-                dataMulti,
-                formatString("trade with " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
-                )
+                ${
+                    Inputs.button(
+                        "Download data", {
+                            reduce: () => downloadXLSX(
+                                dataMulti,
+                                formatString("trade with " + countryMulti, {inSentence: true, capitalize: false, fileMode: true})
+                            )
+                        }
+                    )
                 }
-                )}
             </div>
         </div>
-
     </div>
-
 </div>
 
 
-<div class="view-box ${viewSelection === 'About' ? 'active' : ''}">
-
+<div id="about-view" class="view-box">
     <div class="card methodology">
-
         <h2 class="section-header">
             How to use
         </h2>
-
         <p class="normal-text">
             The tool provides two options to analyze international trade data; <span
                 class="italic-span">Single Country</span> allows you to explore trade between a selected country and a
@@ -818,7 +816,6 @@ const selectAbout = () => viewSelection.value = "About"
             trade
             with multiple partners simultaneously.
         </p>
-
         <p class="normal-text">
             Begin by selecting a country or country group from the <span class="italic-span">Country</span> dropdown
             menu. All
@@ -829,14 +826,12 @@ const selectAbout = () => viewSelection.value = "About"
             goods and services, while imports are negative values, reflecting expenditures on incoming goods and
             services.
         </p>
-
         <p class="normal-text">
             In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. To allow for
             cleaner
             comparisons across them, you can only visualize a single trade flow (exports, imports or trade balance) at
             a time.
         </p>
-
         <p class="normal-text">
             To ensure that the data shown is accurate, certain options will be disabled depending on the selected <span
                 class="italic-span">Country</span> and
@@ -846,26 +841,20 @@ const selectAbout = () => viewSelection.value = "About"
             these
             options overlap with France.
         </p>
-
         <h2 class="section-header">
             Country groups
         </h2>
-
         <ul class="group-list">
             ${
-            Object.entries(groupMappings)
-            .filter(([_, countries]) => countries.length > 1)
-            .sort(([a], [b]) => a.localeCompare(b)) // Sort alphabetically by group name
-            .map(([group, countries]) => html`
-            <li><span class="group-name" ">${group}</span>: ${countries.join(", ")}.</li>
-            `)
+                Object.entries(groupMappings)
+                    .filter(([_, countries]) => countries.length > 1)
+                    .sort(([a], [b]) => a.localeCompare(b)) // Sort alphabetically by group name
+                    .map(([group, countries]) => html`<li><span class="group-name">${group}</span>: ${countries.join(", ")}.</li>`)
             }
         </ul>
-
         <h2 class="section-header">
             Methodology
         </h2>
-
         <p class="normal-text">
             Trade data is retrieved from CEPII's
             <a href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37">BACI database</a>
@@ -874,13 +863,11 @@ const selectAbout = () => viewSelection.value = "About"
                 HS Nomenclature</a>,
             with each HS section forming a category.
         </p>
-
         <p class="normal-text">
             The original trade figures are presented in current US Dollars. They are converted into other currencies and
             constant prices via
             <a href="https://github.com/jm-rivera/pydeflate">pydeflate</a>.
         </p>
-
         <p class="normal-text">
             Figures expressed as a share of GDP are based on World Economic Outlook GDP data, retrieved via the
             <a href="https://github.com/ONEcampaign/bblocks_data_importers">bblocks_data_importers</a>.
@@ -889,22 +876,16 @@ const selectAbout = () => viewSelection.value = "About"
             group for that specific year. When grouped by product category (e.g., in tables), it refers to the combined
             GDP of the selected country or country group over the chosen time period.
         </p>
-
         <p class="normal-text">
             The data preparation scripts are located in the <span style="font-family: monospace">src/data</span>
             directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer"> GitHub
             repository</a>.
         </p>
-
         <h2 class="section-header">
             Contact
         </h2>
-
         <p class="normal-text">
             For questions or suggestions, please contact miguel.haroruiz[at]one[dot]org.
         </p>
-
     </div>
-
 </div>
-```
