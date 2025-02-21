@@ -2,7 +2,7 @@
 import {DuckDBClient} from "npm:@observablehq/duckdb";
 
 import {setCustomColors} from "./components/colors.js"
-import {getUnitLabel, formatString} from "./components/utils.js"
+import {getUnitLabel, formatString, generateSubtitle} from "./components/utils.js"
 import {timeRange, categories, groupMappings} from "./components/inputValues.js";
 
 import {rangeInput} from "./components/rangeInput.js";
@@ -53,35 +53,33 @@ const partnerSingleInput = Inputs.select(
 );
 
 function updateOptionsSingle() {
-    
+
     const countryList = groupMappings[countrySingleInput.value]
     const partnerList = groupMappings[partnerSingleInput.value]
     if (countryList.some(country => partnerList.includes(country))) {
         partnerSingleInput.value = countries
             .find(group => {
-            let elements = groupMappings[group] || [group];
-            return !elements.some(country => countryList.includes(country));
-        })
-        // Pick 5 random items that don't overlap
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 1);
-    } 
+                let elements = groupMappings[group] || [group];
+                return !elements.some(country => countryList.includes(country));
+            })
+            // Pick 5 random items that don't overlap
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 1);
+    }
     for (const o of partnerSingleInput.querySelectorAll("option")) {
         const groupList = groups[o.value]
         if (countryList.some(item => groupList.includes(item))) {
             o.setAttribute("disabled", "disabled");
-        }
-        else o.removeAttribute("disabled");
+        } else o.removeAttribute("disabled");
     }
 
     for (const o of countrySingleInput.querySelectorAll("option")) {
         const groupList = groups[o.value]
         if (groupList.some(item => partnerList.includes(item))) {
             o.setAttribute("disabled", "disabled");
-        }
-        else o.removeAttribute("disabled");
+        } else o.removeAttribute("disabled");
     }
-    
+
 }
 
 updateOptionsSingle();
@@ -155,7 +153,7 @@ const partnersMultiInput = multiSelect(
     {
         label: "Partners",
         value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"],
-}   )
+    })
 
 
 function updateOptionsMulti() {
@@ -169,26 +167,24 @@ function updateOptionsMulti() {
                 return !elements.some(country => countryList.includes(country));
             })
             // Pick 5 random items that don't overlap
-            .sort(() => Math.random() - 0.5) 
+            .sort(() => Math.random() - 0.5)
             .slice(0, 5);
     }
-   
-    for (const o of partnersMultiInput.querySelectorAll("option")) {        
+
+    for (const o of partnersMultiInput.querySelectorAll("option")) {
         const groupList = groupMappings[o.value]
         if (groupList.some(item => countryList.includes(item))) {
             o.setAttribute("disabled", "disabled");
-        }
-        else o.removeAttribute("disabled");
+        } else o.removeAttribute("disabled");
     }
 
     for (const o of countryMultiInput.querySelectorAll("option")) {
         const groupList = groups[o.value]
         if (groupList.some(item => partnerList.includes(item))) {
             o.setAttribute("disabled", "disabled");
-        }
-        else o.removeAttribute("disabled");
+        } else o.removeAttribute("disabled");
     }
-   
+
 }
 
 updateOptionsMulti();
@@ -334,7 +330,7 @@ const querySingleString = `
     conversion AS (
         SELECT year, ${pricesSingle === "constant" | isGdpSingle ? "country," : ""} ${unitColumnSingle} AS factor 
         FROM ${conversionTableSingle}
-        ${pricesSingle === "constant" | isGdpSingle ? `WHERE country IN (${countrySingleSQLList})` :""}
+        ${pricesSingle === "constant" | isGdpSingle ? `WHERE country IN (${countrySingleSQLList})` : ""}
     ),
     gdp AS (
         SELECT year, SUM(gdp_constant) AS gdp
@@ -391,11 +387,11 @@ const conversionTableMulti = isGdpMulti
     : `${pricesMulti}_conversion_table`
 
 // Define flow column selection
-const flowColumn = flowMulti === 'exports' 
-    ? `COALESCE(SUM(e.exports), 0)` 
-    : flowMulti === 'imports' 
-        ? `COALESCE(SUM(i.imports), 0) * -1` 
-        : `COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0)` 
+const flowColumn = flowMulti === 'exports'
+    ? `COALESCE(SUM(e.exports), 0)`
+    : flowMulti === 'imports'
+        ? `COALESCE(SUM(i.imports), 0) * -1`
+        : `COALESCE(SUM(e.exports), 0) - COALESCE(SUM(i.imports), 0)`
 
 // Generate CASE statement for importer/exporter mappings
 function caseStatement(name) {
@@ -453,7 +449,7 @@ const queryMultiString = `
     conversion AS (
         SELECT year, ${pricesMulti === "constant" | isGdpMulti ? "country," : ""} ${unitColumnMulti} AS factor 
         FROM ${conversionTableMulti}
-        ${pricesMulti === "constant" | isGdpMulti ? `WHERE country IN (${countryMultiSQLList})` :""}
+        ${pricesMulti === "constant" | isGdpMulti ? `WHERE country IN (${countryMultiSQLList})` : ""}
     ),
     gdp AS (
         SELECT year, SUM(gdp_constant) AS gdp
@@ -500,7 +496,7 @@ const dataMulti = queryMulti.toArray()
 ```js
 // Handle view selection
 document.querySelectorAll('.view-button').forEach(button => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         // Remove 'active' class from all buttons
         document.querySelectorAll('.view-button').forEach(btn => btn.classList.remove('active'));
 
@@ -515,8 +511,8 @@ document.querySelectorAll('.view-button').forEach(button => {
         document.getElementById(viewId)?.classList.add('active');
     });
 });
-
 ```
+
 <div class="title-container" xmlns="http://www.w3.org/1999/html">
     <div class="title-logo">
         <a href="https://data.one.org/" target="_blank">
@@ -686,15 +682,7 @@ document.querySelectorAll('.view-button').forEach(button => {
                 <h2 class="plot-title">
                     ${formatString(flowMulti, {inSentence: true, capitalize: true})} ${countryMulti}
                 </h2>
-                <h3 class="plot-subtitle">
-                    ${
-                        flowMulti === "exports"
-                            ? "to selected trading partners"
-                            : flowMulti === "imports"
-                                ? "from selected trading partners"
-                                : "Selected trading partners"
-                    }
-                </h3>
+                ${generateSubtitle(partnersMulti)}
                 ${
                     resize(
                         (width) => plotMulti(dataMulti, flowMulti, width)
@@ -827,7 +815,7 @@ document.querySelectorAll('.view-button').forEach(button => {
             services.
         </p>
         <p class="normal-text">
-            In <span class="italic-span">Multi Country</span>, you can select multiple trading partners. To allow for
+            In <span class="italic-span">Multi Country</span>, you can select up to 5 trading partners. To allow for
             cleaner
             comparisons across them, you can only visualize a single trade flow (exports, imports or trade balance) at
             a time.

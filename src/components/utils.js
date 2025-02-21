@@ -131,3 +131,33 @@ export function reshapeDataForTable(data, flow, groupKey) {
 
     return reshapedData;
 }
+
+
+import { schemeObservable10 } from "npm:d3-scale-chromatic";
+
+export function generateSubtitle(strings) {
+    const colors = schemeObservable10;
+    const subtitle = document.createElement("h2");
+    subtitle.className = "plot-subtitle";
+
+    // Sort strings alphabetically
+    strings.sort();
+
+    strings.forEach((text, index) => {
+        const span = document.createElement("span");
+        span.className = "subtitle-label";
+        span.textContent = text;
+        span.style.color = colors[index % colors.length]; // Cycle through colors
+
+        subtitle.appendChild(span);
+
+        // Add appropriate separator
+        if (index < strings.length - 2) {
+            subtitle.appendChild(document.createTextNode(", "));
+        } else if (index === strings.length - 2) {
+            subtitle.appendChild(document.createTextNode(" and "));
+        }
+    });
+
+    return subtitle;
+}

@@ -1,12 +1,4 @@
-import {
-  plot,
-  rectY,
-  line,
-  ruleY,
-  text,
-  tip,
-  pointer,
-} from "npm:@observablehq/plot";
+import { plot, rectY, line, ruleY, tip, pointer } from "npm:@observablehq/plot";
 import { table } from "npm:@observablehq/inputs";
 import { html } from "npm:htl";
 import { utcYear } from "npm:d3-time";
@@ -20,7 +12,6 @@ import {
   getLimits,
   reshapeDataForTable,
 } from "./utils.js";
-import { jitterLabels } from "./jitterLabels.js";
 
 export function plotSingle(data, width) {
   let formattedData = data.map((row) => ({
@@ -192,7 +183,7 @@ export function plotMulti(data, flow, width) {
     width: width,
     height: width * 0.5,
     marginTop: 25,
-    marginRight: 75,
+    marginRight: 25,
     marginBottom: 25,
     marginLeft: 75,
     x: {
@@ -231,18 +222,6 @@ export function plotMulti(data, flow, width) {
         stroke: "Partner",
         strokeWidth: 2,
       }),
-
-      // Country labels
-      text(jitterLabels(plotData, "Value", "Year", "Partner"), {
-        x: "Year",
-        y: "Value",
-        fill: "Partner",
-        text: "Partner",
-        fontSize: 12,
-        dx: 10,
-        frameAnchor: "left",
-      }),
-
       tip(
         plotData,
         pointer({
@@ -423,7 +402,6 @@ function sparkbar(fillColor, alignment, globalMin, globalMax) {
 
   return (x) => {
     const barWidth = Math.min(100, (100 * Math.abs(x)) / range);
-
 
     const barStyle =
       alignment === "center"
