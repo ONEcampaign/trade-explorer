@@ -152,7 +152,7 @@ const partnersMultiInput = multiSelect(
     countries,
     {
         label: "Partners",
-        value: ["South Africa", "Kenya", "Nigeria", "Senegal", "Côte d'Ivoire"],
+        value: ["South Africa", "Kenya", "Nigeria"]
     })
 
 
@@ -564,15 +564,13 @@ document.querySelectorAll('.view-button').forEach(button => {
                 }
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: <a
+                        <p class="plot-note">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
                                 rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
-                            CEPII
-                        </p>
-                        <p class="plot-note">
+                            CEPII. •
                             ${
                                 isGdpSingle
-                                    ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
+                                    ? html`<span>All values as a share of ${formatString(countrySingle, {genitive: true})} GDP.</span>`
                                     : pricesSingle === "constant"
                                         ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                                         : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -617,15 +615,13 @@ document.querySelectorAll('.view-button').forEach(button => {
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: <a
+                        <p class="plot-note">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
                                 rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
-                            CEPII
-                        </p>
-                        <p class="plot-note">
+                            CEPII. •
                             ${
                                 isGdpSingle
-                                    ? html`<span>All values as a share of the GDP of ${countrySingle}.</span>`
+                                    ? html`<span>All values as a share of ${formatString(countrySingle, {genitive: true})} GDP.</span>`
                                     : pricesSingle === "constant"
                                         ? html`<span>All values in constant 2023 ${getUnitLabel(unitSingle, {})}.</span>`
                                         : html`<span>All values in current ${getUnitLabel(unitSingle, {})}.</span>`
@@ -690,15 +686,13 @@ document.querySelectorAll('.view-button').forEach(button => {
                 }
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: <a
+                        <p class="plot-note">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
                                 rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
-                            CEPII
-                        </p>
-                        <p class="plot-note">
+                            CEPII.  •
                             ${
                                 isGdpMulti
-                                ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
+                                ? html`<span>All values as a share of ${formatString(countryMulti, {genitive: true})} GDP.</span>`
                                 : pricesSingle === "constant"
                                     ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
@@ -708,7 +702,7 @@ document.querySelectorAll('.view-button').forEach(button => {
                                 ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
                                 : flowMulti === "imports"
                                     ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
+                                    : html`<span>A positive trade balance indicates ${formatString(countryMulti, {genitive: true})} exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>
@@ -746,15 +740,13 @@ document.querySelectorAll('.view-button').forEach(button => {
                 )}
                 <div class="bottom-panel">
                     <div class="text-section">
-                        <p class="plot-source">Source: <a
+                        <p class="plot-note">Source: <a
                                 href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" target="_blank"
                                 rel="noopener noreferrer">BACI: International trade database at the Product-level</a>.
-                            CEPII
-                        </p>
-                        <p class="plot-note">
+                            CEPII. •
                             ${
                                 isGdpMulti
-                                ? html`<span>All values as a share of the GDP of ${countryMulti}.</span>`
+                                ? html`<span>All values as a share of ${formatString(countryMulti, {genitive: true})} GDP.</span>`
                                 : pricesSingle === "constant"
                                     ? html`<span>All values in constant 2023 ${getUnitLabel(unitMulti, {})}.</span>`
                                     : html`<span>All values in current ${getUnitLabel(unitMulti, {})}.</span>`
@@ -764,7 +756,7 @@ document.querySelectorAll('.view-button').forEach(button => {
                                 ? html`<span>Exports refer to the value of goods traded from ${countryMulti} to the selected partners.</span>`
                                 : flowMulti === "imports"
                                     ? html`<span>Imports refer to the value of goods traded from the selected partners to ${countryMulti}.</span>`
-                                    : html`<span>A positive trade balance indicates ${countryMulti}'s exports to a partner exceed its imports from that partner.</span>`
+                                    : html`<span>A positive trade balance indicates ${formatString(countryMulti, {genitive: true})} exports to a partner exceed its imports from that partner.</span>`
                             }
                         </p>
                     </div>

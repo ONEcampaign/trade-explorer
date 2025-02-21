@@ -52,7 +52,7 @@ export const singlePalette = {
 export const multiPalette = [
     ONEPalette.teal1,
     ONEPalette.orange1,
-    ONEPalette.navy3,
+    ONEPalette.navy2,
     ONEPalette.blue0,
     ONEPalette.purple3,
 ]

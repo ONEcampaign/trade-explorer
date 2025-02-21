@@ -217,18 +217,18 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 
 .text-section {
     margin: 0;
+    flex: 1
 }
 
-.plot-note,
-.plot-source {
+.plot-note {
     font-size: var(--size-s);
-    margin: 5px 0;
+    margin: 0 0;
 }
 
 .logo-section {
     width: var(--size-xl);
     height: var(--size-xl);
-    margin: 5px 0 5px 10px;
+    flex-shrink: 0;
     opacity: 1;
     transition: opacity 250ms ease-in-out;
 }
@@ -340,6 +340,14 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 }
 
 /* Responsive design */
+
+@media (max-width: 1000px) {
+    .settings-group > form,
+    .range-input {
+        width: 200px !important;
+    }
+}
+
 @media (max-width: 800px) {
     .card.settings {
         flex-flow: column wrap;
@@ -347,13 +355,12 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     }
     .settings-group {
         flex-flow: row wrap;
-        justify-content: space-between;
-        width: 90%;
-        margin: 0 auto;
+        justify-content: space-around;
+        width: 100%;
     }
-    .settings-group > form,
-    .range-input {
-        width: 200px !important;
+    .logo-section {
+        width: var(--size-l);
+        height: var(--size-l);
     }
 }
 
