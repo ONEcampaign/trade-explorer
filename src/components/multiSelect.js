@@ -71,9 +71,16 @@ export function multiSelect(data, options = {}) {
     function oninput(event) {
         preventDefault(event);
         const pickedKey = event.target?.value;
+
         if (pickedKey) {
             const iOfIndex = keys.indexOf(pickedKey);
+
             if (iOfIndex >= 0) {
+                // Check if the limit is reached
+                if (selectedIndices.size >= 5) {
+                    return; // Do nothing if the max limit is reached
+                }
+
                 inputEl.value = "";
                 selectedIndices.add(iOfIndex);
                 updateUI();
@@ -118,6 +125,15 @@ export function multiSelect(data, options = {}) {
     function updateUI() {
         updateOptions();
         updateSelectedPills();
+
+        // Check if the limit is reached
+        if (selectedIndices.size >= 5) {
+            inputEl.disabled = true;
+            inputEl.placeholder = "Selection limit reached";
+        } else {
+            inputEl.disabled = false;
+            inputEl.placeholder = "Search…";
+        }
     }
 
     function generateValues() {
@@ -297,7 +313,7 @@ function attachStyles(placeOfUseInvalidation) {
         border-radius: var(--border-radius-100);
         background-color: var(--color-bg);
         box-sizing: border-box;
-        width: 200px;
+        width: 100%;
       }
 
       .${blockClass}__selected-items {
