@@ -133,11 +133,11 @@ export function reshapeDataForTable(data, flow, groupKey) {
 }
 
 
-import { schemeObservable10 } from "npm:d3-scale-chromatic";
+import { multiPalette } from "./colors.js";
 
 export function generateSubtitle(strings) {
-    const colors = schemeObservable10;
-    const subtitle = document.createElement("h2");
+    const colors = multiPalette;
+    const subtitle = document.createElement("h3");
     subtitle.className = "plot-subtitle";
 
     // Sort strings alphabetically
