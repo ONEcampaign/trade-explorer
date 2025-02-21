@@ -4,7 +4,7 @@ import { html } from "npm:htl";
 import { utcYear } from "npm:d3-time";
 import { timeFormat } from "npm:d3-time-format";
 import { schemeObservable10 } from "npm:d3-scale-chromatic";
-import { customPalette, singlePalette } from "./colors.js";
+import { customPalette, singlePalette, multiPalette } from "./colors.js";
 import {
   formatValue,
   formatString,
@@ -12,6 +12,7 @@ import {
   getLimits,
   reshapeDataForTable,
 } from "./utils.js";
+
 
 export function plotSingle(data, width) {
   let formattedData = data.map((row) => ({
@@ -104,7 +105,7 @@ export function plotSingle(data, width) {
         y: "Value",
         stroke: "Flow",
         curve: "monotone-x",
-        strokeWidth: 2,
+        strokeWidth: 2.5,
       }),
 
       tip(
@@ -126,6 +127,7 @@ export function plotSingle(data, width) {
     ],
   });
 }
+
 
 export function plotMulti(data, flow, width) {
   let formattedData = data.map((row) => ({
@@ -179,6 +181,11 @@ export function plotMulti(data, flow, width) {
 
   const formatYear = timeFormat("%Y");
 
+  const colorPalette = {
+      domain: [...new Set(plotData.map(row => row["Partner"]))],
+      range: multiPalette
+  };
+
   return plot({
     width: width,
     height: width * 0.5,
@@ -203,9 +210,7 @@ export function plotMulti(data, flow, width) {
       ticks: 4,
       grid: true,
     },
-    color: {
-      scheme: "observable10",
-    },
+    color: colorPalette,
     marks: [
       // Horizontal line at 0
       ruleY([0], {
@@ -220,7 +225,7 @@ export function plotMulti(data, flow, width) {
         z: "Partner",
         curve: "monotone-x",
         stroke: "Partner",
-        strokeWidth: 2,
+        strokeWidth: 2.5,
       }),
       tip(
         plotData,
@@ -241,6 +246,7 @@ export function plotMulti(data, flow, width) {
     ],
   });
 }
+
 
 export function tableSingle(data, width) {
   const isGDP = data[0].unit === "share of gdp";
@@ -317,6 +323,7 @@ export function tableSingle(data, width) {
   });
 }
 
+
 export function tableMulti(data, flow, width) {
   const isGDP = data[0].unit === "share of gdp";
 
@@ -363,9 +370,7 @@ export function tableMulti(data, flow, width) {
 
   const limits = getLimits(tableData);
 
-  console.log(limits);
-
-  const colors = schemeObservable10;
+  const colors = multiPalette;
 
   return table(tableData, {
     format: {
@@ -395,6 +400,7 @@ export function tableMulti(data, flow, width) {
     height: width * 0.5,
   });
 }
+
 
 function sparkbar(fillColor, alignment, globalMin, globalMax) {
   const range = Math.abs(globalMax) + Math.abs(globalMin);
@@ -490,6 +496,7 @@ function sparkbar(fillColor, alignment, globalMin, globalMax) {
     </div>`;
   };
 }
+
 
 function hex2rgb(hex, alpha = 1) {
   // Remove the hash if present
