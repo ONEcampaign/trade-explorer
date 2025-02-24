@@ -192,5 +192,5 @@ def generate_input_values():
 
 
 if __name__ == "__main__":
-    generate_input_values()
     process_trade_data()
+    generate_input_values()

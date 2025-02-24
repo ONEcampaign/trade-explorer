@@ -5,25 +5,25 @@ export const timeRange = [
 
 export const categories = [
   "Arms and ammunition",
-  "Art, collectibles",
+  "Art, collectibles, antiques",
   "Base metals",
   "Chemical products",
   "Edible fats",
   "Food, beverages, spirits, tobacco",
-  "Footwear, headgear, other wearables",
+  "Footwear, headgear, accessories",
+  "Fur, leather products",
+  "Furniture, lighting, toys, misc.",
+  "Jewelery, precious metals, coins",
   "Live animals, animal products",
-  "Machinery",
+  "Machinery and electronics",
   "Mineral products",
-  "Miscellaneous manufactured articles",
   "Optical, precision instruments",
   "Paper products",
-  "Pearls, precious metals and stones",
   "Plastic, rubber products",
-  "Skin, leather products",
-  "Stone, ceramic, glass products",
+  "Stone, ceramic, glassware",
   "Textiles",
   "Vegetable products",
-  "Vehicles, aircraft, other transport",
+  "Vehicles, aircraft, vessels",
   "Wood products"
 ];
 
