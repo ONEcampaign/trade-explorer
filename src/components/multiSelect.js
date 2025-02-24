@@ -129,7 +129,7 @@ export function multiSelect(data, options = {}) {
         // Check if the limit is reached
         if (selectedIndices.size >= 5) {
             inputEl.disabled = true;
-            inputEl.placeholder = "Selection limit reached";
+            inputEl.placeholder = "Limit reached";
         } else {
             inputEl.disabled = false;
             inputEl.placeholder = "Search…";

@@ -29,13 +29,9 @@ export function formatString(
     result = result.toLowerCase().replace(/\s+/g, "_");
   }
 
-  console.log(result)
-
   if (options.genitive) {
     result += result.endsWith("s") ? "'" : "'s";
   }
-
-  console.log(result)
 
   return result;
 }

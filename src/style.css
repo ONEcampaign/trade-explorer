@@ -236,6 +236,16 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     opacity: 0.6;
 }
 
+/* Tables */
+table tr > *:nth-child(2) {
+    width: 200px !important;
+}
+table tr > *:nth-child(n+3) {
+    width: 100px !important;
+}
+
+
+
 /* Axes */
 [aria-label="x-axis tick label"],
 [aria-label="y-axis label"] text,

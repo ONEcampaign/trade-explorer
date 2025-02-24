@@ -3,7 +3,6 @@ import { table } from "npm:@observablehq/inputs";
 import { html } from "npm:htl";
 import { utcYear } from "npm:d3-time";
 import { timeFormat } from "npm:d3-time-format";
-import { schemeObservable10 } from "npm:d3-scale-chromatic";
 import { customPalette, singlePalette, multiPalette } from "./colors.js";
 import {
   formatValue,
@@ -182,7 +181,7 @@ export function plotMulti(data, flow, width) {
   const formatYear = timeFormat("%Y");
 
   const colorPalette = {
-      domain: [...new Set(plotData.map(row => row["Partner"]))],
+      domain: [...new Set(plotData.map(row => row["Partner"]))].sort(),
       range: multiPalette
   };
 
