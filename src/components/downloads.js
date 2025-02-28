@@ -23,12 +23,9 @@ export function downloadPNG(elementId, filename) {
 // https://observablehq.observablehq.cloud/pangea/party/xlsx-downloads
 export function downloadXLSX(data, filename) {
 
-    const arrayData = data.toArray()
-        .map((row) => row.toJSON())
+    const isGDP = data[0].unit === "share of gdp";
 
-    const isGDP = arrayData[0].unit === "share of gdp";
-
-    const dataToDownload = arrayData.map(entry => {
+    const dataToDownload = data.map(entry => {
         let { imports, exports, balance, gdp } = entry;
 
         if (isGDP) {
