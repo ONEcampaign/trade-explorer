@@ -171,12 +171,12 @@ def generate_input_values():
 
     # Convert HS section categories to JavaScript format
     categories = sorted(hs_sections_data.keys())  # Sorting for consistency
-    js_categories = "export const categories = [\n"
+    js_categories = "export const productCategories = [\n"
     js_categories += ",\n".join(f'  "{category}"' for category in categories)
     js_categories += "\n];\n"
 
     # Define time range
-    js_time_range = "export const timeRange = [\n"
+    js_time_range = "export const maxTimeRange = [\n"
     js_time_range += ",\n".join(f"  {year}" for year in time_range)
     js_time_range += "\n];\n"
 

@@ -1,9 +1,9 @@
-export const timeRange = [
+export const maxTimeRange = [
   2002,
   2023
 ];
 
-export const categories = [
+export const productCategories = [
   "Arms and ammunition",
   "Art, collectibles, antiques",
   "Base metals",
