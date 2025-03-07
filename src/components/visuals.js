@@ -13,6 +13,85 @@ import {
 } from "./utils.js";
 
 
+// Function to get color by domain
+function getSingleColor(key) {
+    const index = singlePalette.domain.indexOf(key);
+    return index !== -1 ? singlePalette.range[index] : null; // Return color if found, otherwise null
+};
+
+export function topPartnersTable(data, flow, width) {
+
+    const mainColumn = data.some(row => "category" in row) ? "category" : "partner";
+
+    const tableData = data
+        .filter(row => row.flow === flow)
+        .map(row => ({
+            [mainColumn]: row[mainColumn], // Extract dynamically
+            [flow]: row.value // Dynamically set column name
+        }));
+
+    const values = tableData.map(row => row[flow]);
+    const limits = [Math.min(...values), Math.max(...values)];
+
+    const alignmentMapping = {
+        partner: "left",
+        imports: "right",
+        exports: "left",
+    };
+
+    return table(tableData, {
+        sort: flow,
+        reverse: flow ===  "exports",
+        format: {
+            category: (x) => x, // General formatter for groupKey (year or category)
+            ...Object.fromEntries(
+                Object.keys(tableData[0]) // Get all columns
+                    .filter((key) => key !== mainColumn)
+                    .map((key, index) => [
+                        key,
+                        sparkbar(
+                            getSingleColor(key),
+                            alignmentMapping[key],
+                            limits[0],
+                            limits[1],
+                        ),
+                    ]),
+            ),
+        },
+        header: {
+            ...Object.fromEntries(
+                Object.keys(tableData[0]).map((key) => [key, formatString(key)]),
+            ),
+        },
+        align: alignmentMapping,
+        width: width,
+        // height: width * 0.4,
+    });
+
+}
+
+
+export function tradePlot(data, flow, width) {
+    const isMulti = new Set(data.map(row => row.partner)).size > 1;
+
+    if (isMulti) {
+        return plotMulti(data, flow, width);
+    } else {
+        return plotSingle(data, width);
+    }
+}
+
+export function tradeTable(data, flow, width) {
+    const isMulti = new Set(data.map(row => row.partner)).size > 1;
+
+    if (isMulti) {
+        return tableMulti(data, flow, width);
+    } else {
+        return tableSingle(data, width);
+    }
+}
+
+
 export function plotSingle(data, width) {
   let formattedData = data.map((row) => ({
     ...row,
@@ -245,7 +324,6 @@ export function plotMulti(data, flow, width) {
     ],
   });
 }
-
 
 export function tableSingle(data, width) {
   const isGDP = data[0].unit === "share of gdp";
