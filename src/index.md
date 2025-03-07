@@ -1,15 +1,15 @@
 ```js
-
-import {singleQueries} from "./components/queries.js"
-
 import {setCustomColors} from "./components/colors.js"
-import {getUnitLabel, formatString, generateTitleSingle, generateSubtitle, generateNote} from "./components/utils.js"
+import {
+    getUnitLabel, 
+    formatString, 
+    generateTitleSingle, 
+    generateSubtitle, 
+    generateNote
+} from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
-
 import {rangeInput} from "./components/rangeInput.js";
-
 import {topPartnersTable} from "./components/visuals.js";
-
 // import {downloadPNG, downloadXLSX} from './components/downloads.js';
 ```
 
@@ -18,6 +18,7 @@ setCustomColors();
 ```
 
 ```js
+
 // USER INPUTS
 
 const countries = Object.keys(groupMappings)
@@ -95,15 +96,27 @@ const timeRangeInput = rangeInput(
         enableTextInput: true
     })
 const timeRange = Generators.input(timeRangeInput)
+
 ```
 
 ```js
+
 // DATA  QUERIES
 
-const queries = singleQueries(country, unit, prices, timeRange, category, flow)
+import {querySingle} from "./components/dataQueries.js"
 
-const dataTopPartners = queries[0]
-const dataTopCategories = queries[1]
+const data = querySingle(
+    country, 
+    unit, 
+    prices, 
+    timeRange, 
+    category,
+    flow
+)
+
+const partnersData = data.partners
+const categoriesData = data.categories
+
 ```
 
 <div class="title-container">
@@ -160,7 +173,7 @@ const dataTopCategories = queries[1]
         </h3>
         ${
             resize(
-                (width) => topPartnersTable(dataTopPartners, flow, width)
+                (width) => topPartnersTable(partnersData, flow, width)
             )
         }
         <div class="bottom-panel">
@@ -186,7 +199,7 @@ const dataTopCategories = queries[1]
         </h3>
         ${
             resize(
-                (width) => topPartnersTable(dataTopCategories, flow, width)
+                (width) => topPartnersTable(categoriesData, flow, width)
             )
         }
         <div class="bottom-panel">

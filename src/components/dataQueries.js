@@ -17,11 +17,14 @@ function getCountryList(name) {
     return groupMappings[name] || [name];
 }
 
-const escapeSQL = (str) => str.replace(/'/g, "''");
+function escapeSQL(str) {
+    return str.replace(/'/g, "''");
+}
 
 const unpivotColumns = productCategories.map(cat => `'${escapeSQL(cat)}'`).join(", ");
 
-export function singleQueries(country, unit, prices, timeRange, category, flow) {
+
+export function querySingle(country, unit, prices, timeRange, category, flow) {
 
     const countryList = getCountryList(country);
 
@@ -31,19 +34,34 @@ export function singleQueries(country, unit, prices, timeRange, category, flow) 
 
     const isGdp = unit === "gdp";
 
-    const unitColumn = isGdp
-        ? "usd_constant"
-        : `${unit}_${prices}`;
-    const conversionTable = isGdp
-        ? "constant_conversion_table"
-        : `${prices}_conversion_table`
+    const unitColumn = isGdp ? "usd_constant" : `${unit}_${prices}`;
 
+    const conversionTable = isGdp ? "constant_conversion_table" : `${prices}_conversion_table`
 
-    const topPartners = queryTopPartners(country, countrySQLList, unitColumn, isGdp, prices, conversionTable, timeRange, category, flow)
+    const partners = queryTopPartners(
+        country, 
+        countrySQLList, 
+        unitColumn, 
+        isGdp, 
+        prices, 
+        conversionTable, 
+        timeRange, 
+        category, 
+        flow
+    )
 
-    const topCategories = queryTopCategories(country, countrySQLList, isGdp, unitColumn, prices, conversionTable, timeRange, flow);
+    const categories = queryTopCategories(
+        country, 
+        countrySQLList, 
+        isGdp, 
+        unitColumn, 
+        prices, 
+        conversionTable, 
+        timeRange, 
+        flow
+    );
 
-    return [topPartners, topCategories];
+    return {partners, categories};
 }
 
 
@@ -209,7 +227,7 @@ async function queryTopCategories(country, countrySQLList, isGdp, unitColumn, pr
 }
 
 
-export async function multiQuery(country, partners, unit, prices, timeRange, category, flow) {
+export async function queryMulti(country, partners, unit, prices, timeRange, category, flow) {
 
     const countryList = getCountryList(country);
     const partnersList = getCountryList(partners);

@@ -1,15 +1,17 @@
 ```js
 import {setCustomColors} from "./components/colors.js"
-import {getUnitLabel, formatString, generateTitleMulti, generateSubtitle, generateNote, generateFileName} from "./components/utils.js"
+import {
+    getUnitLabel, 
+    formatString,
+    generateTitleMulti,
+    generateSubtitle, 
+    generateNote, 
+    generateFileName
+} from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
-
 import {rangeInput} from "./components/rangeInput.js";
 import {multiSelect} from "./components/multiSelect.js";
-
-import {multiQuery} from "./components/queries.js"
-
 import {tradePlot,  tradeTable} from "./components/visuals.js";
-
 import {downloadPNG, downloadXLSX} from './components/downloads.js';
 ```
 
@@ -22,12 +24,13 @@ const ONELogo = await FileAttachment("./ONE-logo-black.png").image()
 ```
 
 ```js
+
 // USER INPUTS
 
 const countries = Object.keys(groupMappings)
 const groups = Object.values(groupMappings)
 
-// Country Input
+// Country
 const countryInput = Inputs.select(
     countries,
     {
@@ -36,6 +39,7 @@ const countryInput = Inputs.select(
         value: "Kenya"
     })
 
+// Partner
 const partnersInput = multiSelect(
     countries,
     {
@@ -43,6 +47,7 @@ const partnersInput = multiSelect(
         value: ["Canada"]
     })
 
+// Disable options condionally
 function updateOptions() {
 
     const countryList = groupMappings[countryInput.value]
@@ -81,7 +86,7 @@ partnersInput.addEventListener("input", updateOptions);
 const country = Generators.input(countryInput);
 const partners = Generators.input(partnersInput);
 
-// Unit Input
+// Unit
 const unitInput = Inputs.select(
     new Map([
         ["US Dollars", "usd"],
@@ -97,7 +102,7 @@ const unitInput = Inputs.select(
 );
 const unit = Generators.input(unitInput)
 
-// Flow input
+// Flow
 const flowInput = Inputs.select(
     new Map([
         ["Trade balance", "balance"],
@@ -111,7 +116,7 @@ const flowInput = Inputs.select(
 )
 const flow = Generators.input(flowInput)
 
-// Category Input
+// Product category
 const categoryInput = Inputs.select(
     ["All", ...productCategories], {
         label: "Category",
@@ -120,7 +125,7 @@ const categoryInput = Inputs.select(
 );
 const category = Generators.input(categoryInput)
 
-// Prices Input
+// Prices
 const pricesInput = Inputs.radio(
     new Map([
         ["Constant", "constant"],
@@ -133,7 +138,7 @@ const pricesInput = Inputs.radio(
 );
 const prices = Generators.input(pricesInput)
 
-// Time Input
+// Time range
 const timeRangeInput = rangeInput(
     {
         min: maxTimeRange[0],
@@ -144,11 +149,24 @@ const timeRangeInput = rangeInput(
         enableTextInput: true
     })
 const timeRange = Generators.input(timeRangeInput)
+
 ```
 
 ```js
+
 // DATA  QUERIES
-const data = multiQuery(country, partners, unit, prices, timeRange, category, flow)
+
+import {queryMulti} from "./components/dataQueries.js"
+
+const data = queryMulti(
+    country, 
+    partners, 
+    unit, 
+    prices, 
+    timeRange, 
+    category, 
+    flow
+)
 
 const isPartners = partners.length > 1 ? true : false
 ```
