@@ -55,37 +55,25 @@
 }
 
 .view-button {
-    border: none;
-    background: none;
+    text-decoration: none !important;
     font-size: var(--size-xl);
+    color: darkgrey !important;
     cursor: pointer;
-    display: inline-block;
-    color: darkgrey;
     transition: all 0.3s ease-in-out;
 }
 
 .view-button:hover {
-    color: dimgray;
+    color: dimgray !important;
     transform: scale(1.1);
 }
 
-.view-button.active:hover {
-    color: dimgray;
-    transform: scale(1);
-}
-
 .view-button.active {
-    color: black;
+    color: black !important;
 }
 
-
-/* View Box */
-.view-box {
-    display: none;
-}
-
-.view-box.active {
-    display: block;
+.view-button.active:hover {
+    color: dimgray !important;
+    transform: scale(1);
 }
 
 /* Settings */
@@ -159,6 +147,11 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     gap: 20px
 }
 
+/* Warning message */
+.warning {
+    width: 100% !important;
+}
+
 
 /* Plots */
 .card:has(.plot-container) {
@@ -202,6 +195,7 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 .balance-label {
     /*background-color: var(--balance);*/
     /*color: var(--lightGrey);*/
+    font-weight: normal;
     color: var(--balance);
 
 }

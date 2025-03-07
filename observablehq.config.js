@@ -9,6 +9,8 @@ export default {
   root: "src",
   theme: ["light", "wide", "alt"],
   toc: false,
+  sidebar: false,
+  pager: false,
   style: "style.css"
 
   // Some additional configuration options and their defaults:
