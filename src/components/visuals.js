@@ -19,7 +19,7 @@ function getSingleColor(key) {
     return index !== -1 ? singlePalette.range[index] : null; // Return color if found, otherwise null
 };
 
-export function topPartnersTable(data, flow, width) {
+export function rankTable(data, flow, width) {
 
     const mainColumn = data.some(row => "category" in row) ? "category" : "partner";
 
@@ -71,77 +71,58 @@ export function topPartnersTable(data, flow, width) {
 }
 
 
-export function tradePlot(data, flow, width) {
+export function tradePlot(data, unit, flow, width, {wide= false}) {
+
+    const isPhone = window.screen.width < 800
+
     const isMulti = new Set(data.map(row => row.partner)).size > 1;
 
+    const formattedData = data.map((row) => ({
+        ...row,
+        year: new Date(row.year, 1, 1), // Ensure year is just the integer
+    }));
+
+    const plotData = formattedData.flatMap(({ year, partner, imports, exports, balance }) => [
+        { Year: year, Partner: partner, Flow: "imports", Value: imports },
+        { Year: year, Partner: partner, Flow: "exports", Value: exports },
+        { Year: year, Partner: partner, Flow: "balance", Value: balance },
+    ]);
+
     if (isMulti) {
-        return plotMultiPartner(data, flow, width);
+        return plotMultiPartner(plotData, unit, flow, width, {isPhone});
     } else {
-        return plotSinglePartner(data, width);
+        return plotSinglePartner(plotData, unit, width, {isPhone, wide});
     }
 }
+
 
 export function tradeTable(data, flow, width) {
+
+    const isPhone = window.screen.width < 800
+
     const isMulti = new Set(data.map(row => row.partner)).size > 1;
 
     if (isMulti) {
-        return tableMulti(data, flow, width);
+        return tableMulti(data, flow, width, {isPhone});
     } else {
-        return tableSingle(data, width);
+        return tableSingle(data, width, {isPhone});
     }
 }
 
 
-export function plotSinglePartner(data, width) {
-  let formattedData = data.map((row) => ({
-    ...row,
-    year: new Date(row.year, 1, 1), // Ensure year is just the integer
-  }));
-
-  const isGDP = formattedData[0].unit === "share of gdp";
-  const unit = isGDP ? "gdp" : formattedData[0].unit.split(" ")[1];
-
-  formattedData = formattedData.reduce(
-    (acc, { year, imports, exports, balance, gdp }) => {
-      // Initialize the accumulator for each year if not already initialized
-      if (!acc[year]) {
-        acc[year] = { year: year, exports: 0, imports: 0, balance: 0, gdp: 0 };
-      }
-
-      // Sum up exports, imports, balance, and gdp
-      acc[year].exports += exports;
-      acc[year].imports += imports;
-      acc[year].balance += balance;
-      acc[year].gdp = gdp; // Assuming GDP remains constant for the year
-
-      return acc;
-    },
-    {},
-  );
-
-  // Convert the object into an array with the desired format
-  const plotData = Object.values(formattedData)
-    .flatMap((yearData) => {
-      const { year, exports, imports, balance, gdp } = yearData;
-      const factor = isGDP && gdp ? 100 / gdp : 1;
-
-      return [
-        { Year: year, Flow: "exports", Value: exports * factor },
-        { Year: year, Flow: "imports", Value: imports * factor },
-        { Year: year, Flow: "balance", Value: balance * factor },
-      ];
-    })
-    .sort((a, b) => a.Year - b.Year);
+export function plotSinglePartner(data, unit, width, {isPhone= false, wide= false}) {
 
   const formatYear = timeFormat("%Y");
 
   return plot({
     width: width,
-    height: width * 0.33,
+    height: wide && !isPhone ? width * 0.25
+        : isPhone ? width * 0.7
+            : width * 0.4,
     marginTop: 25,
-    marginRight: 25,
+    marginRight: wide && !isPhone ? 50 : 25,
     marginBottom: 25,
-    marginLeft: 75,
+    marginLeft: wide && !isPhone ? 125 : 75,
     x: {
       inset: 10,
       label: null,
@@ -162,7 +143,7 @@ export function plotSinglePartner(data, width) {
     color: singlePalette,
     marks: [
       // Imports/exports bars
-      rectY(plotData, {
+      rectY(data, {
         filter: (d) => d.Flow !== "balance",
         x: "Year",
         y: "Value",
@@ -177,7 +158,7 @@ export function plotSinglePartner(data, width) {
       }),
 
       // Line for balance
-      line(plotData, {
+      line(data, {
         filter: (d) => d.Flow === "balance",
         x: "Year",
         y: "Value",
@@ -187,7 +168,7 @@ export function plotSinglePartner(data, width) {
       }),
 
       tip(
-        plotData,
+        data,
         pointer({
           x: "Year",
           y: "Value",
@@ -207,60 +188,12 @@ export function plotSinglePartner(data, width) {
 }
 
 
-export function plotMultiPartner(data, flow, width) {
-  let formattedData = data.map((row) => ({
-    ...row,
-    year: new Date(row.year, 1, 1),
-  }));
-
-  const isGDP = formattedData[0].unit === "share of gdp";
-  const unit = isGDP ? "gdp" : formattedData[0].unit.split(" ")[1];
-
-  formattedData = formattedData.reduce(
-    (acc, { year, partner, imports, exports, balance, gdp }) => {
-      let key = `${year}||${partner}`; // Unique key for grouping by year-partner
-
-      if (!acc[key]) {
-        acc[key] = {
-          year,
-          partner,
-          imports: 0,
-          exports: 0,
-          balance: 0,
-          gdp: 0,
-        };
-      }
-
-      acc[key][flow] += { imports, exports, balance }[flow];
-
-      if (isGDP) {
-        acc[key].gdp += gdp;
-      }
-
-      return acc;
-    },
-    {},
-  );
-
-  // Convert the object into an array with the desired format
-  const plotData = Object.values(formattedData)
-    .map(({ year, partner, imports, exports, balance, gdp }) => {
-      let value = { imports, exports, balance }[flow];
-      const factor = isGDP && gdp ? 100 / gdp : 1;
-
-      return {
-        Year: year,
-        Partner: partner,
-        Flow: flow,
-        Value: value * factor,
-      };
-    })
-    .sort((a, b) => a.Year - b.Year);
+export function plotMultiPartner(data, unit, flow, width, {isPhone= false}) {
 
   const formatYear = timeFormat("%Y");
 
   const colorPalette = {
-      domain: [...new Set(plotData.map(row => row["Partner"]))].sort(),
+      domain: [...new Set(data.map(row => row["Partner"]))].sort(),
       range: multiPalette
   };
 
@@ -297,7 +230,9 @@ export function plotMultiPartner(data, flow, width) {
       }),
 
       // Lines for each country
-      line(plotData, {
+      line(data, {
+        filter: (d) => d.Flow === flow,
+        sort: ((a, b) => a.Year - b.Year),
         x: "Year",
         y: "Value",
         z: "Partner",
@@ -306,8 +241,9 @@ export function plotMultiPartner(data, flow, width) {
         strokeWidth: 2.5,
       }),
       tip(
-        plotData,
+        data,
         pointer({
+          filter: (d) => d.Flow === flow,
           x: "Year",
           y: "Value",
           fill: "Partner",
@@ -325,52 +261,25 @@ export function plotMultiPartner(data, flow, width) {
   });
 }
 
-export function tableSingle(data, width) {
-  const isGDP = data[0].unit === "share of gdp";
 
-  let tableData = Object.values(
-    data.reduce((acc, { category, imports, exports, balance, gdp }) => {
-      if (!acc[category]) {
-        acc[category] = {
-          category,
-          imports: 0,
-          exports: 0,
-          balance: 0,
-          gdp: 0,
-        };
-      }
-
-      acc[category].imports += imports;
-      acc[category].exports += exports;
-      acc[category].balance += balance;
-
-      if (isGDP) {
-        acc[category].gdp += gdp;
-      }
-
-      return acc;
-    }, {}),
-  );
-
-  tableData.forEach((entry) => {
-    if (isGDP) {
-      entry.imports = (entry.imports / entry.gdp) * 100;
-      entry.exports = (entry.exports / entry.gdp) * 100;
-      entry.balance = (entry.balance / entry.gdp) * 100;
-    }
-    delete entry.gdp;
-  });
-
-  const limits = getLimits(tableData);
+export function tableSingle(data, width, {isPhone= false}) {
 
   const alignmentMapping = {
-    year: "left",
+    category: "left",
     imports: "right",
     exports: "left",
     balance: "center",
   };
 
-  return table(tableData, {
+  const tableData = data.map(row =>
+      Object.fromEntries(
+          Object.entries(row).filter(([key]) => key in alignmentMapping) // Keep only specified keys
+      )
+  );
+
+  const limits = getLimits(tableData);
+
+    return table(tableData, {
     sort: "exports", // Sort by year or exports
     reverse: true, // Reverse sort only for category-based tables
     format: {
@@ -396,50 +305,14 @@ export function tableSingle(data, width) {
     },
     align: alignmentMapping,
     width: width,
-    height: width * 0.5,
+    height: isPhone ? width * 0.7 : width * 0.4,
   });
 }
 
 
-export function tableMulti(data, flow, width) {
-  const isGDP = data[0].unit === "share of gdp";
+export function tableMulti(data, flow, width, {isPhone = false}) {
 
-  let groupedData = Object.values(
-    data.reduce(
-      (acc, { category, partner, imports, exports, balance, gdp }) => {
-        let key = `${category}||${partner}`; // Unique key for category-partner grouping
-
-        if (!acc[key]) {
-          acc[key] = {
-            category,
-            partner,
-            imports: 0,
-            exports: 0,
-            balance: 0,
-            gdp: 0,
-          };
-        }
-
-        acc[key][flow] += { imports, exports, balance }[flow];
-
-        if (isGDP) {
-          acc[key].gdp += gdp;
-        }
-
-        return acc;
-      },
-      {},
-    ),
-  );
-
-  groupedData.forEach((entry) => {
-    if (isGDP) {
-      entry[flow] = (entry[flow] / entry.gdp) * 100;
-    }
-    delete entry.gdp;
-  });
-
-  const tableData = reshapeDataForTable(groupedData, flow, "category");
+  const tableData = reshapeDataForTable(data, flow, "category");
 
   const countries = Object.keys(tableData[0]).filter(
     (key) => key !== "category",
@@ -474,7 +347,7 @@ export function tableMulti(data, flow, width) {
       ),
     },
     width: width,
-    height: width * 0.5,
+    height: isPhone ? width * 0.7 : width * 0.4,
   });
 }
 

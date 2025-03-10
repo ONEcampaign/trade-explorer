@@ -3,13 +3,14 @@ import {setCustomColors} from "./components/colors.js"
 import {
     getUnitLabel, 
     formatString, 
-    generateTitleSingle, 
+    generateTitleSingle,
+    generatePlotTitle,
     generateSubtitle, 
     generateNote
 } from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
 import {rangeInput} from "./components/rangeInput.js";
-import {plotSinglePartner, topPartnersTable} from "./components/visuals.js";
+import {tradePlot, rankTable} from "./components/visuals.js";
 // import {downloadPNG, downloadXLSX} from './components/downloads.js';
 ```
 
@@ -158,35 +159,17 @@ const categoriesData = data.categories
     </div>
 </div>
 <div class="card">
-    ${
-        resize(
-            (width) => plotSinglePartner(worldTradeData, width*.8)
-        )
-    }
-</div>
-<div class="grid grid-cols-2">
-    <div class="card">
-        ${generateTitleSingle(country, flow, {})}
-        <h3 class="plot-subtitle">
-            ${
-                category === "All" 
-                ? "All products"
-                : category
-            };
-            ${
-                timeRange[0] === timeRange[1] 
-                ? timeRange[0] 
-                : `${timeRange[0]}-${timeRange[1]}`
-            }
-        </h3>
+    <div class="plot-container wide">
+        ${generatePlotTitle(country, ["the world"], flow)}
+        ${generateSubtitle(["ROW"], flow, timeRange, {table: false})}
         ${
             resize(
-                (width) => topPartnersTable(partnersData, flow, width)
+                (width) => tradePlot(worldTradeData, unit, flow, width, {wide: true})
             )
         }
         <div class="bottom-panel">
             <div class="text-section">
-                ${generateNote(unit, prices, country)}
+                ${generateNote(unit, prices, country, false)}
             </div>
             <div class="logo-section">
                 <a href="https://data.one.org/" target="_blank">
@@ -195,29 +178,65 @@ const categoriesData = data.categories
             </div>
         </div>
     </div>
+</div>
+<div class="grid grid-cols-2">
     <div class="card">
-        ${generateTitleSingle(country, flow, {plot: false})}
-        <h3 class="plot-subtitle">
-            Product categories;
+        <div class="plot-container">
+            ${generateTitleSingle(country, flow, {})}
+            <h3 class="plot-subtitle">
+                ${
+                    category === "All" 
+                    ? "All products"
+                    : category
+                };
+                ${
+                    timeRange[0] === timeRange[1] 
+                    ? timeRange[0] 
+                    : `${timeRange[0]}-${timeRange[1]}`
+                }
+            </h3>
             ${
-                timeRange[0] === timeRange[1] 
-                ? timeRange[0] 
-                : `${timeRange[0]}-${timeRange[1]}`
+                resize(
+                    (width) => rankTable(partnersData, flow, width)
+                )
             }
-        </h3>
-        ${
-            resize(
-                (width) => topPartnersTable(categoriesData, flow, width)
-            )
-        }
-        <div class="bottom-panel">
-            <div class="text-section">
-                ${generateNote(unit, prices, country)}
+            <div class="bottom-panel">
+                <div class="text-section">
+                    ${generateNote(unit, prices, country, false)}
+                </div>
+                <div class="logo-section">
+                    <a href="https://data.one.org/" target="_blank">
+                        <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
+                    </a>
+                </div>
             </div>
-            <div class="logo-section">
-                <a href="https://data.one.org/" target="_blank">
-                    <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
-                </a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="plot-container">
+            ${generateTitleSingle(country, flow, {plot: false})}
+            <h3 class="plot-subtitle">
+                Product categories;
+                ${
+                    timeRange[0] === timeRange[1] 
+                    ? timeRange[0] 
+                    : `${timeRange[0]}-${timeRange[1]}`
+                }
+            </h3>
+            ${
+                resize(
+                    (width) => rankTable(categoriesData, flow, width)
+                )
+            }
+            <div class="bottom-panel">
+                <div class="text-section">
+                    ${generateNote(unit, prices, country, false)}
+                </div>
+                <div class="logo-section">
+                    <a href="https://data.one.org/" target="_blank">
+                        <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
+                    </a>
+                </div>
             </div>
         </div>
     </div>

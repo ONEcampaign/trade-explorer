@@ -78,19 +78,22 @@ export function formatValue(value) {
 export function getLimits(data) {
   let minValue = Infinity;
   let maxValue = -Infinity;
+  let hasNumericValue = false; // Track if any numeric value is found
 
   data.forEach((row) => {
     Object.keys(row).forEach((key) => {
-      if (key !== "year" && key !== "category" && row[key] != null) {
-        // Skip 'year' and null/undefined values
+      if (typeof row[key] === "number") {
+        // Process only numeric values
         minValue = Math.min(minValue, row[key]);
         maxValue = Math.max(maxValue, row[key]);
+        hasNumericValue = true;
       }
     });
   });
 
-  return [minValue, maxValue];
+  return hasNumericValue ? [minValue, maxValue] : [null, null]; // Return null if no numeric values exist
 }
+
 
 
 export function getUnitLabel(unit, { long = true, value = "" }) {
@@ -166,7 +169,7 @@ export function generateTitleSingle(country, flow, {plot= true}) {
 }
 
 
-export function generateTitleMulti(country, partners, flow) {
+export function generatePlotTitle(country, partners, flow) {
 
   const title = document.createElement("h2");
   title.className = "plot-title";
@@ -175,7 +178,7 @@ export function generateTitleMulti(country, partners, flow) {
     return ""
   }
   else if  (partners.length === 1) {
-    title.textContent = `Trade between ${country} and ${partners}`;
+    title.textContent = `${formatString(country, {genitive: true})} trade with ${partners}`;
   }
   else {
     title.textContent = `${formatString(country, {genitive: true})} ${formatString(flow, {capitalize: false})}`
@@ -243,6 +246,7 @@ export function generateSubtitle(partners, flow, timeRange, {table=false}) {
 
 
 export function generateNote(unit, prices, country, isMultiPartner, flow=null) {
+
   const note = document.createElement("p");
   note.className = "plot-note";
 

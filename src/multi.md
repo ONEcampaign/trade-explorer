@@ -3,7 +3,7 @@ import {setCustomColors} from "./components/colors.js"
 import {
     getUnitLabel, 
     formatString,
-    generateTitleMulti,
+    generatePlotTitle,
     generateSubtitle, 
     generateNote, 
     generateFileName
@@ -159,16 +159,21 @@ const timeRange = Generators.input(timeRangeInput)
 import {queryMulti} from "./components/dataQueries.js"
 
 const data = queryMulti(
-    country, 
-    partners, 
-    unit, 
-    prices, 
-    timeRange, 
-    category, 
+    country,
+    partners,
+    unit,
+    prices,
+    timeRange,
+    category,
     flow
 )
 
+const plotData = data.plot
+const tableData = data.table
+
 const isMultiPartner = partners.length > 1
+
+
 
 ```
 
@@ -225,16 +230,16 @@ ${
         <div class="grid grid-cols-2">
             <div class="card">
                 <div class="plot-container" id="multi-plot">
-                    ${generateTitleMulti(country, partners, flow)}
+                    ${generatePlotTitle(country, partners, flow)}
                     ${generateSubtitle(partners, flow, timeRange, {table: false})}
                     ${
                         resize(
-                            (width) => tradePlot(data, flow, width)
+                            (width) => tradePlot(plotData, unit, flow, width, {})
                         )
                     }
                     <div class="bottom-panel">
                         <div class="text-section">
-                            ${generateNote(unit, prices, country, partners, flow)}
+                            ${generateNote(unit, prices, country, isMultiPartner, flow)}
                         </div>
                         <div class="logo-section">
                             <a href="https://data.one.org/" target="_blank">
@@ -258,14 +263,14 @@ ${
             </div>
             <div class="card">
                 <div class="plot-container" id="multi-table">
-                        ${generateTitleMulti(country, partners, flow)}
+                        ${generatePlotTitle(country, partners, flow)}
                         ${generateSubtitle(partners, flow, timeRange, {table: true})}
                         ${resize((width) =>
-                            tradeTable(data, flow, width)
+                            tradeTable(tableData, flow, width)
                         )}
                         <div class="bottom-panel">
                             <div class="text-section">
-                                ${generateNote(unit, prices, country, partners, flow)}
+                                ${generateNote(unit, prices, country, isMultiPartner, flow)}
                             </div>
                             <div class="logo-section">
                                 <a href="https://data.one.org/" target="_blank">

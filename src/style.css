@@ -154,12 +154,18 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 
 
 /* Plots */
+
 .card:has(.plot-container) {
     padding: 0;
 }
 .plot-container {
     padding: 1rem;
 }
+
+.plot-container.wide {
+    padding: 1.5rem 3rem;
+}
+
 .plot-title,
 .table-title {
     font-size: var(--size-xl) !important;
