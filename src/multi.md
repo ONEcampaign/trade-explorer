@@ -168,7 +168,8 @@ const data = queryMulti(
     flow
 )
 
-const isPartners = partners.length > 1 ? true : false
+const isMultiPartner = partners.length > 1
+
 ```
 
 <div class="title-container">
@@ -189,8 +190,8 @@ const isPartners = partners.length > 1 ? true : false
     <a class="view-button active" href="./multi">
         Multi Country
     </a>
-    <a class="view-button" href="./about">
-        About
+    <a class="view-button" href="./faqs">
+        FAQs
     </a>
 </div>
 
@@ -206,7 +207,7 @@ const isPartners = partners.length > 1 ? true : false
     <div class="settings-group">
         ${unit === "gdp" ? html` ` : pricesInput}
         ${timeRangeInput}
-        ${isPartners ? flowInput : html` `}
+        ${isMultiPartner ? flowInput : html` `}
     </div>
 </div>
 ${ 

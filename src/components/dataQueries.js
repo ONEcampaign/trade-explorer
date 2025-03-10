@@ -24,7 +24,14 @@ function escapeSQL(str) {
 const unpivotColumns = productCategories.map(cat => `'${escapeSQL(cat)}'`).join(", ");
 
 
-export function querySingle(country, unit, prices, timeRange, category, flow) {
+export function querySingle(
+    country,
+    unit,
+    prices,
+    timeRange,
+    category,
+    flow
+) {
 
     const countryList = getCountryList(country);
 
@@ -38,11 +45,11 @@ export function querySingle(country, unit, prices, timeRange, category, flow) {
 
     const conversionTable = isGdp ? "constant_conversion_table" : `${prices}_conversion_table`
 
-    const partners = queryTopPartners(
+    const partners = topPartnersQuery(
         country, 
-        countrySQLList, 
-        unitColumn, 
-        isGdp, 
+        countrySQLList,
+        isGdp,
+        unitColumn,
         prices, 
         conversionTable, 
         timeRange, 
@@ -50,10 +57,10 @@ export function querySingle(country, unit, prices, timeRange, category, flow) {
         flow
     )
 
-    const categories = queryTopCategories(
+    const categories = topCategoriesQuery(
         country, 
-        countrySQLList, 
-        isGdp, 
+        countrySQLList,
+        isGdp,
         unitColumn, 
         prices, 
         conversionTable, 
@@ -61,11 +68,33 @@ export function querySingle(country, unit, prices, timeRange, category, flow) {
         flow
     );
 
-    return {partners, categories};
+    const worldTrade = worldTradeQuery(
+        country,
+        countrySQLList,
+        isGdp,
+        unitColumn,
+        prices,
+        conversionTable,
+        timeRange,
+        category
+    )
+
+
+    return {partners, categories, worldTrade};
 }
 
 
-async function queryTopPartners(country, countrySQLList, unitColumn, isGdp, prices, conversionTable, timeRange, category, flow) {
+async function topPartnersQuery(
+    country,
+    countrySQLList,
+    isGdp,
+    unitColumn,
+    prices,
+    conversionTable,
+    timeRange,
+    category,
+    flow
+) {
 
     const string = `
         WITH filtered AS (
@@ -145,7 +174,16 @@ async function queryTopPartners(country, countrySQLList, unitColumn, isGdp, pric
 
 }
 
-async function queryTopCategories(country, countrySQLList, isGdp, unitColumn, prices, conversionTable, timeRange, flow) {
+async function topCategoriesQuery(
+    country,
+    countrySQLList,
+    isGdp,
+    unitColumn,
+    prices,
+    conversionTable,
+    timeRange,
+    flow
+) {
 
     const string = `
         WITH filtered AS (
@@ -216,6 +254,102 @@ async function queryTopCategories(country, countrySQLList, isGdp, unitColumn, pr
             }
         FROM aggregated a
         CROSS JOIN gdp g
+        `;
+
+    const query =  await db.query(string);
+
+    return query.toArray().map((row) => ({
+        ...row
+    }));
+
+}
+
+async function worldTradeQuery(
+    country,
+    countrySQLList,
+    isGdp,
+    unitColumn,
+    prices,
+    conversionTable,
+    timeRange
+) {
+
+    const string = `
+        WITH filtered AS (
+            SELECT *
+            FROM trade
+            WHERE
+                (importer IN (${countrySQLList}) OR exporter IN (${countrySQLList}))
+                    AND year BETWEEN ${timeRange[0]} AND ${timeRange[1]}
+        ),
+        unpivoted AS (
+            SELECT year, exporter, importer, category, value
+            FROM filtered
+                UNPIVOT (value FOR category IN (${unpivotColumns}))
+        ),
+        conversion AS (
+            SELECT
+                year,
+                ${prices === "constant" | isGdp ? "country AS country," : ""}
+                        ${unitColumn} AS factor
+            FROM ${conversionTable}
+                ${prices === "constant" | isGdp ? `WHERE country IN (${countrySQLList})` : ""}
+        ),
+        gdp AS (
+        SELECT year, SUM(gdp_constant) AS gdp
+            FROM gdp_table
+            WHERE country IN (${countrySQLList})
+                AND year BETWEEN ${timeRange[0]} AND ${timeRange[1]}
+            GROUP BY year
+        ),
+        exports AS (
+            SELECT u.year, u.exporter AS country, SUM(u.value * c.factor * 1.1 / 1.1) AS exports
+            FROM unpivoted u
+            JOIN conversion c
+                ON u.year = c.year
+                ${
+                    prices === "constant" | isGdp 
+                    ? `AND u.exporter = c.country`
+                    : ""
+                }
+            WHERE u.exporter IN (${countrySQLList})
+            GROUP BY u.year, u.exporter
+        ),
+        imports AS (
+            SELECT u.year, u.importer AS country, SUM(u.value * c.factor * 1.1 / 1.1) AS imports
+            FROM unpivoted u
+            JOIN conversion c
+                ON u.year = c.year
+                ${
+                    prices === "constant" | isGdp
+                    ? `AND u.importer = c.country` 
+                    : ""
+                }
+            WHERE u.importer IN (${countrySQLList})
+            GROUP BY u.year, u.importer
+        )
+        SELECT 
+            COALESCE(e.year, i.year) AS year,
+            ${
+                isGdp 
+                ? `
+                    SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)) AS imports,
+                    SUM(COALESCE(e.exports / g.gdp * 100, 0)) AS exports,
+                    (SUM(COALESCE(e.exports / g.gdp * 100, 0)) - SUM(COALESCE(i.imports / g.gdp * 100, 0))) AS balance
+                `
+                : `
+                    SUM(COALESCE(i.imports * -1, 0)) AS imports,
+                    SUM(COALESCE(e.exports, 0)) AS exports,
+                    (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0))) AS balance
+                `
+            },
+            'null' AS unit
+            FROM exports e
+            FULL OUTER JOIN imports i
+                ON e.year = i.year
+            LEFT JOIN gdp g
+                ON COALESCE(e.year, i.year) = g.year
+            GROUP BY COALESCE(e.year, i.year), g.gdp
         `;
 
     const query =  await db.query(string);

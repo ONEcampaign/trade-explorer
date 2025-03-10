@@ -324,11 +324,20 @@ table tr > *:nth-child(n+3) {
     margin-top: 0 !important;
 }
 
-.italic-span {
+.italic {
     font-style: italic;
 }
 
-.section-header + .normal-text {
+.bold {
+    font-weight: bold;
+}
+
+.sub-section-header {
+    font-size: var(--size-m) !important;
+}
+
+
+.section-header + .base-text {
     margin-top: 0 !important;
 }
 

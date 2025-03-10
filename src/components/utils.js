@@ -192,9 +192,8 @@ export function generateSubtitle(partners, flow, timeRange, {table=false}) {
   subtitle.className = "plot-subtitle";
 
     if (partners.length === 0) {
-      subtitle.innerHTML = `Select at least 1 partner`
+      return subtitle;
     }
-
     else {
       if (table) {
         subtitle.innerHTML = `By product category, ${timeRange[0] === timeRange[1] ? timeRange[0] :
@@ -243,13 +242,11 @@ export function generateSubtitle(partners, flow, timeRange, {table=false}) {
 }
 
 
-export function generateNote(unit, prices, country, isMulti, flow=null) {
+export function generateNote(unit, prices, country, isMultiPartner, flow=null) {
   const note = document.createElement("p");
   note.className = "plot-note";
 
-  let text;
-
-  text +=  `
+  let text =`
         Source: <a 
         href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" 
         target="_blank"
@@ -266,8 +263,7 @@ export function generateNote(unit, prices, country, isMulti, flow=null) {
     text += `<span>All values in ${prices === "constant" ? "constant 2023" : "current"} ${unitLabel}.</span>`;
   }
 
-  if  (isMulti) {
-
+  if  (isMultiPartner) {
     if (flow === "exports") {
       text += `<span> Exports refer to the value of goods traded from ${country} to selected partners.</span>`;
     } else if (flow === "imports") {

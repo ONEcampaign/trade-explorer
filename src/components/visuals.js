@@ -75,9 +75,9 @@ export function tradePlot(data, flow, width) {
     const isMulti = new Set(data.map(row => row.partner)).size > 1;
 
     if (isMulti) {
-        return plotMulti(data, flow, width);
+        return plotMultiPartner(data, flow, width);
     } else {
-        return plotSingle(data, width);
+        return plotSinglePartner(data, width);
     }
 }
 
@@ -92,7 +92,7 @@ export function tradeTable(data, flow, width) {
 }
 
 
-export function plotSingle(data, width) {
+export function plotSinglePartner(data, width) {
   let formattedData = data.map((row) => ({
     ...row,
     year: new Date(row.year, 1, 1), // Ensure year is just the integer
@@ -137,7 +137,7 @@ export function plotSingle(data, width) {
 
   return plot({
     width: width,
-    height: width * 0.5,
+    height: width * 0.33,
     marginTop: 25,
     marginRight: 25,
     marginBottom: 25,
@@ -207,7 +207,7 @@ export function plotSingle(data, width) {
 }
 
 
-export function plotMulti(data, flow, width) {
+export function plotMultiPartner(data, flow, width) {
   let formattedData = data.map((row) => ({
     ...row,
     year: new Date(row.year, 1, 1),

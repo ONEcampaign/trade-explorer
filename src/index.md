@@ -9,7 +9,7 @@ import {
 } from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
 import {rangeInput} from "./components/rangeInput.js";
-import {topPartnersTable} from "./components/visuals.js";
+import {plotSinglePartner, topPartnersTable} from "./components/visuals.js";
 // import {downloadPNG, downloadXLSX} from './components/downloads.js';
 ```
 
@@ -114,6 +114,7 @@ const data = querySingle(
     flow
 )
 
+const worldTradeData = data.worldTrade
 const partnersData = data.partners
 const categoriesData = data.categories
 
@@ -132,13 +133,13 @@ const categoriesData = data.categories
 
 <div class="header card">
     <a class="view-button active" href="./">
-         Country
+         Single Country
     </a>
     <a class="view-button" href="./multi">
         Multi Country
     </a>
-    <a class="view-button" href="./about">
-        About
+    <a class="view-button" href="./faqs">
+        FAQs
     </a>
 </div>
 
@@ -155,6 +156,13 @@ const categoriesData = data.categories
         ${unit === 'gdp' ? html` ` : pricesInput}
         ${timeRangeInput}
     </div>
+</div>
+<div class="card">
+    ${
+        resize(
+            (width) => plotSinglePartner(worldTradeData, width*.8)
+        )
+    }
 </div>
 <div class="grid grid-cols-2">
     <div class="card">
