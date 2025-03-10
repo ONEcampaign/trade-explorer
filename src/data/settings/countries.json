@@ -12,7 +12,10 @@
     "groups": ["EU27 countries"]
   },
   "Argentina" : {
-    "groups": ["G20 countries"]
+    "groups": ["G20 countries", "MERCOSUR"]
+  },
+  "Bangladesh": {
+    "groups": []
   },
   "Belgium": {
     "groups": ["EU27 countries"]
@@ -24,7 +27,7 @@
     "groups": ["African countries", "Southern African countries", "Sub-saharan countries"]
   },
   "Brazil": {
-    "groups": ["G20 countries", "BRICS countries"]
+    "groups": ["G20 countries", "BRICS countries", "MERCOSUR"]
   },
   "Bulgaria": {
     "groups": ["EU27 countries"]
@@ -50,11 +53,17 @@
   "Chad": {
     "groups": ["African countries", "Middle African countries", "Sahel countries", "Sub-saharan countries"]
   },
+  "Chile": {
+    "groups": ["MERCOSUR"]
+  },
   "China": {
     "groups": ["G20 countries", "BRICS countries"]
   },
   "Comoros": {
     "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Colombia": {
+    "groups": ["MERCOSUR"]
   },
   "Congo": {
     "groups": ["African countries", "Middle African countries", "Sub-saharan countries"]
@@ -79,6 +88,9 @@
   },
   "Djibouti": {
     "groups": ["African countries", "Eastern African countries", "Horn of Africa countries", "Sub-saharan countries"]
+  },
+  "Ecuador": {
+    "groups": ["MERCOSUR"]
   },
   "Egypt": {
     "groups": ["African countries", "Northern African countries", "BRICS countries"]
@@ -125,6 +137,9 @@
   "Guinea-Bissau": {
     "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
   },
+  "Guyana": {
+    "groups": ["MERCOSUR"]
+  },
   "Hungary": {
     "groups": ["EU27 countries"]
   },
@@ -146,6 +161,9 @@
   "Japan": {
     "groups": ["G7 countries", "G20 countries"]
   },
+  "Kazakhstan": {
+    "groups": []
+  },
   "Kenya": {
     "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
   },
@@ -166,6 +184,9 @@
   },
   "Luxembourg": {
     "groups": ["EU27 countries"]
+  },
+  "Norway": {
+    "groups": []
   },
   "Madagascar": {
     "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
@@ -206,11 +227,20 @@
   "Nigeria": {
     "groups": ["African countries", "Western African countries", "Sahel countries", "Sub-saharan countries"]
   },
+  "Paraguay" : {
+    "groups": ["MERCOSUR"]
+  },
+  "Peru": {
+    "groups": ["MERCOSUR"]
+  },
   "Poland": {
     "groups": ["EU27 countries"]
   },
   "Portugal": {
     "groups": ["EU27 countries"]
+  },
+  "Qatar": {
+    "groups": []
   },
   "Rep. of Korea": {
     "groups": ["G20 countries"]
@@ -257,11 +287,17 @@
   "Sudan": {
     "groups": ["African countries", "Northern African countries", "Sub-saharan countries"]
   },
+  "Suriname": {
+    "groups": ["MERCOSUR"]
+  },
   "Spain": {
     "groups": ["EU27 countries"]
   },
   "Sweden": {
     "groups": ["EU27 countries"]
+  },
+  "Switzerland": {
+    "groups": []
   },
   "Togo": {
     "groups": ["African countries", "Western African countries", "Sub-saharan countries"]
@@ -272,11 +308,14 @@
   "Türkiye": {
     "groups": ["G20 countries"]
   },
+  "Uruguay": {
+    "groups": ["MERCOSUR"]
+  },
   "USA": {
     "groups": ["G7 countries", "G20 countries"]
   },
   "Uganda": {
-    "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+    "groups": ["African countries", "Easbtern African countries", "Sub-saharan countries"]
   },
   "United Arab Emirates": {
     "groups": ["BRICS countries"]
@@ -286,6 +325,9 @@
   },
   "United Rep. of Tanzania": {
     "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
+  },
+  "Viet Nam": {
+    "groups": []
   },
   "Zambia": {
     "groups": ["African countries", "Eastern African countries", "Sub-saharan countries"]
