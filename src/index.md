@@ -3,15 +3,14 @@ import {setCustomColors} from "./components/colors.js"
 import {
     getUnitLabel, 
     formatString, 
-    generateTitleSingle,
-    generatePlotTitle,
+    generateTitle,
     generateSubtitle, 
-    generateNote
+    generateFooter
 } from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
 import {rangeInput} from "./components/rangeInput.js";
 import {tradePlot, rankTable} from "./components/visuals.js";
-// import {downloadPNG, downloadXLSX} from './components/downloads.js';
+import {downloadPNG, downloadXLSX} from './components/downloads.js';
 ```
 
 ```js 
@@ -159,85 +158,74 @@ const categoriesData = data.categories
     </div>
 </div>
 <div class="card">
-    <div class="plot-container wide">
-        ${generatePlotTitle(country, ["the world"], flow)}
-        ${generateSubtitle(["ROW"], flow, timeRange, {table: false})}
+    <div class="plot-container wide" id="single-plot">
+        ${generateTitle({country: country, partners: ["the world"], mode: "plot"})}
+        ${generateSubtitle({partners: [""], category: category, mode: "plot"})}
+        ${resize((width) => tradePlot(worldTradeData, unit, flow, width, {wide: true}))}
+        ${await generateFooter({unit: unit, prices: prices, country: country})}
+    </div>
+    <div class="download-panel">
         ${
-            resize(
-                (width) => tradePlot(worldTradeData, unit, flow, width, {wide: true})
+            Inputs.button(
+                "Download plot", {
+                    reduce: () => downloadPNG(
+                        'single-plot',
+                        'file_name'
+                    )
+                }
             )
         }
-        <div class="bottom-panel">
-            <div class="text-section">
-                ${generateNote(unit, prices, country, false)}
-            </div>
-            <div class="logo-section">
-                <a href="https://data.one.org/" target="_blank">
-                    <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
-                </a>
-            </div>
-        </div>
+        ${
+            Inputs.button(
+                "Download data", {
+                    reduce: () => downloadXLSX(
+                        worldTradeData,
+                        'file_name'
+                    )
+                }
+            )
+        }
     </div>
 </div>
 <div class="grid grid-cols-2">
     <div class="card">
         <div class="plot-container">
-            ${generateTitleSingle(country, flow, {})}
-            <h3 class="plot-subtitle">
-                ${
-                    category === "All" 
-                    ? "All products"
-                    : category
-                };
-                ${
-                    timeRange[0] === timeRange[1] 
-                    ? timeRange[0] 
-                    : `${timeRange[0]}-${timeRange[1]}`
-                }
-            </h3>
+            ${generateTitle({country: country, flow: flow, mode: "table-top-partners"})}
+            ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-partners"})}
+            ${resize((width) => rankTable(partnersData, flow, 'partner', width))}
+            ${await generateFooter({unit: unit, prices: prices, country: country})}
+        </div>
+        <div class="download-panel">
             ${
-                resize(
-                    (width) => rankTable(partnersData, flow, width)
+                Inputs.button(
+                    "Download data", {
+                        reduce: () => downloadXLSX(
+                            partnersData,
+                            'file_name'
+                        )
+                    }
                 )
             }
-            <div class="bottom-panel">
-                <div class="text-section">
-                    ${generateNote(unit, prices, country, false)}
-                </div>
-                <div class="logo-section">
-                    <a href="https://data.one.org/" target="_blank">
-                        <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
     <div class="card">
         <div class="plot-container">
-            ${generateTitleSingle(country, flow, {plot: false})}
-            <h3 class="plot-subtitle">
-                Product categories;
-                ${
-                    timeRange[0] === timeRange[1] 
-                    ? timeRange[0] 
-                    : `${timeRange[0]}-${timeRange[1]}`
-                }
-            </h3>
+            ${generateTitle({country: country, flow: flow, mode: "table-top-categories"})}
+            ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-categories"})}
+            ${resize((width) => rankTable(categoriesData, flow, 'category', width))}
+            ${await generateFooter({unit: unit, prices: prices, country: country})}
+        </div>
+        <div class="download-panel">
             ${
-                resize(
-                    (width) => rankTable(categoriesData, flow, width)
+                Inputs.button(
+                    "Download data", {
+                        reduce: () => downloadXLSX(
+                            categoriesData,
+                            'file_name'
+                        )
+                    }
                 )
             }
-            <div class="bottom-panel">
-                <div class="text-section">
-                    ${generateNote(unit, prices, country, false)}
-                </div>
-                <div class="logo-section">
-                    <a href="https://data.one.org/" target="_blank">
-                        <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>

@@ -56,6 +56,7 @@ export function querySingle(
         country, 
         countrySQLList,
         isGdp,
+        unit,
         unitColumn,
         prices, 
         conversionTable, 
@@ -68,6 +69,7 @@ export function querySingle(
         country, 
         countrySQLList,
         isGdp,
+        unit,
         unitColumn, 
         prices, 
         conversionTable, 
@@ -96,6 +98,7 @@ async function topPartnersQuery(
     country,
     countrySQLList,
     isGdp,
+    unit,
     unitColumn,
     prices,
     conversionTable,
@@ -161,15 +164,21 @@ async function topPartnersQuery(
             WHERE ${flow === "exports" ? "exporter" : "importer"} IN (${countrySQLList}) 
             GROUP BY ${flow === "exports" ? "importer" : "exporter"}
         )
-        SELECT 
+        SELECT
+            '${timeRange[0]}-${timeRange[1]}' AS years,
             '${escapeSQL(country)}' AS country,
-            a.partner, 
+            a.partner,
+            -- '${escapeSQL(category)}' AS category,
             a.flow, 
             ${
                 isGdp
-                ? "CASE WHEN a.flow = 'imports' THEN -1 * (a.total_value / g.gdp * 100) ELSE (a.total_value / g.gdp * 100) END AS value"
-                : "CASE WHEN a.flow = 'imports' THEN -1 * a.total_value ELSE a.total_value END AS value"
+                ? "CASE WHEN a.flow = 'imports' THEN -1 * (a.total_value / g.gdp * 100) ELSE (a.total_value / g.gdp * 100) END AS value,"
+                : "CASE WHEN a.flow = 'imports' THEN -1 * a.total_value ELSE a.total_value END AS value,"
             }
+            CASE
+                WHEN ${isGdp} THEN 'share of gdp'
+                ELSE '${prices} ${unit} million'
+            END AS unit 
         FROM aggregated a
         CROSS JOIN gdp g
         `;
@@ -186,6 +195,7 @@ async function topCategoriesQuery(
     country,
     countrySQLList,
     isGdp,
+    unit,
     unitColumn,
     prices,
     conversionTable,
@@ -251,15 +261,21 @@ async function topCategoriesQuery(
             WHERE ${flow === "exports" ? "exporter" : "importer"} IN (${countrySQLList}) 
             GROUP BY category
         )
-        SELECT 
+        SELECT
+            '${timeRange[0]}-${timeRange[1]}' AS years,
             '${escapeSQL(country)}' AS country,
+            'RoW' AS partner,
             a.category, 
             a.flow, 
             ${
                 isGdp
-                ? "CASE WHEN a.flow = 'imports' THEN -1 * (a.total_value / g.gdp * 100) ELSE (a.total_value / g.gdp * 100) END AS value"
-                : "CASE WHEN a.flow = 'imports' THEN -1 * a.total_value ELSE a.total_value END AS value"
+                ? "CASE WHEN a.flow = 'imports' THEN -1 * (a.total_value / g.gdp * 100) ELSE (a.total_value / g.gdp * 100) END AS value,"
+                : "CASE WHEN a.flow = 'imports' THEN -1 * a.total_value ELSE a.total_value END AS value,"
             }
+            CASE
+                WHEN ${isGdp} THEN 'share of gdp'
+                ELSE '${prices} ${unit} million'
+            END AS unit
         FROM aggregated a
         CROSS JOIN gdp g
         `;
@@ -280,7 +296,8 @@ async function worldTradeQuery(
     unitColumn,
     prices,
     conversionTable,
-    timeRange
+    timeRange,
+    category
 ) {
 
     const string = `
@@ -294,7 +311,7 @@ async function worldTradeQuery(
         unpivoted AS (
             SELECT year, exporter, importer, category, value
             FROM filtered
-                UNPIVOT (value FOR category IN (${unpivotColumns}))
+                UNPIVOT (value FOR category IN (${category === "All" ? unpivotColumns : `'${category}'`}))
         ),
         conversion AS (
             SELECT
@@ -337,9 +354,10 @@ async function worldTradeQuery(
             GROUP BY u.year, u.importer
         )
         SELECT
-            '${escapeSQL(country)}' AS country,
-            'ROW' AS partner,
             COALESCE(e.year, i.year) AS year,
+            '${escapeSQL(country)}' AS country,
+            'RoW' AS partner,
+            '${escapeSQL(category)}' AS category,
             ${
                 isGdp 
                 ? `
@@ -505,6 +523,7 @@ async function plotQuery(
             COALESCE(e.year, i.year) AS year,
             '${escapeSQL(country)}' AS country,
             COALESCE(e.partner, i.partner) AS partner,
+            '${escapeSQL(category)}' AS category,
             ${
                 isGdp
                 ? `
@@ -635,6 +654,7 @@ async function tableQuery(
                 ON e.year = g.year OR i.year = g.year
         )
         SELECT
+            '${timeRange[0]}-${timeRange[1]}' AS years,
             '${escapeSQL(country)}' AS country,
             partner, 
             category, 

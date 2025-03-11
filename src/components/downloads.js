@@ -23,23 +23,7 @@ export function downloadPNG(elementId, filename) {
 // https://observablehq.observablehq.cloud/pangea/party/xlsx-downloads
 export function downloadXLSX(data, filename) {
 
-    const isGDP = data[0].unit === "share of gdp";
-
-    const dataToDownload = data.map(entry => {
-        let { imports, exports, balance, gdp } = entry;
-
-        if (isGDP) {
-            entry.imports = (imports / gdp) * 100;
-            entry.exports = (exports / gdp) * 100;
-            entry.balance = (balance / gdp) * 100;
-        }
-
-        delete entry.gdp;
-        return entry;
-    });
-
-
-    const worksheet = utils.json_to_sheet(dataToDownload);
+    const worksheet = utils.json_to_sheet(data);
     const workbook = utils.book_new();
     utils.book_append_sheet(workbook, worksheet);
     writeFile(workbook, `${filename}.xlsx`);

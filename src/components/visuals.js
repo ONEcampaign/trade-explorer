@@ -19,9 +19,7 @@ function getSingleColor(key) {
     return index !== -1 ? singlePalette.range[index] : null; // Return color if found, otherwise null
 };
 
-export function rankTable(data, flow, width) {
-
-    const mainColumn = data.some(row => "category" in row) ? "category" : "partner";
+export function rankTable(data, flow, mainColumn, width) {
 
     const tableData = data
         .filter(row => row.flow === flow)
@@ -60,7 +58,7 @@ export function rankTable(data, flow, width) {
         },
         header: {
             ...Object.fromEntries(
-                Object.keys(tableData[0]).map((key) => [key, formatString(key)]),
+                Object.keys(tableData[0]).map((key) => [key, formatString(key, {})]),
             ),
         },
         align: alignmentMapping,
@@ -160,6 +158,7 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
       // Line for balance
       line(data, {
         filter: (d) => d.Flow === "balance",
+        sort: ((a, b) => a.Year - b.Year),
         x: "Year",
         y: "Value",
         stroke: "Flow",
@@ -174,7 +173,7 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
           y: "Value",
           fill: "Flow",
           format: {
-            fill: (d) => formatString(d),
+            fill: (d) => formatString(d, {}),
             x: (d) => formatYear(d),
             y: (d) => `${formatValue(d).label}`,
             stroke: true,
@@ -300,7 +299,7 @@ export function tableSingle(data, width, {isPhone= false}) {
     },
     header: {
       ...Object.fromEntries(
-        Object.keys(tableData[0]).map((key) => [key, formatString(key)]),
+        Object.keys(tableData[0]).map((key) => [key, formatString(key, {})]),
       ),
     },
     align: alignmentMapping,
@@ -338,7 +337,7 @@ export function tableMulti(data, flow, width, {isPhone = false}) {
       ),
     },
     header: {
-      category: formatString("category"),
+      category: formatString("category", {}),
     },
     align: {
       category: "left",

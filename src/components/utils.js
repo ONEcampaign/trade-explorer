@@ -1,43 +1,41 @@
 import { multiPalette } from "./colors.js";
+import {FileAttachment} from "observablehq:stdlib";
 
+export function formatString(str, {
+    capitalize=true,
+    inSentence=false,
+    fileMode=false,
+    genitive=false,
+    verb=null
+  }) {
 
-export function formatString(
-  str,
-  options = {
-    capitalize: true,
-    inSentence: false,
-    fileMode: false,
-    genitive: false,
-    verb: null
-  },
-) {
   let result = str.includes("balance")
     ? str.replace("balance", "trade balance")
     : str;
 
-  if (options.inSentence) {
+  if (inSentence) {
     result = result
       .replace(/\bbalance\b/, "balance with")
       .replace(/\bexports\b/, "exports from")
       .replace(/\bimports\b/, "imports to");
   }
 
-  if (options.capitalize) {
+  if (capitalize) {
     result = result.charAt(0).toUpperCase() + result.slice(1);
   }
 
-  if (options.fileMode) {
+  if (fileMode) {
     result = result.toLowerCase().replace(/\s+/g, "_");
   }
 
-  if (options.genitive) {
+  if (genitive) {
     result += result.endsWith("s") ? "'" : "'s";
   }
 
-  if (options.verb) {
+  if (verb) {
     result += " " + (result.endsWith("countries")
-        ? options.verb.replace(/s$/, "")  // Remove trailing "s"
-        : options.verb);  // Otherwise, use the original verb
+        ? verb.replace(/s$/, "")  // Remove trailing "s"
+        : verb);  // Otherwise, use the original verb
   }
 
   return result;
@@ -95,7 +93,6 @@ export function getLimits(data) {
 }
 
 
-
 export function getUnitLabel(unit, { long = true, value = "" }) {
   let prefix, suffix;
 
@@ -147,12 +144,24 @@ export function reshapeDataForTable(data, flow, groupKey) {
 }
 
 
-export function generateTitleSingle(country, flow, {plot= true}) {
+export function generateTitle({
+    country=null,
+    partners=null,
+    flow=null,
+    mode
+}) {
 
   const title = document.createElement("h2");
   title.className = "plot-title";
 
-  if (plot) {
+  if (mode === "plot") {
+    if (partners.length === 1) {
+      title.textContent = `${formatString(country, {genitive: true})} trade with ${partners[0]}`;
+    } else {
+      title.textContent = `${formatString(country, {genitive: true})} ${formatString(flow, {capitalize: false})}`
+    }
+  }
+  else if (mode === "table-top-partners") {
     if (flow === 'exports') {
       title.textContent = `${formatString(country, {genitive: true})} exports go to ...`;
     }
@@ -160,97 +169,134 @@ export function generateTitleSingle(country, flow, {plot= true}) {
       title.textContent = `${formatString(country, {genitive: true})} imports come from ...`;
     }
   }
-  else {
-      title.textContent = `${formatString(country, {verb: flow})} a lot of ...`;
+  else if (mode === "table-top-categories") {
+    title.textContent = `${formatString(country, {verb: flow})} a lot of ...`;
   }
 
-  return title;
+  return title
 
 }
 
 
-export function generatePlotTitle(country, partners, flow) {
-
-  const title = document.createElement("h2");
-  title.className = "plot-title";
-
-  if (partners.length === 0) {
-    return ""
-  }
-  else if  (partners.length === 1) {
-    title.textContent = `${formatString(country, {genitive: true})} trade with ${partners}`;
-  }
-  else {
-    title.textContent = `${formatString(country, {genitive: true})} ${formatString(flow, {capitalize: false})}`
-  }
-
-  return title;
-
-}
-
-
-export function generateSubtitle(partners, flow, timeRange, {table=false}) {
+export function generateSubtitle({
+    partners=null,
+    flow=null,
+    category=null,
+    timeRange=null,
+    mode
+}) {
 
   const subtitle = document.createElement("h3");
   subtitle.className = "plot-subtitle";
 
-    if (partners.length === 0) {
-      return subtitle;
+  const categoryString = category === "All" ? "All products" : category
+
+  if (mode === "plot") {
+    if (partners.length === 1) {
+
+      subtitle.innerHTML = `
+        <span class="export-label subtitle-label">Exports</span>, 
+        <span class="import-label subtitle-label">imports</span> and 
+        <span class="balance-label subtitle-label">trade balance</span>; 
+        ${categoryString}
+    `
+    } else {
+
+      const colors = multiPalette;
+
+      // Determine prefix based on flow
+      const prefix = flow === "exports" ? "To " : flow === "imports" ? "From " : "With ";
+
+      // Create and append the prefix text
+      subtitle.appendChild(document.createTextNode(prefix));
+
+      partners.sort();
+      partners.forEach((text, index) => {
+        const span = document.createElement("span");
+        span.className = "subtitle-label";
+        span.textContent = text;
+        span.style.color = colors[index % colors.length]; // Cycle through colors
+
+        subtitle.appendChild(span);
+
+        // Add appropriate separator
+        if (index < partners.length - 2) {
+          subtitle.appendChild(document.createTextNode(", "));
+        } else if (index === partners.length - 2) {
+          subtitle.appendChild(document.createTextNode(" and "));
+        }
+      });
+
+      subtitle.appendChild(document.createTextNode( `; ${categoryString}`));
+
     }
-    else {
-      if (table) {
-        subtitle.innerHTML = `By product category, ${timeRange[0] === timeRange[1] ? timeRange[0] :
-            `${timeRange[0]}-${timeRange[1]}`}`
-      }
-      else if (partners.length === 1) {
+  }
+  else {
 
-        subtitle.innerHTML = `
-          <span class="export-label subtitle-label">Exports</span>, 
-          <span class="import-label subtitle-label">imports</span> and 
-          <span class="balance-label subtitle-label">trade balance</span>
-      `
+    const timeString = timeRange[0] === timeRange[1] ? timeRange[0] : `${timeRange[0]}-${timeRange[1]}`
 
-      } else {
-
-        const colors = multiPalette;
-
-        // Determine prefix based on flow
-        const prefix = flow === "exports" ? "To " : flow === "imports" ? "From " : "With ";
-
-        // Create and append the prefix text
-        subtitle.appendChild(document.createTextNode(prefix));
-
-        partners.sort();
-        partners.forEach((text, index) => {
-          const span = document.createElement("span");
-          span.className = "subtitle-label";
-          span.textContent = text;
-          span.style.color = colors[index % colors.length]; // Cycle through colors
-
-          subtitle.appendChild(span);
-
-          // Add appropriate separator
-          if (index < partners.length - 2) {
-            subtitle.appendChild(document.createTextNode(", "));
-          } else if (index === partners.length - 2) {
-            subtitle.appendChild(document.createTextNode(" and "));
-          }
-        });
-
-      }
+    if (mode === "table-top-partners") {
+      subtitle.textContent = `${categoryString}; ${timeString}`;
     }
+    else if (mode === "table-top-categories") {
+      subtitle.textContent = `Product categories; ${timeString}`;
+    }
+    else if (mode === "table-multi") {
+      subtitle.innerHTML = `By product category; ${timeString}`;
+    }
+  }
 
   return subtitle;
 
 }
 
 
-export function generateNote(unit, prices, country, isMultiPartner, flow=null) {
+export async function generateFooter({
+    unit=null,
+    prices=null,
+    country=null,
+    flow = null,
+    isMultiPartner=false
+}) {
 
+
+  const footer = document.createElement("div");
+  footer.className = "bottom-panel";
+
+  const textSection = document.createElement("div");
+  textSection.className = "text-section";
+  textSection.appendChild(generateNote({ unit, prices, country, flow, isMultiPartner }));
+
+  const logoSection = document.createElement("div");
+  logoSection.className = "logo-section";
+
+  const link = document.createElement("a");
+  link.href = "https://data.one.org/";
+  link.target = "_blank";
+
+  const ONELogo = await FileAttachment("../ONE-logo-black.png").image()
+
+
+  link.appendChild(ONELogo);
+  logoSection.appendChild(link);
+  footer.appendChild(textSection);
+  footer.appendChild(logoSection);
+
+  return footer;
+}
+
+
+function generateNote({
+    unit=null,
+    prices=null,
+    country=null,
+    flow = null,
+    isMultiPartner=false,
+}) {
   const note = document.createElement("p");
   note.className = "plot-note";
 
-  let text =`
+  let text = `
         Source: <a 
         href="https://cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" 
         target="_blank"
@@ -267,7 +313,7 @@ export function generateNote(unit, prices, country, isMultiPartner, flow=null) {
     text += `<span>All values in ${prices === "constant" ? "constant 2023" : "current"} ${unitLabel}.</span>`;
   }
 
-  if  (isMultiPartner) {
+  if (isMultiPartner) {
     if (flow === "exports") {
       text += `<span> Exports refer to the value of goods traded from ${country} to selected partners.</span>`;
     } else if (flow === "imports") {
@@ -282,21 +328,32 @@ export function generateNote(unit, prices, country, isMultiPartner, flow=null) {
   return note;
 }
 
-export function generateFileName(country, timeRange, partners, flow, {png= false}) {
+
+export function generateFileName({
+      country,
+      partners,
+      category,
+      flow,
+      timeRange,
+      mode
+    }) {
 
   let text
 
-  if (partners.length === 1) {
-      text = `trade_between_${formatString(country, {fileMode: true})}_and_${formatString(partners[0], {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
-  }
-  else {
-    if (png) {
-      text = `${formatString(flow  + " " + country, {inSentence: true, capitalize: false, fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+  const timeString = timeRange[0] === timeRange[1] ? timeRange[0] : `${timeRange[0]}_${timeRange[1]}`
+  const categoryString = category === 'All' ? null : formatString(category, { fileMode: true });
+
+  if (mode === 'plot') {
+    if (partners.length === 1) {
+      text = `${formatString(country, {fileMode: true})}trade_with_${formatString(partners[0], {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
     }
     else {
-      text = `trade_with_${formatString(country, {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+      text = `${formatString(flow  + " " + country, {inSentence: true, capitalize: false, fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+      }
     }
-  }
+  else if (mode === 'table-multi') {
+    text = `trade_with_${formatString(country, {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+    }
 
   return text
 

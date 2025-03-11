@@ -3,9 +3,9 @@ import {setCustomColors} from "./components/colors.js"
 import {
     getUnitLabel, 
     formatString,
-    generatePlotTitle,
+    generateTitle,
     generateSubtitle, 
-    generateNote, 
+    generateFooter, 
     generateFileName
 } from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
@@ -17,10 +17,6 @@ import {downloadPNG, downloadXLSX} from './components/downloads.js';
 
 ```js 
 setCustomColors();
-```
-
-```js
-const ONELogo = await FileAttachment("./ONE-logo-black.png").image()
 ```
 
 ```js
@@ -230,23 +226,10 @@ ${
         <div class="grid grid-cols-2">
             <div class="card">
                 <div class="plot-container" id="multi-plot">
-                    ${generatePlotTitle(country, partners, flow)}
-                    ${generateSubtitle(partners, flow, timeRange, {table: false})}
-                    ${
-                        resize(
-                            (width) => tradePlot(plotData, unit, flow, width, {})
-                        )
-                    }
-                    <div class="bottom-panel">
-                        <div class="text-section">
-                            ${generateNote(unit, prices, country, isMultiPartner, flow)}
-                        </div>
-                        <div class="logo-section">
-                            <a href="https://data.one.org/" target="_blank">
-                                ${ONELogo}
-                            </a>
-                        </div>
-                    </div>
+                    ${generateTitle({country: country, partners: partners, flow: flow, mode: "plot"})}
+                    ${generateSubtitle({partners: partners, flow: flow, category: category, mode: "plot"})}
+                    ${resize((width) => tradePlot(plotData, unit, flow, width, {}))}
+                    ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isMultiPartner: isMultiPartner})}
                 </div>
                 <div class="download-panel">
                     ${
@@ -259,32 +242,31 @@ ${
                             }
                         )
                     }
+                    ${
+                        Inputs.button(
+                            "Download data", {
+                                reduce: () => downloadXLSX(
+                                    plotData,
+                                    generateFileName(country, timeRange, partners, flow, {})
+                                )
+                            }
+                        )
+                    }
                 </div>
             </div>
             <div class="card">
                 <div class="plot-container" id="multi-table">
-                        ${generatePlotTitle(country, partners, flow)}
-                        ${generateSubtitle(partners, flow, timeRange, {table: true})}
-                        ${resize((width) =>
-                            tradeTable(tableData, flow, width)
-                        )}
-                        <div class="bottom-panel">
-                            <div class="text-section">
-                                ${generateNote(unit, prices, country, isMultiPartner, flow)}
-                            </div>
-                            <div class="logo-section">
-                                <a href="https://data.one.org/" target="_blank">
-                                    ${ONELogo}
-                                </a>
-                            </div>
-                        </div>
+                    ${generateTitle({country: country, partners: partners, flow: flow, mode: "plot"})}
+                    ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-multi"})}
+                    ${resize((width) => tradeTable(tableData, flow, width))}
+                    ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isMultiPartner: isMultiPartner})}
                 </div>
                 <div class="download-panel">
                         ${
                             Inputs.button(
                                 "Download data", {
                                     reduce: () => downloadXLSX(
-                                        data,
+                                        tableData,
                                         generateFileName(country, timeRange, partners, flow, {})
                                     )
                                 }
