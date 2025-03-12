@@ -152,9 +152,9 @@ const timeRange = Generators.input(timeRangeInput)
 
 // DATA  QUERIES
 
-import {queryMulti} from "./components/dataQueries.js"
+import {multiQueries} from "./components/dataQueries.js"
 
-const data = queryMulti(
+const data = multiQueries(
     country,
     partners,
     unit,
@@ -228,7 +228,7 @@ ${
                 <div class="plot-container" id="multi-plot">
                     ${generateTitle({country: country, partners: partners, flow: flow, mode: "plot"})}
                     ${generateSubtitle({partners: partners, flow: flow, category: category, mode: "plot"})}
-                    ${resize((width) => tradePlot(plotData, unit, flow, width, {}))}
+                    ${resize((width) => tradePlot(plotData, partners, unit, flow, width, {}))}
                     ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isMultiPartner: isMultiPartner})}
                 </div>
                 <div class="download-panel">

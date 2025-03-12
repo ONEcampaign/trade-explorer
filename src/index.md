@@ -103,9 +103,9 @@ const timeRange = Generators.input(timeRangeInput)
 
 // DATA  QUERIES
 
-import {querySingle} from "./components/dataQueries.js"
+import {singleQueries} from "./components/dataQueries.js"
 
-const data = querySingle(
+const data = singleQueries(
     country, 
     unit, 
     prices, 
@@ -157,75 +157,81 @@ const categoriesData = data.categories
         ${timeRangeInput}
     </div>
 </div>
-<div class="card">
-    <div class="plot-container wide" id="single-plot">
-        ${generateTitle({country: country, partners: ["the world"], mode: "plot"})}
-        ${generateSubtitle({partners: [""], category: category, mode: "plot"})}
-        ${resize((width) => tradePlot(worldTradeData, unit, flow, width, {wide: true}))}
-        ${await generateFooter({unit: unit, prices: prices, country: country})}
-    </div>
-    <div class="download-panel">
-        ${
-            Inputs.button(
-                "Download plot", {
-                    reduce: () => downloadPNG(
-                        'single-plot',
-                        'file_name'
-                    )
-                }
-            )
-        }
-        ${
-            Inputs.button(
-                "Download data", {
-                    reduce: () => downloadXLSX(
-                        worldTradeData,
-                        'file_name'
-                    )
-                }
-            )
-        }
-    </div>
-</div>
-<div class="grid grid-cols-2">
-    <div class="card">
-        <div class="plot-container">
-            ${generateTitle({country: country, flow: flow, mode: "table-top-partners"})}
-            ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-partners"})}
-            ${resize((width) => rankTable(partnersData, flow, 'partner', width))}
-            ${await generateFooter({unit: unit, prices: prices, country: country})}
-        </div>
-        <div class="download-panel">
-            ${
-                Inputs.button(
-                    "Download data", {
-                        reduce: () => downloadXLSX(
-                            partnersData,
-                            'file_name'
+    ${
+        data === null
+        ? html` `
+        : html`
+            <div class="card">
+                <div class="plot-container wide" id="single-plot">
+                    ${generateTitle({country: country, partners: ["the world"], mode: "plot"})}
+                    ${generateSubtitle({partners: [""], category: category, mode: "plot"})}
+                    ${resize((width) => tradePlot(worldTradeData, [""], unit, flow, width, {wide: true}))}
+                    ${await generateFooter({unit: unit, prices: prices, country: country, isGlobalTrade: true})}
+                </div>
+                <div class="download-panel">
+                    ${
+                        Inputs.button(
+                            "Download plot", {
+                                reduce: () => downloadPNG(
+                                    'single-plot',
+                                    'file_name'
+                                )
+                            }
                         )
                     }
-                )
-            }
-        </div>
-    </div>
-    <div class="card">
-        <div class="plot-container">
-            ${generateTitle({country: country, flow: flow, mode: "table-top-categories"})}
-            ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-categories"})}
-            ${resize((width) => rankTable(categoriesData, flow, 'category', width))}
-            ${await generateFooter({unit: unit, prices: prices, country: country})}
-        </div>
-        <div class="download-panel">
-            ${
-                Inputs.button(
-                    "Download data", {
-                        reduce: () => downloadXLSX(
-                            categoriesData,
-                            'file_name'
+                    ${
+                        Inputs.button(
+                            "Download data", {
+                                reduce: () => downloadXLSX(
+                                    worldTradeData,
+                                    'file_name'
+                                )
+                            }
                         )
                     }
-                )
-            }
-        </div>
-    </div>
-</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2">
+                <div class="card">
+                    <div class="plot-container">
+                        ${generateTitle({country: country, flow: flow, mode: "table-top-partners"})}
+                        ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-partners"})}
+                        ${resize((width) => rankTable(partnersData, flow, 'partner', width))}
+                        ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isGlobalTrade: true})}
+                    </div>
+                    <div class="download-panel">
+                        ${
+                            Inputs.button(
+                                "Download data", {
+                                    reduce: () => downloadXLSX(
+                                        partnersData,
+                                        'file_name'
+                                    )
+                                }
+                            )
+                        }
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="plot-container">
+                        ${generateTitle({country: country, flow: flow, mode: "table-top-categories"})}
+                        ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-categories"})}
+                        ${resize((width) => rankTable(categoriesData, flow, 'category', width))}
+                        ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isGlobalTrade: true})}
+                    </div>
+                    <div class="download-panel">
+                        ${
+                            Inputs.button(
+                                "Download data", {
+                                    reduce: () => downloadXLSX(
+                                        categoriesData,
+                                        'file_name'
+                                    )
+                                }
+                            )
+                        }
+                    </div>
+                </div>
+            </div>
+        `
+    }

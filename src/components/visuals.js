@@ -1,5 +1,5 @@
-import { plot, rectY, line, ruleY, tip, pointer } from "npm:@observablehq/plot";
-import { table } from "npm:@observablehq/inputs";
+import * as Plot from "npm:@observablehq/plot";
+import * as Inputs from "npm:@observablehq/inputs";
 import { html } from "npm:htl";
 import { utcYear } from "npm:d3-time";
 import { timeFormat } from "npm:d3-time-format";
@@ -37,7 +37,7 @@ export function rankTable(data, flow, mainColumn, width) {
         exports: "left",
     };
 
-    return table(tableData, {
+    return Inputs.table(tableData, {
         sort: flow,
         reverse: flow ===  "exports",
         format: {
@@ -69,11 +69,11 @@ export function rankTable(data, flow, mainColumn, width) {
 }
 
 
-export function tradePlot(data, unit, flow, width, {wide= false}) {
+export function tradePlot(data, partners, unit, flow, width, {wide= false}) {
 
     const isPhone = window.screen.width < 800
 
-    const isMulti = new Set(data.map(row => row.partner)).size > 1;
+    const isMulti = partners.length > 1;
 
     const formattedData = data.map((row) => ({
         ...row,
@@ -86,10 +86,12 @@ export function tradePlot(data, unit, flow, width, {wide= false}) {
         { Year: year, Partner: partner, Flow: "balance", Value: balance },
     ]);
 
+    const missingVals = data.some(row => row.Value === 0)
+
     if (isMulti) {
-        return plotMultiPartner(plotData, unit, flow, width, {isPhone});
+        return plotMultiPartner(plotData, unit, flow, width, {isPhone, missingVals});
     } else {
-        return plotSinglePartner(plotData, unit, width, {isPhone, wide});
+        return plotSinglePartner(plotData, unit, width, {isPhone, wide, missingVals});
     }
 }
 
@@ -108,11 +110,11 @@ export function tradeTable(data, flow, width) {
 }
 
 
-export function plotSinglePartner(data, unit, width, {isPhone= false, wide= false}) {
+export function plotSinglePartner(data, unit, width, {isPhone= false, wide= false, missingVals}) {
 
   const formatYear = timeFormat("%Y");
 
-  return plot({
+  return Plot.plot({
     width: width,
     height: wide && !isPhone ? width * 0.25
         : isPhone ? width * 0.7
@@ -141,8 +143,8 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
     color: singlePalette,
     marks: [
       // Imports/exports bars
-      rectY(data, {
-        filter: (d) => d.Flow !== "balance",
+      Plot.rectY(data, {
+        filter: (d) => d.Flow !== "balance" & d.Value !== 0,
         x: "Year",
         y: "Value",
         fill: "Flow",
@@ -150,25 +152,46 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
       }),
 
       // Horizontal line at 0
-      ruleY([0], {
+      Plot.ruleY([0], {
         stroke: "black",
         strokeWidth: 0.5,
       }),
 
       // Line for balance
-      line(data, {
-        filter: (d) => d.Flow === "balance",
-        sort: ((a, b) => a.Year - b.Year),
-        x: "Year",
-        y: "Value",
-        stroke: "Flow",
-        curve: "monotone-x",
-        strokeWidth: 2.5,
+      Plot.line(data, {
+          filter: (d) => d.Flow === "balance" & d.Value !== 0,
+          sort: ((a, b) => a.Year - b.Year),
+          x: "Year",
+          y: "Value",
+          stroke: "Flow",
+          curve: "monotone-x",
+          marker: missingVals ? "dot" : false,
+          strokeWidth: 2,
       }),
 
-      tip(
+      // Plot.tickY(data, {
+      //   filter: (d) => d.Flow === "balance",
+      //   // sort: ((a, b) => a.Year - b.Year),
+      //   x: "Year",
+      //   y: "Value",
+      //   stroke: "Flow",
+      //   // curve: "monotone-x",
+      //   strokeWidth: 2,
+      // }),
+      // Plot.dot(data, {
+      //     filter: (d) => d.Flow === "balance",
+      //     // sort: ((a, b) => a.Year - b.Year),
+      //     x: "Year",
+      //     y: "Value",
+      //     fill: "Flow",
+      //     // curve: "monotone-x",
+      //     strokeWidth: 5,
+      //     r:4
+      // }),
+
+      Plot.tip(
         data,
-        pointer({
+        Plot.pointer({
           x: "Year",
           y: "Value",
           fill: "Flow",
@@ -187,7 +210,7 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
 }
 
 
-export function plotMultiPartner(data, unit, flow, width, {isPhone= false}) {
+export function plotMultiPartner(data, unit, flow, width, {isPhone= false, missingVals}) {
 
   const formatYear = timeFormat("%Y");
 
@@ -196,7 +219,7 @@ export function plotMultiPartner(data, unit, flow, width, {isPhone= false}) {
       range: multiPalette
   };
 
-  return plot({
+  return Plot.plot({
     width: width,
     height: width * 0.5,
     marginTop: 25,
@@ -223,26 +246,27 @@ export function plotMultiPartner(data, unit, flow, width, {isPhone= false}) {
     color: colorPalette,
     marks: [
       // Horizontal line at 0
-      ruleY([0], {
+      Plot.ruleY([0], {
         stroke: "black",
         strokeWidth: 0.5,
       }),
 
       // Lines for each country
-      line(data, {
-        filter: (d) => d.Flow === flow,
+      Plot.line(data, {
+        filter: (d) => d.Flow === flow & d.Value !== 0,
         sort: ((a, b) => a.Year - b.Year),
         x: "Year",
         y: "Value",
         z: "Partner",
         curve: "monotone-x",
+        marker: missingVals ? "dot": false,
         stroke: "Partner",
-        strokeWidth: 2.5,
+        strokeWidth: 2,
       }),
-      tip(
+      Plot.tip(
         data,
-        pointer({
-          filter: (d) => d.Flow === flow,
+        Plot.pointer({
+          filter: (d) => d.Flow === flow & d.Value !== 0,
           x: "Year",
           y: "Value",
           fill: "Partner",
@@ -278,7 +302,7 @@ export function tableSingle(data, width, {isPhone= false}) {
 
   const limits = getLimits(tableData);
 
-    return table(tableData, {
+    return Inputs.table(tableData, {
     sort: "exports", // Sort by year or exports
     reverse: true, // Reverse sort only for category-based tables
     format: {
@@ -321,7 +345,7 @@ export function tableMulti(data, flow, width, {isPhone = false}) {
 
   const colors = multiPalette;
 
-  return table(tableData, {
+  return Inputs.table(tableData, {
     format: {
       category: (x) => x, // General formatter for groupKey (year or category)
       ...Object.fromEntries(

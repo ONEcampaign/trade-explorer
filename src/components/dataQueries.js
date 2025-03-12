@@ -31,7 +31,7 @@ function caseStatement(name, partners) {
 }
 
 
-export function querySingle(
+export function singleQueries(
     country,
     unit,
     prices,
@@ -133,7 +133,7 @@ async function topPartnersQuery(
             SELECT SUM(gdp_constant) AS gdp
             FROM gdp_table
             WHERE country IN (${countrySQLList})
-            AND year BETWEEN ${timeRange[0]} AND ${timeRange[1]}
+                AND year BETWEEN ${timeRange[0]} AND ${timeRange[1]}
         ),
         converted AS (
             SELECT 
@@ -391,7 +391,7 @@ async function worldTradeQuery(
 
 }
 
-export function queryMulti(country, partners, unit, prices, timeRange, category, flow) {
+export function multiQueries(country, partners, unit, prices, timeRange, category, flow) {
 
     const countryList = getCountryList(country);
     const partnersList = getCountryList(partners);
@@ -490,9 +490,11 @@ async function plotQuery(
         exports AS (
             SELECT year, partner, SUM(exports) AS exports
             FROM (
-                SELECT u.year, SUM(u.value * c.factor * 1.1 / 1.1) AS exports, 
-                       unnest(ARRAY[ ${caseStatement("u.importer", partners)} ]) AS partner
-                FROM unpivoted u
+                SELECT 
+                    u.year, 
+                    SUM(u.value * c.factor * 1.1 / 1.1) AS exports,
+                    unnest(ARRAY[ ${caseStatement("u.importer", partners)} ]) AS partner
+            FROM unpivoted u
                 JOIN conversion c 
                     ON u.year = c.year
                     ${prices === "constant" | isGdp ? "AND u.exporter = c.country" : ""} 
@@ -506,8 +508,10 @@ async function plotQuery(
         imports AS (
             SELECT year, partner, SUM(imports) AS imports
             FROM (
-                SELECT u.year, SUM(u.value * c.factor * 1.1 / 1.1) AS imports,
-                       unnest(ARRAY[ ${caseStatement("u.exporter", partners)} ]) AS partner
+                SELECT 
+                    u.year, 
+                    SUM(u.value * c.factor * 1.1 / 1.1) AS imports,
+                    unnest(ARRAY[ ${caseStatement("u.exporter", partners)} ]) AS partner
                 FROM unpivoted u
                 JOIN conversion c 
                     ON u.year = c.year
@@ -537,13 +541,13 @@ async function plotQuery(
                     (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0))) AS balance
                 `
             },
-            CASE 
+            CASE
                 WHEN ${isGdp} THEN 'share of gdp'
                 ELSE '${prices} ${unit} million'
-            END AS unit  
+            END AS unit
         FROM exports e
             FULL OUTER JOIN imports i
-        ON e.year = i.year
+                ON e.year = i.year AND e.partner = i.partner
             LEFT JOIN gdp g
                 ON COALESCE(e.year, i.year) = g.year
         GROUP BY COALESCE(e.year, i.year), COALESCE(e.partner, i.partner)

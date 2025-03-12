@@ -63,6 +63,7 @@ def filter_and_aggregate_data(
     df["value"] /= 1_000  # Convert from thousands to millions
     return df
 
+
 def to_decimal(val, precision=2):
     quantizer = Decimal("1." + "0" * precision)
     return Decimal(str(val)).quantize(quantizer, rounding=ROUND_HALF_EVEN)
@@ -75,7 +76,7 @@ def generate_parquet(df):
     decimal_cols = [col for col in cols if col not in category_cols]
 
     for col in category_cols:
-        df[col] = df[col].astype('category')
+        df[col] = df[col].astype("category")
 
     for col in decimal_cols:
         df[col] = df[col].apply(lambda x: to_decimal(x))
@@ -86,7 +87,7 @@ def generate_parquet(df):
         ("importer", pa.dictionary(index_type=pa.int8(), value_type=pa.string())),
     ]
 
-    dynamic_schema = [(col,  pa.decimal128(8, 2)) for col in decimal_cols]
+    dynamic_schema = [(col, pa.decimal128(8, 2)) for col in decimal_cols]
 
     schema = pa.schema(base_schema + dynamic_schema)
 

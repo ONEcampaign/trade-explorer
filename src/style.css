@@ -162,6 +162,10 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
     padding: 1rem;
 }
 
+/*.card:has(.plot-container.wide) {*/
+/*    width: 80%;*/
+/*    margin: 0 auto;*/
+/*}*/
 .plot-container.wide {
     padding: 1.5rem 3rem;
 }
@@ -222,7 +226,8 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 
 .plot-note {
     font-size: var(--size-s);
-    margin: 0 0;
+    margin: 0 0 5px;
+    max-width: 100% !important;
 }
 
 .logo-section {

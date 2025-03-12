@@ -1,5 +1,11 @@
 ```js
 import {groupMappings} from "./components/inputValues.js";
+
+const sampleInfo = await FileAttachment("./data/scripts/country_aggregates.csv").csv({typed: true});
+
+const NCountries = sampleInfo[0].n_countries
+const GDPShare = sampleInfo[0].gdp_share.toFixed(1)
+const PopulationShare = sampleInfo[0].pop_share.toFixed(1)
 ```
 
 <div class="title-container">
@@ -40,8 +46,9 @@ import {groupMappings} from "./components/inputValues.js";
     </p> 
     <p class="base-text">
         Note that due to data management constraints, <span class='italic'>Single Country</span> provides trade 
-        information for 113 countries rather than the entire world. While not exhaustive, these countries account for 
-        XX% of the global population and XX% of world GDP, making it a strong approximation.
+        information for ${NCountries} countries rather than the entire world. While not exhaustive, these countries 
+        account for ${GDPShare}% of global GDP and ${PopulationShare}% of world population, making it a strong 
+        approximation.
     </p>
     <p class="base-text">
         <span class="bold">Multi Country</span> lets you explore trade between a selected country and up to five trading 

@@ -33,10 +33,9 @@ def load_format_weo():
     weo = bbdata.WEO()
     df_raw = weo.get_data()
 
-    df = df_raw[
-        (df_raw["indicator_code"] == "NGDPD")  # Gross domestic product, current prices
-        & (df_raw["unit"] == "U.S. dollars")
-    ][["year", "entity_name", "value"]]
+    df = df_raw.query(
+        "indicator_code == 'NGDPD' & unit == 'U.S. dollars'"
+    )[["year", "entity_name", "value"]]
 
     df.rename(columns={"value": "gdp_current"}, inplace=True)
 

@@ -1,5 +1,7 @@
 import { multiPalette } from "./colors.js";
 import {FileAttachment} from "observablehq:stdlib";
+import {groupMappings} from "./inputValues.js";
+
 
 export function formatString(str, {
     capitalize=true,
@@ -16,8 +18,8 @@ export function formatString(str, {
   if (inSentence) {
     result = result
       .replace(/\bbalance\b/, "balance with")
-      .replace(/\bexports\b/, "exports from")
-      .replace(/\bimports\b/, "imports to");
+      .replace(/\bexports\b/, "exports to")
+      .replace(/\bimports\b/, "imports from");
   }
 
   if (capitalize) {
@@ -157,21 +159,23 @@ export function generateTitle({
   if (mode === "plot") {
     if (partners.length === 1) {
       title.textContent = `${formatString(country, {genitive: true})} trade with ${partners[0]}`;
+      title.innerHTML += partners.length === 1 && partners[0] === "the world" ? "<sup>*</sup>" : "";
     } else {
       title.textContent = `${formatString(country, {genitive: true})} ${formatString(flow, {capitalize: false})}`
     }
   }
   else if (mode === "table-top-partners") {
     if (flow === 'exports') {
-      title.textContent = `${formatString(country, {genitive: true})} exports go to ...`;
+      title.innerHTML = `${formatString(country, {genitive: true})} exports<sup>*</sup> go to ...`;
     }
     else {
-      title.textContent = `${formatString(country, {genitive: true})} imports come from ...`;
+      title.innerHTML = `${formatString(country, {genitive: true})} imports<sup>*</sup> come from ...`;
     }
   }
   else if (mode === "table-top-categories") {
-    title.textContent = `${formatString(country, {verb: flow})} a lot of ...`;
+    title.innerHTML = `${formatString(country, {verb: flow})}<sup>*</sup> a lot of ...`;
   }
+
 
   return title
 
@@ -256,7 +260,8 @@ export async function generateFooter({
     prices=null,
     country=null,
     flow = null,
-    isMultiPartner=false
+    isMultiPartner=false,
+    isGlobalTrade=false
 }) {
 
 
@@ -265,7 +270,33 @@ export async function generateFooter({
 
   const textSection = document.createElement("div");
   textSection.className = "text-section";
-  textSection.appendChild(generateNote({ unit, prices, country, flow, isMultiPartner }));
+  textSection.appendChild(generateNote({ unit, prices, country, flow, isMultiPartner}));
+
+  if (isGlobalTrade) {
+
+    function groupLength(name) {
+      return groupMappings[name].length;
+    }
+
+    const sampleInfo = await FileAttachment("../data/scripts/country_aggregates.csv").csv({typed: true});
+
+    const NCountries = sampleInfo[0].n_countries
+    const GDPShare = sampleInfo[0].gdp_share.toFixed(1)
+    const PopulationShare = sampleInfo[0].pop_share.toFixed(1)
+
+    const starNote = document.createElement("p");
+    starNote.className = "plot-note";
+
+    if (flow !== null) {
+      starNote.textContent = `*This table includes ${formatString(country, {genitive: true})} ${formatString(flow, {inSentence: true, capitalize: false})} a selection of ${NCountries - groupLength(country)} countries, which altogether cover ${GDPShare}% of global GDP and ${PopulationShare}% of the world’s population.`
+    } else  {
+      starNote.textContent = `*This plot represents ${formatString(country, {genitive: true})} trade with a selection of ${NCountries - groupLength(country)} countries, which altogether cover ${GDPShare}% of global GDP and ${PopulationShare}% of the world’s population.`
+
+    }
+
+    textSection.appendChild(starNote);
+
+  }
 
   const logoSection = document.createElement("div");
   logoSection.className = "logo-section";
@@ -291,7 +322,7 @@ function generateNote({
     prices=null,
     country=null,
     flow = null,
-    isMultiPartner=false,
+    isMultiPartner=false
 }) {
   const note = document.createElement("p");
   note.className = "plot-note";
