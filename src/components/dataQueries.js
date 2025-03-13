@@ -301,7 +301,14 @@ async function worldTradeQuery(
 ) {
 
     const string = `
-        WITH filtered AS (
+        WITH years_raw AS (
+            SELECT * FROM GENERATE_SERIES(${timeRange[0]}, ${timeRange[1]})
+        ),
+        years AS (
+            SELECT generate_series AS year 
+            FROM years_raw
+        ),
+        filtered AS (
             SELECT *
             FROM trade
             WHERE
@@ -322,7 +329,7 @@ async function worldTradeQuery(
                 ${prices === "constant" | isGdp ? `WHERE country IN (${countrySQLList})` : ""}
         ),
         gdp AS (
-        SELECT year, SUM(gdp_constant) AS gdp
+            SELECT year, SUM(gdp_constant) AS gdp
             FROM gdp_table
             WHERE country IN (${countrySQLList})
             GROUP BY year
@@ -354,34 +361,44 @@ async function worldTradeQuery(
             GROUP BY u.year, u.importer
         )
         SELECT
-            COALESCE(e.year, i.year) AS year,
+            y.year,
             '${escapeSQL(country)}' AS country,
             'RoW' AS partner,
             '${escapeSQL(category)}' AS category,
             ${
                 isGdp 
                 ? `
-                    SUM(COALESCE(i.imports  * -1 / g.gdp * 100, 0)) AS imports,
-                    SUM(COALESCE(e.exports / g.gdp * 100, 0)) AS exports,
-                    (SUM(COALESCE(e.exports / g.gdp * 100, 0)) - SUM(COALESCE(i.imports / g.gdp * 100, 0))) AS balance
+                    NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) AS imports,
+                    NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) AS exports,
+                    CASE 
+                        WHEN NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) IS NULL
+                            AND NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) IS NULL
+                        THEN NULL
+                        ELSE (SUM(COALESCE(e.exports / g.gdp * 100, 0)) - SUM(COALESCE(i.imports / g.gdp * 100, 0)))
+                    END AS balance
                 `
                 : `
-                    SUM(COALESCE(i.imports * -1, 0)) AS imports,
-                    SUM(COALESCE(e.exports, 0)) AS exports,
-                    (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0))) AS balance
+                    NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) AS imports,
+                    NULLIF(SUM(COALESCE(e.exports, 0)), 0) AS exports,
+                    CASE 
+                        WHEN NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) IS NULL
+                            AND NULLIF(SUM(COALESCE(e.exports, 0)), 0) IS NULL
+                        THEN NULL
+                        ELSE (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0)))
+                    END AS balance
                 `
             },
             CASE
                 WHEN ${isGdp} THEN 'share of gdp'
                 ELSE '${prices} ${unit} million'
             END AS unit  
-        FROM exports e
-        FULL OUTER JOIN imports i
-            ON e.year = i.year
-        LEFT JOIN gdp g
-            ON COALESCE(e.year, i.year) = g.year
-        GROUP BY COALESCE(e.year, i.year), g.gdp
-        `;
+        FROM years y 
+            LEFT JOIN exports e ON y.year = e.year
+            LEFT JOIN imports i ON y.year = e.year
+            LEFT JOIN gdp g ON g.year = e.year
+        GROUP BY y.year
+        ORDER BY y.year
+    `;
 
     const query =  await db.query(string);
 
@@ -463,7 +480,18 @@ async function plotQuery(
 ) {
 
     const string = `
-        WITH filtered AS (
+        WITH years AS (
+            SELECT * FROM GENERATE_SERIES(${timeRange[0]}, ${timeRange[1]})
+        ),
+        partners AS (
+            SELECT unnest(ARRAY[${partnersSQLList}]) AS partner
+        ),
+        years_partners AS (
+            SELECT y.generate_series AS year, p.partner
+            FROM years y
+            CROSS JOIN partners p
+        ),
+        filtered AS (
             SELECT * 
             FROM trade
             WHERE 
@@ -524,33 +552,44 @@ async function plotQuery(
             GROUP BY year, partner
         )
         SELECT
-            COALESCE(e.year, i.year) AS year,
+            yp.year,
             '${escapeSQL(country)}' AS country,
-            COALESCE(e.partner, i.partner) AS partner,
+            yp.partner,
             '${escapeSQL(category)}' AS category,
             ${
                 isGdp
-                ? `
-                    SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)) AS imports,
-                    SUM(COALESCE(e.exports / g.gdp * 100, 0)) AS exports,
-                    (SUM(COALESCE(e.exports / g.gdp * 100, 0)) - SUM(COALESCE(i.imports / g.gdp * 100, 0))) AS balance
+                ?
                 `
-                : `
-                    SUM(COALESCE(i.imports * -1, 0)) AS imports,
-                    SUM(COALESCE(e.exports, 0)) AS exports,
-                    (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0))) AS balance
+                    NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) AS imports,
+                    NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) AS exports,
+                    CASE 
+                        WHEN NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) IS NULL
+                            AND NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) IS NULL
+                        THEN NULL
+                        ELSE (SUM(COALESCE(e.exports / g.gdp * 100, 0)) - SUM(COALESCE(i.imports / g.gdp * 100, 0)))
+                    END AS balance
+                `
+                :
+                `
+                    NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) AS imports,
+                    NULLIF(SUM(COALESCE(e.exports, 0)), 0) AS exports,
+                    CASE 
+                        WHEN NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) IS NULL
+                            AND NULLIF(SUM(COALESCE(e.exports, 0)), 0) IS NULL
+                        THEN NULL
+                        ELSE (SUM(COALESCE(e.exports, 0)) - SUM(COALESCE(i.imports, 0)))
+                    END AS balance
                 `
             },
-            CASE
-                WHEN ${isGdp} THEN 'share of gdp'
-                ELSE '${prices} ${unit} million'
+            CASE WHEN ${isGdp} THEN 'share of gdp'
+                 ELSE '${prices} ${unit} million'
             END AS unit
-        FROM exports e
-            FULL OUTER JOIN imports i
-                ON e.year = i.year AND e.partner = i.partner
-            LEFT JOIN gdp g
-                ON COALESCE(e.year, i.year) = g.year
-        GROUP BY COALESCE(e.year, i.year), COALESCE(e.partner, i.partner)
+        FROM years_partners yp
+            LEFT JOIN exports e ON yp.year = e.year AND yp.partner = e.partner
+            LEFT JOIN imports i ON yp.year = i.year AND yp.partner = i.partner
+            LEFT JOIN gdp g ON yp.year = g.year
+        GROUP BY yp.year, yp.partner
+        ORDER BY yp.partner, yp.year;
     `;
 
     const query = await db.query(string);

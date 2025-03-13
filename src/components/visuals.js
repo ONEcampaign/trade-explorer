@@ -78,7 +78,7 @@ export function tradePlot(data, partners, unit, flow, width, {wide= false}) {
     const formattedData = data.map((row) => ({
         ...row,
         year: new Date(row.year, 1, 1), // Ensure year is just the integer
-    }));
+    }))
 
     const plotData = formattedData.flatMap(({ year, partner, imports, exports, balance }) => [
         { Year: year, Partner: partner, Flow: "imports", Value: imports },
@@ -86,12 +86,25 @@ export function tradePlot(data, partners, unit, flow, width, {wide= false}) {
         { Year: year, Partner: partner, Flow: "balance", Value: balance },
     ]);
 
-    const missingVals = data.some(row => row.Value === 0)
+    const seriesBreaks = (() => {
+        let foundNonNull = false, foundGap = false;
+        return data.some(row => {
+            if (row.balance !== null) {
+                if (foundGap) return true; // If we already saw a gap, this confirms a break
+                foundNonNull = true; // Mark start of non-null sequence
+            } else if (foundNonNull) {
+                foundGap = true; // Found a null after non-null values, potential break
+            }
+            return false;
+        });
+    })();
+
+    const singleValue = data.filter(d => d.balance !== null).length === 1;
 
     if (isMulti) {
-        return plotMultiPartner(plotData, unit, flow, width, {isPhone, missingVals});
+        return plotMultiPartner(plotData, unit, flow, width, {isPhone, seriesBreaks, singleValue});
     } else {
-        return plotSinglePartner(plotData, unit, width, {isPhone, wide, missingVals});
+        return plotSinglePartner(plotData, unit, width, {isPhone, wide, seriesBreaks, singleValue});
     }
 }
 
@@ -110,7 +123,15 @@ export function tradeTable(data, flow, width) {
 }
 
 
-export function plotSinglePartner(data, unit, width, {isPhone= false, wide= false, missingVals}) {
+export function plotSinglePartner(
+    data, unit, width,
+    {
+        isPhone= false,
+        wide= false,
+        seriesBreaks = false,
+        singleValue = false
+    }
+    ) {
 
   const formatYear = timeFormat("%Y");
 
@@ -144,11 +165,10 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
     marks: [
       // Imports/exports bars
       Plot.rectY(data, {
-        filter: (d) => d.Flow !== "balance" & d.Value !== 0,
+        filter: (d) => d.Flow !== "balance",
         x: "Year",
         y: "Value",
-        fill: "Flow",
-        // opacity: .75
+        fill: "Flow"
       }),
 
       // Horizontal line at 0
@@ -157,37 +177,29 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
         strokeWidth: 0.5,
       }),
 
-      // Line for balance
       Plot.line(data, {
-          filter: (d) => d.Flow === "balance" & d.Value !== 0,
-          sort: ((a, b) => a.Year - b.Year),
+          filter: (d) => d.Flow === "balance",
           x: "Year",
           y: "Value",
           stroke: "Flow",
           curve: "monotone-x",
-          marker: missingVals ? "dot" : false,
           strokeWidth: 2,
       }),
 
-      // Plot.tickY(data, {
-      //   filter: (d) => d.Flow === "balance",
-      //   // sort: ((a, b) => a.Year - b.Year),
-      //   x: "Year",
-      //   y: "Value",
-      //   stroke: "Flow",
-      //   // curve: "monotone-x",
-      //   strokeWidth: 2,
-      // }),
-      // Plot.dot(data, {
-      //     filter: (d) => d.Flow === "balance",
-      //     // sort: ((a, b) => a.Year - b.Year),
-      //     x: "Year",
-      //     y: "Value",
-      //     fill: "Flow",
-      //     // curve: "monotone-x",
-      //     strokeWidth: 5,
-      //     r:4
-      // }),
+      ...(
+          (seriesBreaks | singleValue)
+          ? [
+
+              Plot.dot(data, {
+                  filter: (d) => d.Flow === "balance",
+                  x: "Year",
+                  y: "Value",
+                  fill: "Flow",
+                  r: 3
+              })
+          ]
+          : []
+      ),
 
       Plot.tip(
         data,
@@ -210,7 +222,13 @@ export function plotSinglePartner(data, unit, width, {isPhone= false, wide= fals
 }
 
 
-export function plotMultiPartner(data, unit, flow, width, {isPhone= false, missingVals}) {
+export function plotMultiPartner(
+    data, unit, flow, width,
+    {
+        isPhone= false,
+        seriesBreaks=false,
+        singleValue=false
+    }) {
 
   const formatYear = timeFormat("%Y");
 
@@ -245,6 +263,7 @@ export function plotMultiPartner(data, unit, flow, width, {isPhone= false, missi
     },
     color: colorPalette,
     marks: [
+
       // Horizontal line at 0
       Plot.ruleY([0], {
         stroke: "black",
@@ -253,16 +272,29 @@ export function plotMultiPartner(data, unit, flow, width, {isPhone= false, missi
 
       // Lines for each country
       Plot.line(data, {
-        filter: (d) => d.Flow === flow & d.Value !== 0,
+        filter: (d) => d.Flow === flow,
         sort: ((a, b) => a.Year - b.Year),
         x: "Year",
         y: "Value",
         z: "Partner",
         curve: "monotone-x",
-        marker: missingVals ? "dot": false,
         stroke: "Partner",
         strokeWidth: 2,
       }),
+      ...(
+          (seriesBreaks | singleValue)
+          ? [
+
+              Plot.dot(data, {
+                  filter: (d) => d.Flow === flow,
+                  x: "Year",
+                  y: "Value",
+                  fill: "Partner",
+                  r: 3
+              })
+          ]
+          : []
+      ),
       Plot.tip(
         data,
         Plot.pointer({

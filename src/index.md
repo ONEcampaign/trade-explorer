@@ -30,7 +30,7 @@ const countryInput = Inputs.select(
     {
         label: "Country",
         sort: true,
-        value: "Algeria"
+        value: "South Africa"
     })
 
 const country = Generators.input(countryInput);
