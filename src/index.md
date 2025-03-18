@@ -91,7 +91,7 @@ const timeRangeInput = rangeInput(
         min: maxTimeRange[0],
         max: maxTimeRange[1],
         step: 1,
-        value: [maxTimeRange[1] - 10, maxTimeRange[1]],
+        value: [maxTimeRange[0], maxTimeRange[1]],
         label: "Time range",
         enableTextInput: true
     })

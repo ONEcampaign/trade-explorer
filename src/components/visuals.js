@@ -84,7 +84,7 @@ export function tradePlot(data, partners, unit, flow, width, {wide= false}) {
         { Year: year, Partner: partner, Flow: "imports", Value: imports },
         { Year: year, Partner: partner, Flow: "exports", Value: exports },
         { Year: year, Partner: partner, Flow: "balance", Value: balance },
-    ]);
+    ]).filter((d) => d.Value !== null);
 
     const seriesBreaks = (() => {
         let foundNonNull = false, foundGap = false;

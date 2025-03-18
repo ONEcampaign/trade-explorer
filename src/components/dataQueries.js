@@ -366,11 +366,11 @@ async function worldTradeQuery(
             'RoW' AS partner,
             '${escapeSQL(category)}' AS category,
             ${
-                isGdp 
+                isGdp
                 ? `
                     NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) AS imports,
                     NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) AS exports,
-                    CASE 
+                    CASE
                         WHEN NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) IS NULL
                             AND NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) IS NULL
                         THEN NULL
@@ -380,7 +380,7 @@ async function worldTradeQuery(
                 : `
                     NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) AS imports,
                     NULLIF(SUM(COALESCE(e.exports, 0)), 0) AS exports,
-                    CASE 
+                    CASE
                         WHEN NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) IS NULL
                             AND NULLIF(SUM(COALESCE(e.exports, 0)), 0) IS NULL
                         THEN NULL
@@ -391,11 +391,11 @@ async function worldTradeQuery(
             CASE
                 WHEN ${isGdp} THEN 'share of gdp'
                 ELSE '${prices} ${unit} million'
-            END AS unit  
-        FROM years y 
+            END AS unit
+        FROM years y
             LEFT JOIN exports e ON y.year = e.year
-            LEFT JOIN imports i ON y.year = e.year
-            LEFT JOIN gdp g ON g.year = e.year
+            FULL OUTER JOIN imports i ON y.year = i.year AND e.country = i.country
+            LEFT JOIN gdp g ON y.year = g.year
         GROUP BY y.year
         ORDER BY y.year
     `;
