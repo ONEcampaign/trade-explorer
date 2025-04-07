@@ -376,7 +376,7 @@ export function generateFileName({
 
   if (mode === 'plot') {
     if (partners.length === 1) {
-      text = `${formatString(country, {fileMode: true})}trade_with_${formatString(partners[0], {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+      text = `${formatString(country, {fileMode: true})}_trade_with_${formatString(partners[0], {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
     }
     else {
       text = `${formatString(flow  + " " + country, {inSentence: true, capitalize: false, fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;

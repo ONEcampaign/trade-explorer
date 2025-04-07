@@ -173,17 +173,6 @@ const isMultiPartner = partners.length > 1
 
 ```
 
-<div class="title-container">
-    <div class="title-logo">
-        <a href="https://data.one.org/" target="_blank">
-            <img src="./ONE-logo-black.png" alt="A black circle with ONE written in white thick letters.">
-        </a>
-    </div>
-    <h1 class="title-text">
-        Trade explorer
-    </h1>
-</div>
-
 <div class="header card">
     <a class="view-button" href="./">
         Single Country
@@ -237,7 +226,7 @@ ${
                             "Download plot", {
                                 reduce: () => downloadPNG(
                                     'multi-plot',
-                                    generateFileName(country, timeRange, partners, flow, {png: true})
+                                    generateFileName({country:country, partners:partners, category:category, flow:flow, timeRange:timeRange, mode:"plot"})
                                 )
                             }
                         )
@@ -247,7 +236,7 @@ ${
                             "Download data", {
                                 reduce: () => downloadXLSX(
                                     plotData,
-                                    generateFileName(country, timeRange, partners, flow, {})
+                                    generateFileName({country:country, partners:partners, category:category, flow:flow, timeRange:timeRange, mode:"plot"})
                                 )
                             }
                         )
@@ -267,7 +256,7 @@ ${
                                 "Download data", {
                                     reduce: () => downloadXLSX(
                                         tableData,
-                                        generateFileName(country, timeRange, partners, flow, {})
+                                        generateFileName({country:country, partners:partners, category:category, flow:flow, timeRange:timeRange, mode:"table-multi"})
                                     )
                                 }
                             )
