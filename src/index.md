@@ -5,7 +5,8 @@ import {
     formatString, 
     generateTitle,
     generateSubtitle, 
-    generateFooter
+    generateFooter,
+    generateFileName
 } from "./components/utils.js"
 import {maxTimeRange, productCategories, groupMappings} from "./components/inputValues.js";
 import {rangeInput} from "./components/rangeInput.js";
@@ -163,7 +164,7 @@ const categoriesData = data.categories
                             "Download plot", {
                                 reduce: () => downloadPNG(
                                     'single-plot',
-                                    'file_name'
+                                    generateFileName({country:country, partners:["the world"], category:category, timeRange:timeRange, mode:"plot"})
                                 )
                             }
                         )
@@ -173,7 +174,7 @@ const categoriesData = data.categories
                             "Download data", {
                                 reduce: () => downloadXLSX(
                                     worldTradeData,
-                                    'file_name'
+                                    generateFileName({country:country, partners:["the world"], category:category, timeRange:timeRange, mode:"plot"})
                                 )
                             }
                         )
@@ -194,7 +195,7 @@ const categoriesData = data.categories
                                 "Download data", {
                                     reduce: () => downloadXLSX(
                                         partnersData,
-                                        'file_name'
+                                        generateFileName({country: country, category:category, timeRange: timeRange, flow: flow, mode: "table-partners"})
                                     )
                                 }
                             )
@@ -214,7 +215,7 @@ const categoriesData = data.categories
                                 "Download data", {
                                     reduce: () => downloadXLSX(
                                         categoriesData,
-                                        'file_name'
+                                        generateFileName({country: country, timeRange: timeRange, flow: flow, mode: "table-categories"})
                                     )
                                 }
                             )

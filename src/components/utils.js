@@ -367,24 +367,35 @@ export function generateFileName({
       flow,
       timeRange,
       mode
-    }) {
+    } ) {
 
   let text
 
   const timeString = timeRange[0] === timeRange[1] ? timeRange[0] : `${timeRange[0]}_${timeRange[1]}`
-  const categoryString = category === 'All' ? null : formatString(category, { fileMode: true });
+  const categoryString = category === 'All' ? '' : formatString(`_${category}`, { fileMode: true });
 
   if (mode === 'plot') {
     if (partners.length === 1) {
-      text = `${formatString(country, {fileMode: true})}_trade_with_${formatString(partners[0], {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+      text = `${formatString(country, {fileMode: true})}_trade_with_${formatString(partners[0], {fileMode: true})}_${timeString}${categoryString}`;
     }
     else {
-      text = `${formatString(flow  + " " + country, {inSentence: true, capitalize: false, fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+      text = `${formatString(flow  + " " + country, {inSentence: true, capitalize: false, fileMode: true})}_${timeString}${categoryString}`;
       }
     }
   else if (mode === 'table-multi') {
-    text = `trade_with_${formatString(country, {fileMode: true})}_${timeRange[0]}_${timeRange[1]}`;
+    text = `trade_with_${formatString(country, {fileMode: true})}_${timeString}${categoryString}`;
     }
+  else if (mode === 'table-partners') {
+    if (flow === 'exports') {
+      text = `${formatString(country, {fileMode: true})}_export_partners_${timeString}${categoryString}`;
+    }
+    else {
+      text = `${formatString(country, {fileMode: true})}_import_partners_${timeString}${categoryString}`;
+    }
+  }
+  else if (mode === 'table-categories') {
+    text = `${formatString(country, {fileMode: true})}_top_${flow}_${timeString}`;
+  }
 
   return text
 
