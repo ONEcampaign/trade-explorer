@@ -203,7 +203,7 @@ export function plotSinglePartner(
 
       Plot.tip(
         data,
-        Plot.pointer({
+        Plot.pointerX({
           x: "Year",
           y: "Value",
           fill: "Flow",
