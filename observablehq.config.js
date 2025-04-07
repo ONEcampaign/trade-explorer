@@ -1,17 +1,23 @@
+import { generateHeader } from "@one-data/observable-themes/header-template";
+
 // See https://observablehq.com/framework/config for documentation.
 export default {
 
   title: "Trade Explorer",
 
-  head: '<link rel="icon" href="ONE-logo-favicon.png" type="image/png" sizes="32x32">' +
-      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />',
+  head: `<link rel="icon" href="ONE-logo-favicon.png" type="image/png" sizes="32x32">'
+      <script src="npm:@one-data/observable-themes/header.js" defer></script>
+      <script src="npm:@one-data/observable-themes/footer.js" defer></script>`,
 
   root: "src",
   theme: ["light", "wide", "alt"],
   toc: false,
   sidebar: false,
   pager: false,
-  style: "style.css"
+  style: "style.css",
+
+  header: generateHeader({title: "Trade Explorer"}),
+  footer: "",
 
   // Some additional configuration options and their defaults:
   // theme: "default", // try "light", "dark", "slate", etc.

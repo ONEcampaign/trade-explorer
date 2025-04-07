@@ -1,6 +1,8 @@
 @import url("observablehq:default.css");
 @import url("observablehq:theme-air.css");
 @import url("observablehq:theme-alt.css");
+@import url("@one-data/observable-themes/styles/header.css");
+@import url("@one-data/observable-themes/styles/footer.css");
 
 /* ===== Root Variables ===== */
 :root {
