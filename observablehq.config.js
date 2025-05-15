@@ -1,34 +1,19 @@
-import { generateHeader } from "@one-data/observable-themes/header-template";
+import {generateHeader} from "@one-data/observable-themes/header";
+import {generateFooter} from "@one-data/observable-themes/footer";
+import {icon} from "@one-data/observable-themes/use-images";
 
-// See https://observablehq.com/framework/config for documentation.
 export default {
 
   title: "Trade Explorer",
+  head: `<link rel="icon" href=${icon} type="image/png" sizes="32x32">`,
 
-  head: `<link rel="icon" href="ONE-logo-favicon.png" type="image/png" sizes="32x32">'
-      <script src="npm:@one-data/observable-themes/header.js" defer></script>
-      <script src="npm:@one-data/observable-themes/footer.js" defer></script>`,
+  header: generateHeader({title: "Trade Explorer"}),
+  footer: generateFooter(),
 
   root: "src",
-  theme: ["light", "wide", "alt"],
+  style: "style.css",
+
   toc: false,
   sidebar: false,
   pager: false,
-  style: "style.css",
-
-  header: generateHeader({title: "Trade Explorer"}),
-  footer: "",
-
-  // Some additional configuration options and their defaults:
-  // theme: "default", // try "light", "dark", "slate", etc.
-  // header: "", // what to show in the header (HTML)
-  // footer: "Built with Observable.", // what to show in the footer (HTML)
-  // sidebar: true, // whether to show the sidebar
-  // pager: true, // whether to show previous & next links in the footer
-  // output: "dist", // path to the output root for build
-  // search: true, // activate search
-  // linkify: true, // convert URLs in Markdown to links
-  // typographer: false, // smart quotes and other typographic improvements
-  // preserveExtension: false, // drop .html from URLs
-  // preserveIndex: false, // drop /index from URLs
 };

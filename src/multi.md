@@ -169,8 +169,6 @@ const tableData = data.table
 
 const isMultiPartner = partners.length > 1
 
-
-
 ```
 
 <div class="header card">

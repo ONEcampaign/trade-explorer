@@ -1,6 +1,7 @@
 import { multiPalette } from "./colors.js";
 import {FileAttachment} from "observablehq:stdlib";
 import {groupMappings} from "./inputValues.js";
+import {logo} from "@one-data/observable-themes/use-images"
 
 
 export function formatString(str, {
@@ -305,10 +306,11 @@ export async function generateFooter({
   link.href = "https://data.one.org/";
   link.target = "_blank";
 
-  const ONELogo = await FileAttachment("../ONE-logo-black.png").image()
+  const img = document.createElement("img");
+  img.src = logo;
+  img.alt = "The ONE Campaign logo: a solid black circle with the word ‘ONE’ in bold white capital letters.";
 
-
-  link.appendChild(ONELogo);
+  link.appendChild(img);
   logoSection.appendChild(link);
   footer.appendChild(textSection);
   footer.appendChild(logoSection);

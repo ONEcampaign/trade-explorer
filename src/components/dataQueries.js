@@ -3,11 +3,22 @@ import {DuckDBClient} from "npm:@observablehq/duckdb";
 import {productCategories, groupMappings} from "./inputValues.js";
 
 
+const [trade,
+    current_conversion_table,
+    constant_conversion_table,
+    gdp_table
+] = await Promise.all([
+    FileAttachment("../data/scripts/trade.parquet"),
+    FileAttachment("../data/scripts/current_conversion_table.csv"),
+    FileAttachment("../data/scripts/constant_conversion_table.csv"),
+    FileAttachment("../data/scripts/gdp_table.csv")
+])
+
 const db = await DuckDBClient.of({
-    trade: FileAttachment("../data/scripts/trade.parquet"),
-    current_conversion_table: FileAttachment("../data/scripts/current_conversion_table.csv"),
-    constant_conversion_table: FileAttachment("../data/scripts/constant_conversion_table.csv"),
-    gdp_table: FileAttachment("../data/scripts/gdp_table.csv"),
+    trade,
+    current_conversion_table,
+    constant_conversion_table,
+    gdp_table
 });
 
 function getCountryList(name) {
@@ -29,7 +40,6 @@ function caseStatement(name, partners) {
         `CASE WHEN ${name} IN (${groupMappings[group].map(escapeSQL).map(c => `'${c}'`).join(", ")}) THEN '${escapeSQL(group)}' END`
     ).join(", ");
 }
-
 
 export function singleQueries(
     country,
@@ -416,7 +426,7 @@ export function multiQueries(country, partners, unit, prices, timeRange, categor
     const countrySQLList = countryList.map(escapeSQL).map(c => `'${c}'`).join(", ");
     const partnersSQLList = partnersList.length > 0
         ? partnersList.map(escapeSQL).map(c => `'${c}'`).join(", ")
-        : "'NO_MATCH'"; // Fallback value that will never match
+        : "'NO_MATCH'";
 
     const isGdp = unit === "gdp"
     const unitColumn = isGdp
@@ -480,16 +490,24 @@ async function plotQuery(
 ) {
 
     const string = `
-        WITH years AS (
-            SELECT * FROM GENERATE_SERIES(${timeRange[0]}, ${timeRange[1]})
+        WITH unique_years AS (
+            SELECT generate_series AS year
+            FROM GENERATE_SERIES(${timeRange[0]}, ${timeRange[1]})
         ),
-        partners AS (
+        unique_partners AS (
             SELECT unnest(ARRAY[${partnersSQLList}]) AS partner
         ),
         years_partners AS (
-            SELECT y.generate_series AS year, p.partner
-            FROM years y
-            CROSS JOIN partners p
+            SELECT DISTINCT
+                uy.year,
+                mapped.partner
+            FROM unique_years uy
+            CROSS JOIN (
+                SELECT DISTINCT
+                unnest(ARRAY[ ${caseStatement("up.partner", partners)} ]) AS partner
+                FROM unique_partners up
+            ) mapped
+            WHERE mapped.partner IS NOT NULL AND mapped.partner <> ''
         ),
         filtered AS (
             SELECT * 
@@ -562,7 +580,7 @@ async function plotQuery(
                 `
                     NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) AS imports,
                     NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) AS exports,
-                    CASE 
+                    CASE
                         WHEN NULLIF(SUM(COALESCE(i.imports * -1 / g.gdp * 100, 0)), 0) IS NULL
                             AND NULLIF(SUM(COALESCE(e.exports / g.gdp * 100, 0)), 0) IS NULL
                         THEN NULL
@@ -573,7 +591,7 @@ async function plotQuery(
                 `
                     NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) AS imports,
                     NULLIF(SUM(COALESCE(e.exports, 0)), 0) AS exports,
-                    CASE 
+                    CASE
                         WHEN NULLIF(SUM(COALESCE(i.imports * -1, 0)), 0) IS NULL
                             AND NULLIF(SUM(COALESCE(e.exports, 0)), 0) IS NULL
                         THEN NULL
