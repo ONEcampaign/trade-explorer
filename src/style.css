@@ -129,7 +129,7 @@ select, input {
 .settings-group form > label {
     font-size: var(--size-m);
     font-weight: bold;
-    max-width: 80px !important;
+    max-width: 90px !important;
 }
 
 .settings-group form > select {
@@ -243,6 +243,10 @@ form[class$="-checkbox"] > div:has(> label:nth-of-type(3):last-of-type) {
 }
 
 /* Tables */
+[class^="inputs-"][class$="-table"] thead th {
+    z-index: 1;
+}
+
 table tr > *:nth-child(2) {
     width: 200px !important;
 }
@@ -262,11 +266,6 @@ table tr > *:nth-child(n+3) {
 
 [aria-label="y-grid"] {
     color: var(--midGrey);
-}
-
-/* Tables */
-[class^="inputs-"][class$="-table"] thead th {
-    z-index: 1;
 }
 
 /*Download buttons */
