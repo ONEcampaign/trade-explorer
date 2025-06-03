@@ -3,22 +3,11 @@ import {DuckDBClient} from "npm:@observablehq/duckdb";
 import {productCategories, groupMappings} from "./inputValues.js";
 
 
-const [trade,
-    current_conversion_table,
-    constant_conversion_table,
-    gdp_table
-] = await Promise.all([
-    FileAttachment("../data/scripts/trade.parquet"),
-    FileAttachment("../data/scripts/current_conversion_table.csv"),
-    FileAttachment("../data/scripts/constant_conversion_table.csv"),
-    FileAttachment("../data/scripts/gdp_table.csv")
-])
-
 const db = await DuckDBClient.of({
-    trade,
-    current_conversion_table,
-    constant_conversion_table,
-    gdp_table
+    trade: FileAttachment("../data/scripts/trade.parquet"),
+    current_conversion_table: FileAttachment("../data/scripts/current_conversion_table.csv"),
+    constant_conversion_table: FileAttachment("../data/scripts/constant_conversion_table.csv"),
+    gdp_table: FileAttachment("../data/scripts/gdp_table.csv")
 });
 
 function getCountryList(name) {
@@ -47,12 +36,19 @@ export function singleQueries(
     prices,
     timeRange,
     category,
-    flow
+    flow,
+    group
 ) {
 
     const countryList = getCountryList(country);
 
     const countrySQLList = countryList
+        .map(c => `'${escapeSQL(c)}'`)
+        .join(", ");
+
+    const groupList = getCountryList(group)
+
+    const groupSQLList = groupList
         .map(c => `'${escapeSQL(c)}'`)
         .join(", ");
 
@@ -72,7 +68,9 @@ export function singleQueries(
         conversionTable, 
         timeRange, 
         category, 
-        flow
+        flow,
+        group,
+        groupSQLList
     )
 
     const categories = topCategoriesQuery(
@@ -84,7 +82,9 @@ export function singleQueries(
         prices, 
         conversionTable, 
         timeRange, 
-        flow
+        flow,
+        group,
+        groupSQLList
     );
 
     const worldTrade = worldTradeQuery(
@@ -114,16 +114,23 @@ async function topPartnersQuery(
     conversionTable,
     timeRange,
     category,
-    flow
+    flow,
+    group,
+    groupSQLList
 ) {
 
     const string = `
         WITH filtered AS (
             SELECT * 
             FROM trade
-            WHERE 
-                (${flow === "exports" ? "exporter" : "importer"} IN (${countrySQLList}) 
-                AND ${flow === "exports" ? "importer" : "exporter"} NOT IN (${countrySQLList}))
+            WHERE
+                (${flow === "exports" ? "exporter" : "importer"} IN (${countrySQLList})
+                    AND ${flow === "exports" ? "importer" : "exporter"} NOT IN (${countrySQLList})
+                    ${
+                            group === "All countries*"
+                                    ? ")"
+                                    : `AND ${flow === 'exports' ? 'importer' : 'exporter'} IN (${groupSQLList}))`
+                    }
                 AND year BETWEEN ${timeRange[0]} AND ${timeRange[1]}
         ),
         unpivoted AS (
@@ -210,16 +217,23 @@ async function topCategoriesQuery(
     prices,
     conversionTable,
     timeRange,
-    flow
+    flow,
+    group,
+    groupSQLList
 ) {
 
     const string = `
         WITH filtered AS (
             SELECT * 
             FROM trade
-            WHERE 
-                (${flow === "exports" ? "exporter" : "importer"} IN (${countrySQLList}) 
-                AND ${flow === "exports" ? "importer" : "exporter"} NOT IN (${countrySQLList}))
+            WHERE
+                (${flow === "exports" ? "exporter" : "importer"} IN (${countrySQLList})
+                    AND ${flow === "exports" ? "importer" : "exporter"} NOT IN (${countrySQLList})
+                    ${
+                            group === "All countries*"
+                                    ? ")"
+                                    : `AND ${flow === 'exports' ? 'importer' : 'exporter'} IN (${groupSQLList}))`
+                    }
                 AND year BETWEEN ${timeRange[0]} AND ${timeRange[1]}
         ),
         unpivoted AS (
