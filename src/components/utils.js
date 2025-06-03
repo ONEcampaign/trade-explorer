@@ -151,6 +151,7 @@ export function generateTitle({
     country=null,
     partners=null,
     flow=null,
+    group=null,
     mode
 }) {
 
@@ -166,15 +167,34 @@ export function generateTitle({
     }
   }
   else if (mode === "table-top-partners") {
-    if (flow === 'exports') {
-      title.innerHTML = `${formatString(country, {genitive: true})} exports<sup>*</sup> go to ...`;
-    }
+    if (group === "All countries*")
+      if (flow === 'exports') {
+        title.innerHTML = `${formatString(country, {genitive: true})} exports<sup>*</sup> go to ...`;
+      }
+      else {
+        title.innerHTML = `${formatString(country, {genitive: true})} imports<sup>*</sup> come from ...`;
+      }
     else {
-      title.innerHTML = `${formatString(country, {genitive: true})} imports<sup>*</sup> come from ...`;
+      if (flow === 'exports') {
+        title.innerHTML = `${formatString(country, {genitive: true})} top export destinations among ${group}`;
+      }
+      else {
+        title.innerHTML = `${formatString(country, {genitive: true})} top import origins among ${group}`;
+      }
     }
   }
   else if (mode === "table-top-categories") {
-    title.innerHTML = `${formatString(country, {verb: flow})}<sup>*</sup> a lot of ...`;
+    if (group === "All countries*") {
+      title.innerHTML = `${formatString(country, {verb: flow})}<sup>*</sup> a lot of ...`;
+    }
+    else {
+      if (flow === 'exports') {
+        title.innerHTML = `${formatString(country, {genitive: true})} top exports to ${group}`;
+      }
+      else {
+        title.innerHTML = `${formatString(country, {genitive: true})} top imports from ${group}`;
+      }
+    }
   }
 
 
@@ -261,6 +281,7 @@ export async function generateFooter({
     prices=null,
     country=null,
     flow = null,
+    group= null,
     isMultiPartner=false,
     isGlobalTrade=false
 }) {
@@ -289,7 +310,9 @@ export async function generateFooter({
     starNote.className = "plot-note";
 
     if (flow !== null) {
-      starNote.textContent = `*This table includes ${formatString(country, {genitive: true})} ${formatString(flow, {inSentence: true, capitalize: false})} a selection of ${NCountries - groupLength(country)} countries, which altogether cover ${GDPShare}% of global GDP and ${PopulationShare}% of the world’s population.`
+      if (group === "All countries*") {
+        starNote.textContent = `*This table includes ${formatString(country, {genitive: true})} ${formatString(flow, {inSentence: true, capitalize: false})} a selection of ${NCountries - groupLength(country)} countries, which altogether cover ${GDPShare}% of global GDP and ${PopulationShare}% of the world’s population.`
+      }
     } else  {
       starNote.textContent = `*This plot represents ${formatString(country, {genitive: true})} trade with a selection of ${NCountries - groupLength(country)} countries, which altogether cover ${GDPShare}% of global GDP and ${PopulationShare}% of the world’s population.`
 

@@ -24,6 +24,12 @@ setCustomColors();
 
 const countries = Object.keys(groupMappings)
 const groups = Object.values(groupMappings)
+const multiGroups = [
+    "All countries*",
+    ...Object.entries(groupMappings)
+        .filter(([, countries]) => countries.length > 1)
+        .map(([key]) => key)
+];
 
 // Country Input
 const countryInput = Inputs.select(
@@ -98,6 +104,17 @@ const timeRangeInput = rangeInput(
     })
 const timeRange = Generators.input(timeRangeInput)
 
+// Country group input
+const groupInput = Inputs.select(
+    multiGroups,
+    {
+        label: "Country group",
+        sort: true,
+        value: "All countries*"
+    })
+
+const group = Generators.input(groupInput);
+
 ```
 
 ```js
@@ -112,7 +129,8 @@ const data = singleQueries(
     prices, 
     timeRange, 
     category,
-    flow
+    flow,
+    group
 )
 
 const worldTradeData = data.worldTrade
@@ -136,7 +154,6 @@ const categoriesData = data.categories
 <div class="card settings">
     <div class="settings-group">
         ${countryInput}
-        ${flowInput}
     </div>
     <div class="settings-group">
         ${unitInput}
@@ -181,13 +198,21 @@ const categoriesData = data.categories
                     }
                 </div>
             </div>
+            <div class="card settings">
+                <div class="settings-group">
+                    ${flowInput}
+                </div>
+                <div class="settings-group">
+                    ${groupInput}
+                </div>
+            </div>
             <div class="grid grid-cols-2">
                 <div class="card">
                     <div class="plot-container">
-                        ${generateTitle({country: country, flow: flow, mode: "table-top-partners"})}
+                        ${generateTitle({country: country, flow: flow, group: group, mode: "table-top-partners"})}
                         ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-partners"})}
                         ${resize((width) => rankTable(partnersData, flow, 'partner', width))}
-                        ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isGlobalTrade: true})}
+                        ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, group: group, isGlobalTrade: true})}
                     </div>
                     <div class="download-panel">
                         ${
@@ -204,10 +229,10 @@ const categoriesData = data.categories
                 </div>
                 <div class="card">
                     <div class="plot-container">
-                        ${generateTitle({country: country, flow: flow, mode: "table-top-categories"})}
+                        ${generateTitle({country: country, flow: flow, group: group, mode: "table-top-categories"})}
                         ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-categories"})}
                         ${resize((width) => rankTable(categoriesData, flow, 'category', width))}
-                        ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isGlobalTrade: true})}
+                        ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, group: group, isGlobalTrade: true})}
                     </div>
                     <div class="download-panel">
                         ${
