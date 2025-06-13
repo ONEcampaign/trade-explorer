@@ -208,6 +208,7 @@ export function generateSubtitle({
     flow=null,
     category=null,
     timeRange=null,
+    unit=null,
     mode
 }) {
 
@@ -261,13 +262,25 @@ export function generateSubtitle({
     const timeString = timeRange[0] === timeRange[1] ? timeRange[0] : `${timeRange[0]}-${timeRange[1]}`
 
     if (mode === "table-top-partners") {
-      subtitle.textContent = `${categoryString}; ${timeString}`;
+      if (unit === "gdp") {
+        subtitle.textContent = `${categoryString}; average values between ${timeString}`;
+      } else {
+        subtitle.textContent = `${categoryString}; total values between ${timeString}`;
+      }
     }
     else if (mode === "table-top-categories") {
-      subtitle.textContent = `Product categories; ${timeString}`;
+      if (unit === "gdp") {
+        subtitle.textContent = `Product categories; average values between ${timeString}`;
+      } else {
+        subtitle.textContent = `Product categories; total values between ${timeString}`;
+      }
     }
     else if (mode === "table-multi") {
-      subtitle.innerHTML = `By product category; ${timeString}`;
+      if (unit === "gdp") {
+        subtitle.innerHTML = `By product category; average values between ${timeString}`;
+      } else {
+        subtitle.innerHTML = `By product category; total values between ${timeString}`;
+      }
     }
   }
 
@@ -397,18 +410,18 @@ export function generateFileName({
   let text
 
   const timeString = timeRange[0] === timeRange[1] ? timeRange[0] : `${timeRange[0]}_${timeRange[1]}`
-  const categoryString = category === 'All' ? '' : formatString(`_${category}`, { fileMode: true });
+  const categoryString = category === 'All' ? '_all_products' : formatString(`_${category}`, { fileMode: true });
 
   if (mode === 'plot') {
     if (partners.length === 1) {
       text = `${formatString(country, {fileMode: true})}_trade_with_${formatString(partners[0], {fileMode: true})}_${timeString}${categoryString}`;
     }
     else {
-      text = `${formatString(flow  + " " + country, {inSentence: true, capitalize: false, fileMode: true})}_${timeString}${categoryString}`;
+      text = `trade_with_${formatString(country, {inSentence: true, capitalize: false, fileMode: true})}_${timeString}${categoryString}`;
       }
     }
   else if (mode === 'table-multi') {
-    text = `trade_with_${formatString(country, {fileMode: true})}_${timeString}${categoryString}`;
+    text = `trade_with_${formatString(country, {fileMode: true})}_${timeString}`;
     }
   else if (mode === 'table-partners') {
     if (flow === 'exports') {
