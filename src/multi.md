@@ -244,7 +244,7 @@ ${
             <div class="card">
                 <div class="plot-container" id="multi-table">
                     ${generateTitle({country: country, partners: partners, flow: flow, mode: "plot"})}
-                    ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-multi"})}
+                    ${generateSubtitle({category: category, timeRange: timeRange, unit: unit, mode: "table-multi"})}
                     ${resize((width) => tradeTable(tableData, flow, width))}
                     ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, isMultiPartner: isMultiPartner})}
                 </div>
