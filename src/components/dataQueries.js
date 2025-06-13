@@ -732,16 +732,28 @@ async function tableQuery(
             '${timeRange[0]}-${timeRange[1]}' AS years,
             '${escapeSQL(country)}' AS country,
             partner, 
-            category, 
-            AVG(imports) AS imports,
-            AVG(exports) AS exports,
-            AVG(balance) AS balance,
+            category,
+            ${
+                isGdp
+                ? `
+                    AVG(imports) AS imports,
+                    AVG(exports) AS exports,
+                    AVG(balance) AS balance,
+                `
+                : `
+                    SUM(imports) AS imports,
+                    SUM(exports) AS exports,
+                    SUM(balance) AS balance,
+                `
+            }
+
             CASE
                 WHEN ${isGdp} THEN 'share of gdp'
                 ELSE '${prices} ${unit} million'
              END AS unit
         FROM trade_gdp_ratio
-        GROUP BY partner, category;
+        GROUP BY partner, category
+        ORDER BY partner, category;
 
     `;
 
