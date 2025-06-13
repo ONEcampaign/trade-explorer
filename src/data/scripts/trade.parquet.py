@@ -114,7 +114,7 @@ def process_trade_data():
         dataframes = [
             filter_and_aggregate_data(
                 pd.read_csv(
-                    PATHS.BACI / f"BACI_HS02_Y{year}_{baci_version}.csv",
+                    PATHS.BACI / f"BACI_HS02_Y{year}_V{baci_version}.csv",
                     dtype={"k": str},
                 ),
                 product_code_to_section,
