@@ -19,7 +19,7 @@ base_year = 2023  # for currency conversions
 
 time_range = [2002, 2023]
 
-baci_version = "V202501"
+baci_version = "202501"
 
 
 class PATHS:
@@ -34,7 +34,7 @@ class PATHS:
 
     DATA = SRC / "data" / "raw_data"
     PYDEFLATE = DATA / "pydeflate"
-    BACI = DATA / f"BACI_HS02_{baci_version}"
-    COUNTRY_CODES = BACI / f"country_codes_{baci_version}.csv"
+    BACI = DATA / f"BACI_HS02_V{baci_version}"
+    COUNTRY_CODES = BACI / f"country_codes_V{baci_version}.csv"
 
     COMPONENTS = SRC / "components"
