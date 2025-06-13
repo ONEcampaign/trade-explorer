@@ -210,7 +210,7 @@ const categoriesData = data.categories
                 <div class="card">
                     <div class="plot-container">
                         ${generateTitle({country: country, flow: flow, group: group, mode: "table-top-partners"})}
-                        ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-partners"})}
+                        ${generateSubtitle({category: category, timeRange: timeRange, unit: unit, mode: "table-top-partners"})}
                         ${resize((width) => rankTable(partnersData, flow, 'partner', width))}
                         ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, group: group, isGlobalTrade: true})}
                     </div>
@@ -230,7 +230,7 @@ const categoriesData = data.categories
                 <div class="card">
                     <div class="plot-container">
                         ${generateTitle({country: country, flow: flow, group: group, mode: "table-top-categories"})}
-                        ${generateSubtitle({category: category, timeRange: timeRange, mode: "table-top-categories"})}
+                        ${generateSubtitle({category: category, timeRange: timeRange, unit: unit, mode: "table-top-categories"})}
                         ${resize((width) => rankTable(categoriesData, flow, 'category', width))}
                         ${await generateFooter({unit: unit, prices: prices, country: country, flow: flow, group: group, isGlobalTrade: true})}
                     </div>
