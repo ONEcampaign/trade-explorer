@@ -4,7 +4,7 @@ import {productCategories, groupMappings} from "./inputValues.js";
 
 
 const db = await DuckDBClient.of({
-    trade: FileAttachment("../data/scripts/trade.parquet"),
+    trade: FileAttachment("../data/scripts/trade.parquet").href + (navigator.userAgent.includes("Windows") ? `?t=${Date.now()}` : ""),
     current_conversion_table: FileAttachment("../data/scripts/current_conversion_table.csv"),
     constant_conversion_table: FileAttachment("../data/scripts/constant_conversion_table.csv"),
     gdp_table: FileAttachment("../data/scripts/gdp_table.csv")
