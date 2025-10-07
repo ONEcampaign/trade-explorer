@@ -34,7 +34,9 @@ def create_df():
         )
     ).reset_index()
 
-    df["iso_code"] = resolve_places(df["country"], to_type="iso3", not_found="ignore")
+    df["iso_code"] = resolve_places(
+        df["country"], to_type="iso3_code", not_found="ignore"
+    )
 
     df["value"] = 1
 
