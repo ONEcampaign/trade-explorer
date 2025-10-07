@@ -70,7 +70,6 @@ def to_decimal(val, precision=2):
 
 
 def generate_parquet(df):
-
     cols = df.columns.tolist()
     category_cols = ["year", "exporter", "importer"]
     decimal_cols = [col for col in cols if col not in category_cols]

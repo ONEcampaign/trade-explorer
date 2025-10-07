@@ -1,8 +1,8 @@
 import sys
 import json
 import pandas as pd
-from bblocks import add_iso_codes_column
 from pydeflate import imf_gdp_deflate, set_pydeflate_path
+from bblocks.places import resolve_places
 
 from src.data.config import logger, PATHS, time_range, base_year
 
@@ -34,7 +34,7 @@ def create_df():
         )
     ).reset_index()
 
-    df = add_iso_codes_column(df, "country", id_type="regex")
+    df["iso_code"] = resolve_places(df["country"], to_type="iso3", not_found="ignore")
 
     df["value"] = 1
 
@@ -42,7 +42,6 @@ def create_df():
 
 
 def deflate_current_usd():
-
     df = create_df()
 
     codes = {"USA": "usd", "CAN": "cad", "FRA": "eur", "GBR": "gbp"}

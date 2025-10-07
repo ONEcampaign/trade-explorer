@@ -10,7 +10,6 @@ from src.data.config import logger, PATHS, time_range
 
 
 def get_iso_codes():
-
     with open(PATHS.COUNTRIES, "r") as f:
         country_to_groups = json.load(f)
         countries = list(country_to_groups.keys())
@@ -23,21 +22,18 @@ def get_iso_codes():
 
 
 def load_filter_weo():
-
     weo = bbdata.WEO()
     df_raw = weo.get_data()
 
     cc = coco.CountryConverter()
 
     gdp = df_raw.query(
-        "indicator_code == 'NGDPD' &"
-        "year == @time_range[1] &"
-        "unit == 'U.S. dollars'"
+        "indicator_code == 'NGDPD' &year == @time_range[1] &unit == 'U.S. dollars'"
     )[["entity_name", "value"]]
 
     gdp["iso"] = cc.pandas_convert(gdp["entity_name"], to="ISO3")
 
-    pop = df_raw.query("indicator_code == 'LP' &" "year == @time_range[1]")[
+    pop = df_raw.query("indicator_code == 'LP' &year == @time_range[1]")[
         [
             "entity_name",
             "value",
@@ -50,7 +46,6 @@ def load_filter_weo():
 
 
 def get_shares():
-
     iso_codes = get_iso_codes()
     gdp, pop = load_filter_weo()
 
