@@ -100,7 +100,7 @@ const PopulationShare = sampleInfo[0].pop_share.toFixed(1)
     </p>
     <p class="base-text">
         The data preparation scripts are located in the <span style="font-family: monospace">src/data</span>
-        directory of the project's <a href="https://github.com/ONEcampaign/trade_data_explorer"> GitHub
+        directory of the project's <a href="https://github.com/ONEcampaign/trade-explorer"> GitHub
         repository</a>.
     </p>
     <h2 class="section-header">
