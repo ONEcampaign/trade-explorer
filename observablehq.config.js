@@ -9,7 +9,7 @@ export default {
 
   header: generateHeader({title: "Trade Explorer"}),
   footer: generateFooter(),
-  base: "/trade-explorer",
+  base: "/trade-explorer/",
   preserveExtension: true,
 
   root: "src",
