@@ -7,7 +7,7 @@ import ftfy
 import pandas as pd
 
 from src.data.config import BACI_VERSION, PATHS, TIME_RANGE, logger
-from src.data.scripts.helper_functions import convert_values_to_units, parquet_to_stdout
+from src.data.scripts.helper_functions import convert_values_to_units, write_partitioned_dataset
 from src.data.scripts.transformations import (
     add_country_groups,
     add_currencies_and_prices,
@@ -261,4 +261,7 @@ def _format_time_range_js(time_range: Sequence[int]) -> str:
 
 if __name__ == "__main__":
     df = process_trade_data()
-    parquet_to_stdout(df)
+
+    logger.info("Writing partitioned dataset...")
+    write_partitioned_dataset(df, "trade")
+    logger.info("Trade data completed")

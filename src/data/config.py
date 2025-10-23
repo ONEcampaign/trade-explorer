@@ -27,6 +27,8 @@ class PATHS:
 
     SRC = Path(__file__).resolve().parent.parent
 
+    CDN_FILES = SRC.parent / "cdn_files"
+
     SETTINGS = SRC / "data" / "settings"
     HS_SECTIONS = SETTINGS / "hs_sections.json"
     HS_CATEGORIES = SETTINGS / "hs_categories.json"
