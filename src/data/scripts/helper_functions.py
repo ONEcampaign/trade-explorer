@@ -175,23 +175,11 @@ def optimize_dataframe_types(
         if col in df.columns:
             df[col] = df[col].astype("Int16")
 
-    # Standard Int32 columns
-    int32_cols = ["recipient_code"]
-    if additional_int32_cols:
-        int32_cols.extend(additional_int32_cols)
-    for col in int32_cols:
-        if col in df.columns:
-            df[col] = df[col].astype("Int32")
-
     # Standard categorical columns
     cat_cols = [
-        "donor_name",
-        "recipient_name",
-        "indicator_name",
-        "sub_sector",
-        "price",
-        "currency",
-        "type",
+        "category",
+        "exporter",
+        "importer",
     ]
     if additional_categorical_cols:
         cat_cols.extend(additional_categorical_cols)
@@ -203,11 +191,10 @@ def optimize_dataframe_types(
     sort_keys = [
         c
         for c in [
-            "donor_code",
-            "recipient_code",
-            "indicator",
+            "category",
+            "exporter",
+            "importer",
             "year",
-            "sub_sector_code",
         ]
         if c in df.columns
     ]
@@ -281,14 +268,14 @@ def write_partitioned_dataset(
         partition_cols: Columns to partition by (defaults to ['donor_code', 'recipient_code'])
     """
     if partition_cols is None:
-        partition_cols = ["donor_code", "recipient_code"]
+        partition_cols = ["importer", "exporter"]
 
     # Optimize types with additional columns for sectors
     # Include sub_sector_code as Int32 and sector_name/sub_sector_name as categorical
     optimized = optimize_dataframe_types(
         df,
-        additional_int32_cols=["sub_sector_code"],
-        additional_categorical_cols=["sector_name", "sub_sector_name"],
+        additional_int32_cols=[],
+        additional_categorical_cols=[],
     )
 
     # Convert to Arrow table
@@ -302,7 +289,7 @@ def write_partitioned_dataset(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Define partition schema (all partition cols must be int32 for Hive partitioning)
-    partition_fields = [pa.field(col, pa.int32()) for col in partition_cols]
+    partition_fields = [pa.field(col, pa.string()) for col in partition_cols]
     partition_schema = pa.schema(partition_fields)
 
     # Configure parquet format with write options

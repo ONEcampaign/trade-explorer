@@ -63,6 +63,18 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Upload parquet dataset
+        run: |
+          if [ -d "cdn_files/trade" ]; then
+            echo "Clearing existing trade-explorer dataset in GCS..."
+            gsutil -m rm -r gs://${{ env.BUCKET }}/sources/trade-explorer/** || true
+            echo "Uploading trade explorer dataset to GCS..."
+            gsutil -m rsync -r -d cdn_files/trade gs://${{ env.BUCKET }}/sources/trade-explorer
+          else
+            echo "Warning: cdn_files/trade directory not found"
+            exit 1
+          fi
+
       - name: Deploy to GCS
         run: |
           gsutil -m rsync -r -c -d dist/ gs://${{ env.BUCKET }}/${{ env.APP_PATH }}/

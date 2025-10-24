@@ -7,7 +7,10 @@ import ftfy
 import pandas as pd
 
 from src.data.config import BACI_VERSION, PATHS, TIME_RANGE, logger
-from src.data.scripts.helper_functions import convert_values_to_units, write_partitioned_dataset
+from src.data.scripts.helper_functions import (
+    convert_values_to_units,
+    write_partitioned_dataset,
+)
 from src.data.scripts.transformations import (
     add_country_groups,
     add_currencies_and_prices,
@@ -153,15 +156,12 @@ def process_trade_data() -> pd.DataFrame:
 
     base_cols = ["year", "exporter", "exporter_iso3", "importer"]
 
-    aggregated = (
-        aggregated_wide.melt(
-            id_vars=base_cols,
-            var_name="category",
-            value_name="value",
-            ignore_index=True,
-        )
-        .dropna(subset=["value"])
-    )
+    aggregated = aggregated_wide.melt(
+        id_vars=base_cols,
+        var_name="category",
+        value_name="value",
+        ignore_index=True,
+    ).dropna(subset=["value"])
 
     trade_df = add_currencies_and_prices(aggregated, id_column="exporter_iso3")
 
@@ -209,7 +209,7 @@ def generate_input_values() -> None:
 
 
 def _build_group_mappings(
-    countries_data: Mapping[str, Mapping[str, Any]]
+    countries_data: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, list[str]]:
     """Create a mapping of groups to their member countries (including self-entries)."""
     group_mappings: dict[str, set[str]] = {}
@@ -263,5 +263,5 @@ if __name__ == "__main__":
     df = process_trade_data()
 
     logger.info("Writing partitioned dataset...")
-    write_partitioned_dataset(df, "trade")
+    write_partitioned_dataset(df, "trade", partition_cols=["importer", "category"])
     logger.info("Trade data completed")
