@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
 
 import ftfy
 
@@ -23,7 +22,7 @@ def load_mappings() -> tuple[
     dict[str, str],
     dict[str, str],
     dict[str, str],
-    Mapping[str, Any],
+    dict[str, list[str]],
 ]:
     """Load product and country mappings required by the trade data pipeline."""
     logger.info("Loading mappings")
@@ -55,10 +54,10 @@ def load_mappings() -> tuple[
 
 def filter_and_aggregate_data(
     raw_df: pd.DataFrame,
-    product_code_to_section: Mapping[str, str],
-    country_code_to_name: Mapping[str, str],
-    country_name_to_iso3: Mapping[str, str],
-    country_to_groups: Mapping[str, Any],
+    product_code_to_section: dict[str, str],
+    country_code_to_name: dict[str, str],
+    country_name_to_iso3: dict[str, str],
+    country_to_groups: dict[str, list[str]],
 ) -> pd.DataFrame:
     """Apply reshaping, filtering, and aggregation to a raw BACI dataframe."""
     df = raw_df.rename(
@@ -95,10 +94,10 @@ def filter_and_aggregate_data(
 
 
 def load_build_aggregated_trade(
-    product_code_to_section: Mapping[str, str],
-    country_code_to_name: Mapping[str, str],
-    country_name_to_iso3: Mapping[str, str],
-    country_to_groups: Mapping[str, Any],
+    product_code_to_section: dict[str, str],
+    country_code_to_name: dict[str, str],
+    country_name_to_iso3: dict[str, str],
+    country_to_groups: dict[str, list[str]],
 ) -> pd.DataFrame:
     """Load aggregated trade data from disk or build it from raw BACI files."""
     output_path: Path = PATHS.DATA / f"trade_{TIME_RANGE[0]}_{TIME_RANGE[1]}.csv"
@@ -209,7 +208,7 @@ def generate_input_values() -> None:
 
 
 def _build_group_mappings(
-    countries_data: Mapping[str, Mapping[str, Any]],
+    countries_data: dict[str, dict[str, list[str]]],
 ) -> dict[str, list[str]]:
     """Create a mapping of groups to their member countries (including self-entries)."""
     group_mappings: dict[str, set[str]] = {}
@@ -225,7 +224,7 @@ def _build_group_mappings(
     }
 
 
-def _format_group_mappings_js(group_mappings: Mapping[str, Sequence[str]]) -> str:
+def _format_group_mappings_js(group_mappings: dict) -> str:
     """Format group mappings into a JavaScript export statement."""
     lines = ["export const groupMappings = {"]
     for group, countries in group_mappings.items():
@@ -235,7 +234,7 @@ def _format_group_mappings_js(group_mappings: Mapping[str, Sequence[str]]) -> st
     return "\n".join(lines)
 
 
-def _format_categories_js(categories: Iterable[str]) -> str:
+def _format_categories_js(categories: list) -> str:
     """Format HS section names into a JavaScript array export."""
     items = ",\n".join(f'  "{category}"' for category in categories)
     return "\n".join(
@@ -247,7 +246,7 @@ def _format_categories_js(categories: Iterable[str]) -> str:
     )
 
 
-def _format_time_range_js(time_range: Sequence[int]) -> str:
+def _format_time_range_js(time_range: list[int]) -> str:
     """Format TIME_RANGE into a JavaScript array export."""
     items = ",\n".join(f"  {year}" for year in time_range)
     return "\n".join(
