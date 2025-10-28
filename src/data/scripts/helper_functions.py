@@ -16,12 +16,6 @@ from pydeflate import set_pydeflate_path
 from src.data.config import PATHS, logger
 
 
-def save_time_range_to_json(time_dict: dict, file_name: str):
-    logger.info(f"Saving time range to {PATHS.TOOLS}/{file_name}")
-    with open(PATHS.TOOLS / file_name, "w") as f:
-        json.dump(time_dict, f, indent=2)
-
-
 def set_cache_dir(path=PATHS.DATA, oda_data: bool = False, pydeflate: bool = False):
     if not os.path.exists(path):
         logger.info(f"Creating directory for cached data: {path}")
@@ -268,7 +262,7 @@ def write_partitioned_dataset(
         partition_cols: Columns to partition by (defaults to ['donor_code', 'recipient_code'])
     """
     if partition_cols is None:
-        partition_cols = ["importer", "exporter"]
+        partition_cols = ["exporter"]
 
     # Optimize types with additional columns for sectors
     # Include sub_sector_code as Int32 and sector_name/sub_sector_name as categorical
