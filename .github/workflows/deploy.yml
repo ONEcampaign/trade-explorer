@@ -60,6 +60,22 @@ jobs:
           workload_identity_provider: 'projects/650536812276/locations/global/workloadIdentityPools/github/providers/github'
           service_account: 'github-deployer@one-data-commons.iam.gserviceaccount.com'
 
+      - name: individual-loaders
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          uv run python src/data/scripts/trade.py
+
+      - name: Cache gcloud SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.config/gcloud
+            ~/.cache/google-cloud-sdk
+          key: ${{ runner.os }}-gcloud-${{ hashFiles('**/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-gcloud-
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
