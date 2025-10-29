@@ -262,5 +262,5 @@ if __name__ == "__main__":
     df = process_trade_data()
 
     logger.info("Writing partitioned dataset...")
-    write_partitioned_dataset(df, "trade", partition_cols=["importer", "category"])
+    write_partitioned_dataset(df, "trade", partition_cols=["category"])
     logger.info("Trade data completed")

@@ -262,7 +262,7 @@ def write_partitioned_dataset(
         partition_cols: Columns to partition by (defaults to ['donor_code', 'recipient_code'])
     """
     if partition_cols is None:
-        partition_cols = ["exporter"]
+        partition_cols = ["category"]
 
     # Optimize types with additional columns for sectors
     # Include sub_sector_code as Int32 and sector_name/sub_sector_name as categorical
