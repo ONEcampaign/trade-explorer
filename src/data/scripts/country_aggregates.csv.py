@@ -6,7 +6,7 @@ import bblocks_data_importers as bbdata
 import country_converter as coco
 import pandas as pd
 
-from src.data.config import logger, PATHS, time_range
+from src.data.config import logger, PATHS, TIME_RANGE
 
 
 def get_iso_codes() -> list[str]:
@@ -33,7 +33,7 @@ def load_filtered_weo() -> tuple[pd.DataFrame, pd.DataFrame]:
     df_raw = weo.get_data()
 
     cc = coco.CountryConverter()
-    latest_year = time_range[1]
+    latest_year = TIME_RANGE[1]
 
     gdp = df_raw.query(
         "indicator_code == 'NGDPD' & year == @latest_year & unit == 'U.S. dollars'"
