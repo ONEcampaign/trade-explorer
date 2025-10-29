@@ -1,0 +1,79 @@
+name: Upload dataset to GCP (staging)
+
+on:
+  push:
+    branches-ignore: [ main ]     # run from any non-main branch
+  workflow_dispatch:
+
+env:
+  BUCKET: data-apps-one-data
+  BRANCH_NAME: ${{ github.ref_name }}
+  # Dataset will publish to: gs://$BUCKET/sources/trade-explorer/$BRANCH_NAME/
+  DATA_PREFIX: sources/trade-explorer/${{ github.ref_name }}
+
+jobs:
+  upload-data:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - id: date
+        run: echo "date=$(TZ=America/Los_Angeles date +'%Y-%U')" >> $GITHUB_OUTPUT
+
+      - id: cache-data
+        uses: actions/cache@v4
+        with:
+          path: src/.observablehq/cache
+          key: data-${{ hashFiles('src/data/*') }}-${{ steps.date.outputs.date }}
+
+      - name: Build (if your pipeline generates cdn_files/trade)
+        run: uv run npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WI_PROVIDER_STAGING || 'projects/650536812276/locations/global/workloadIdentityPools/github/providers/github' }}
+          service_account: ${{ vars.GCP_SA_STAGING || 'github-deployer@one-data-commons.iam.gserviceaccount.com' }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload parquet dataset (staging only)
+        run: |
+          if [ -d "cdn_files/trade" ]; then
+            echo "Syncing trade dataset to gs://${{ env.BUCKET }}/${{ env.DATA_PREFIX }}/ ..."
+            # Clear only the branch-specific staging prefix
+            gsutil -m rm -r "gs://${{ env.BUCKET }}/${{ env.DATA_PREFIX }}/**" || true
+            gsutil -m rsync -r -d "cdn_files/trade" "gs://${{ env.BUCKET }}/${{ env.DATA_PREFIX }}/"
+          else
+            echo "Warning: cdn_files/trade directory not found"
+            exit 1
+          fi
