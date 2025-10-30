@@ -247,7 +247,7 @@ def add_share_of_gdp(
 
 def add_country_groups(
     df: pd.DataFrame,
-    iso3_to_groups: Mapping[str, Sequence[str]],
+    membership: pd.DataFrame,
     group_to_iso: Mapping[str, Sequence[str]],
 ) -> pd.DataFrame:
     """
@@ -259,138 +259,167 @@ def add_country_groups(
 
     Args:
         df: DataFrame with trade values in wide format (value_* columns).
-        iso3_to_groups: Mapping of ISO3 codes to the groups they belong to.
+        membership: DataFrame linking ISO3 codes to group names (columns: iso3, group).
         group_to_iso: Mapping of group names to their member ISO3 codes.
     """
 
     logger.info("Adding country groups...")
 
     value_cols = [c for c in df.columns if c.startswith("value_")]
-    member_sets = {
-        group: {code.upper() for code in members}
-        for group, members in group_to_iso.items()
-    }
 
     base = df.copy()
+    for col in ["exporter_iso3", "importer_iso3"]:
+        if col not in base.columns:
+            base[col] = pd.NA
+        base[col] = base[col].astype("string").str.upper()
 
-    def _groups_for_iso3(iso3: str) -> list[str]:
-        if pd.isna(iso3):
-            return []
-        return list(iso3_to_groups.get(str(iso3), []))
+    membership = membership.copy()
+    membership["iso3"] = membership["iso3"].astype("string").str.upper()
+    membership_flag = membership.assign(_member_flag=True)
 
-    base["exporter_groups"] = base["exporter_iso3"].apply(_groups_for_iso3)
-    base["importer_groups"] = base["importer_iso3"].apply(_groups_for_iso3)
+    importer_membership = membership.rename(
+        columns={"iso3": "importer_iso3", "group": "importer_group"}
+    )
+    exporter_membership = membership.rename(
+        columns={"iso3": "exporter_iso3", "group": "exporter_group"}
+    )
 
     outputs: list[pd.DataFrame] = []
 
     # --- country → group (exclude country ∈ group)
-    cg = (
-        base.explode("importer_groups")
-        .drop(columns=["importer"])
-        .rename(columns={"importer_groups": "importer"})
-        .dropna(subset=["importer"])
-    )
+    cg = base.merge(importer_membership, on="importer_iso3", how="inner")
     if not cg.empty:
-        mask = ~cg.apply(
-            lambda r: str(r["exporter_iso3"]).upper()
-            in member_sets.get(r["importer"], set()),
-            axis=1,
+        overlap_flag = membership_flag.rename(
+            columns={
+                "iso3": "exporter_iso3",
+                "group": "importer_group",
+                "_member_flag": "_has_overlap",
+            }
         )
-        cg = cg[mask]
+        cg = cg.merge(
+            overlap_flag,
+            on=["exporter_iso3", "importer_group"],
+            how="left",
+        )
+        cg = cg[cg["_has_overlap"].isna()].drop(columns=["_has_overlap", "importer"])
         if not cg.empty:
-            cg = cg.groupby(
-                [
-                    "year",
-                    "category",
-                    "exporter",
-                    "exporter_iso3",
-                    "importer"
-                ],
-                as_index=False,
-            )[value_cols].sum()
+            cg = (
+                cg.groupby(
+                    [
+                        "year",
+                        "category",
+                        "exporter",
+                        "exporter_iso3",
+                        "importer_group",
+                    ],
+                    as_index=False,
+                )[value_cols]
+                .sum()
+            )
+            cg = cg.rename(columns={"importer_group": "importer"})
             cg["importer_iso3"] = pd.NA
             outputs.append(cg)
 
     # --- group → country (exclude country ∈ group)
-    gc = (
-        base.explode("exporter_groups")
-        .drop(columns=["exporter"])
-        .rename(columns={"exporter_groups": "exporter"})
-        .dropna(subset=["exporter"])
-    )
+    gc = base.merge(exporter_membership, on="exporter_iso3", how="inner")
     if not gc.empty:
-        mask = ~gc.apply(
-            lambda r: str(r["importer_iso3"]).upper()
-            in member_sets.get(r["exporter"], set()),
-            axis=1,
+        overlap_flag = membership_flag.rename(
+            columns={
+                "iso3": "importer_iso3",
+                "group": "exporter_group",
+                "_member_flag": "_has_overlap",
+            }
         )
-        gc = gc[mask]
+        gc = gc.merge(
+            overlap_flag,
+            on=["importer_iso3", "exporter_group"],
+            how="left",
+        )
+        gc = gc[gc["_has_overlap"].isna()].drop(columns=["_has_overlap", "exporter"])
         if not gc.empty:
-            gc = gc.groupby(
-                [
-                    "year",
-                    "category",
-                    "exporter",
-                    "importer",
-                    "importer_iso3",
-                ],
-                as_index=False,
-            )[value_cols].sum()
+            gc = (
+                gc.groupby(
+                    [
+                        "year",
+                        "category",
+                        "exporter_group",
+                        "importer",
+                        "importer_iso3",
+                    ],
+                    as_index=False,
+                )[value_cols]
+                .sum()
+            )
+            gc = gc.rename(columns={"exporter_group": "exporter"})
             gc["exporter_iso3"] = pd.NA
             outputs.append(gc)
 
     # --- group → group (groups must be disjoint: no overlapping members)
-    gg = (
-        base.explode("exporter_groups")
-        .explode("importer_groups")
-        .drop(columns=["exporter", "importer"])
-        .rename(
-            columns={
-                "exporter_groups": "exporter",
-                "importer_groups": "importer",
-            }
-        )
-        .dropna(subset=["exporter", "importer"])
-    )
+    gg = base.merge(exporter_membership, on="exporter_iso3", how="inner")
+    gg = gg.merge(importer_membership, on="importer_iso3", how="inner")
     if not gg.empty:
+        member_sets = {
+            group: {code.upper() for code in members}
+            for group, members in group_to_iso.items()
+        }
+        overlap_pairs: set[tuple[str, str]] = set()
+        for exp_group, exp_members in member_sets.items():
+            for imp_group, imp_members in member_sets.items():
+                if not exp_members.isdisjoint(imp_members):
+                    overlap_pairs.add((exp_group, imp_group))
 
-        def disjoint(row) -> bool:
-            exp_members = member_sets.get(row["exporter"], set())
-            imp_members = member_sets.get(row["importer"], set())
-            if not exp_members or not imp_members:
-                return True
-            return exp_members.isdisjoint(imp_members)
+        if overlap_pairs:
+            overlap_df = pd.DataFrame(
+                list(overlap_pairs),
+                columns=["exporter_group", "importer_group"],
+            ).assign(_has_overlap=True)
+            gg = gg.merge(
+                overlap_df,
+                on=["exporter_group", "importer_group"],
+                how="left",
+            )
+            gg = gg[gg["_has_overlap"].isna()].drop(columns="_has_overlap")
 
-        gg = gg[gg.apply(disjoint, axis=1)]
         if not gg.empty:
-            gg = gg.groupby(
-                ["year", "category", "exporter", "importer"], as_index=False
-            )[value_cols].sum()
+            gg = gg.drop(columns=["exporter", "importer"])
+            gg = (
+                gg.groupby(
+                    ["year", "category", "exporter_group", "importer_group"],
+                    as_index=False,
+                )[value_cols]
+                .sum()
+            )
+            gg = gg.rename(
+                columns={
+                    "exporter_group": "exporter",
+                    "importer_group": "importer",
+                }
+            )
             gg["exporter_iso3"] = pd.NA
             gg["importer_iso3"] = pd.NA
             outputs.append(gg)
 
     # --- keep original country → country
-    cc = (
-        base.drop(columns=["exporter_groups", "importer_groups"])
-        .groupby(
-            [
-                "year",
-                "category",
-                "exporter_iso3",
-                "exporter",
-                "importer_iso3",
-                "importer",
-            ],
-            as_index=False,
-        )[value_cols]
-        .sum()
-    )
+    cc = base.groupby(
+        [
+            "year",
+            "category",
+            "exporter_iso3",
+            "exporter",
+            "importer_iso3",
+            "importer",
+        ],
+        as_index=False,
+    )[value_cols].sum()
     outputs.append(cc)
+
+    outputs = [frame for frame in outputs if not frame.empty]
+    if not outputs:
+        return base.copy()
 
     result = pd.concat(outputs, ignore_index=True)
 
-    for col in ["exporter_iso3","exporter","importer_iso3",  "importer"]:
+    for col in ["exporter", "importer", "exporter_iso3", "importer_iso3"]:
         if col in result.columns:
             result[col] = result[col].astype("string")
 

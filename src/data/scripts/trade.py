@@ -27,6 +27,8 @@ def load_mappings() -> tuple[
     dict[str, str],
     dict[str, list[str]],
     dict[str, list[str]],
+    set[str],
+    pd.DataFrame,
 ]:
     """Load product and country mappings required by the trade data pipeline."""
     logger.info("Loading mappings")
@@ -60,12 +62,23 @@ def load_mappings() -> tuple[
 
     iso3_to_groups = {iso: sorted(groups) for iso, groups in iso3_to_groups.items()}
 
+    eligible_iso3 = {iso for members in group_to_iso3.values() for iso in members}
+
+    membership_rows = [
+        (iso, group)
+        for group, members in group_to_iso3.items()
+        for iso in members
+    ]
+    membership_df = pd.DataFrame(membership_rows, columns=["iso3", "group"])
+
     return (
         product_code_to_section,
         country_code_to_iso3,
         country_iso3_to_name,
         group_to_iso3,
         iso3_to_groups,
+        eligible_iso3,
+        membership_df,
     )
 
 
@@ -73,6 +86,7 @@ def filter_and_aggregate_data(
     raw_df: pd.DataFrame,
     product_code_to_section: dict[str, str],
     country_code_to_iso3: dict[str, str],
+    eligible_iso3: set[str],
 ) -> pd.DataFrame:
     """Apply reshaping, filtering, and aggregation to a raw BACI dataframe."""
     df = raw_df.rename(
@@ -89,6 +103,13 @@ def filter_and_aggregate_data(
     df["exporter_iso3"] = df["exporter"].map(country_code_to_iso3)
     df["importer_iso3"] = df["importer"].map(country_code_to_iso3)
 
+    eligible_mask = (
+        df["exporter_iso3"].isin(eligible_iso3)
+        & df["importer_iso3"].isin(eligible_iso3)
+    )
+
+    df = df[eligible_mask]
+
     df = (
         df.dropna(subset=["value"])
         .groupby(["year", "exporter_iso3", "importer_iso3", "category"], as_index=False)
@@ -100,14 +121,24 @@ def filter_and_aggregate_data(
 
 
 def load_build_aggregated_trade(
-    product_code_to_section: dict[str, str], country_code_to_iso3: dict[str, str]
+    product_code_to_section: dict[str, str],
+    country_code_to_iso3: dict[str, str],
+    eligible_iso3: set[str],
 ) -> pd.DataFrame:
     """Load aggregated trade data from disk or build it from raw BACI files."""
     output_path: Path = PATHS.DATA / f"trade_{TIME_RANGE[0]}_{TIME_RANGE[1]}.parquet"
 
     if output_path.exists():
         logger.info("Loading aggregated BACI data from %s", output_path)
-        return pd.read_parquet(output_path)
+        cached = pd.read_parquet(output_path)
+        mask = (
+            cached["exporter_iso3"].isin(eligible_iso3)
+            & cached["importer_iso3"].isin(eligible_iso3)
+        )
+        filtered_cached = cached.loc[mask].reset_index(drop=True)
+        if len(filtered_cached) != len(cached):
+            logger.info("Filtered cached BACI data to eligible ISO3 codes")
+        return filtered_cached
 
     logger.info("Aggregating BACI data")
     frames: list[pd.DataFrame] = []
@@ -116,7 +147,10 @@ def load_build_aggregated_trade(
         raw_df = pd.read_csv(raw_path, dtype={"k": str})
         frames.append(
             filter_and_aggregate_data(
-                raw_df, product_code_to_section, country_code_to_iso3
+                raw_df,
+                product_code_to_section,
+                country_code_to_iso3,
+                eligible_iso3,
             )
         )
 
@@ -143,11 +177,15 @@ def process_trade_data() -> pd.DataFrame:
         country_code_to_iso3,
         country_iso3_to_name,
         group_to_iso3,
-        iso3_to_groups,
+        _iso3_to_groups,
+        eligible_iso3,
+        membership_df,
     ) = load_mappings()
 
     aggregated_wide = load_build_aggregated_trade(
-        product_code_to_section, country_code_to_iso3
+        product_code_to_section,
+        country_code_to_iso3,
+        eligible_iso3,
     )
 
     base_cols = ["year", "exporter_iso3", "importer_iso3"]
@@ -193,7 +231,7 @@ def process_trade_data() -> pd.DataFrame:
             "category",
         ),
     )
-    trade_df = add_country_groups(trade_df, iso3_to_groups, group_to_iso3)
+    trade_df = add_country_groups(trade_df, membership_df, group_to_iso3)
 
     trade_df = add_share_of_gdp(trade_df, country_iso3_to_name, group_to_iso3)
 
@@ -214,6 +252,8 @@ def generate_input_values() -> None:
         _,
         country_iso3_to_name,
         group_to_iso3,
+        _,
+        _,
         _,
     ) = load_mappings()
 
