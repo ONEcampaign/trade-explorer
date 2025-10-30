@@ -164,8 +164,6 @@ cython_debug/
 /dist/
 node_modules/
 yarn-error.log-
-src/data/raw_data/
-
 
 # Parquet files in cache
 src/data/cache/*.parquet
@@ -182,3 +180,8 @@ src/data/cache/*.csv
 *.pyc
 /cdn_files/sectors_view/
 /cdn_files
+
+# Raw data files
+src/data/raw_data/BACI_HS02_V202501/BACI*
+src/data/raw_data/BACI_HS02_V202501/Readme.txt
+src/data/raw_data/pydeflate/*
