@@ -174,6 +174,9 @@ def optimize_dataframe_types(
         "category",
         "exporter",
         "importer",
+        "country",
+        "partner",
+        "flow",
     ]
     if additional_categorical_cols:
         cat_cols.extend(additional_categorical_cols)

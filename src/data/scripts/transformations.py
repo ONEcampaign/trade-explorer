@@ -122,23 +122,26 @@ def widen_currency_price(
 
 
 def load_countries() -> list[str]:
-    """Return the list of countries defined in the country-groups file."""
-    with open(PATHS.COUNTRIES, "r") as f:
-        country_to_groups = json.load(f)
-    return sorted(country_to_groups.keys())
+    """Return the ISO3 codes configured across all country groups."""
+    with open(PATHS.COUNTRY_GROUPS, "r", encoding="utf-8") as f:
+        group_to_members = json.load(f)
+
+    iso3_codes = {
+        code.upper() for members in group_to_members.values() for code in members
+    }
+
+    return sorted(iso3_codes)
 
 
 def generate_country_year_df(
     countries: Sequence[str], time_range: Sequence[int]
 ) -> pd.DataFrame:
-    """Create a cartesian product of years and countries, adding ISO3 codes."""
+    """Create a cartesian product of years and ISO3 codes."""
     start_year, end_year = time_range[0], time_range[1]
     years = range(start_year, end_year + 1)
     combinations = itertools.product(years, countries)
-    result = pd.DataFrame(combinations, columns=["year", "country"])
-
-    cc = coco.CountryConverter()
-    result["iso3_code"] = cc.pandas_convert(result["country"], to="ISO3")
+    result = pd.DataFrame(combinations, columns=["year", "iso3_code"])
+    result["iso3_code"] = result["iso3_code"].str.upper()
 
     return result
 
@@ -162,155 +165,295 @@ def load_format_weo() -> pd.DataFrame:
     return df
 
 
-def add_group_gdp(df: pd.DataFrame) -> pd.DataFrame:
+def add_group_gdp(
+    df: pd.DataFrame,
+    group_to_iso: Mapping[str, Sequence[str]],
+    iso3_to_name: Mapping[str, str],
+) -> pd.DataFrame:
     """Append GDP totals for each defined country group."""
 
-    with open(PATHS.COUNTRIES, "r") as f:
-        country_to_groups_raw: Mapping[str, Mapping[str, Sequence[str]]] = json.load(f)
+    df = df.copy()
+    df["iso3_code"] = df["iso3_code"].str.upper()
+    df["exporter"] = df["iso3_code"].map(iso3_to_name).fillna(df["iso3_code"])
 
-    group_to_members: dict[str, set[str]] = {}
-    for country, details in country_to_groups_raw.items():
-        for group in details.get("groups", []):
-            group_to_members.setdefault(group, set()).add(country)
-
-    group_frames: list[pd.DataFrame] = []
-    for group, members in group_to_members.items():
-        subset = df[df["country"].isin(members)]
+    country_frames: list[pd.DataFrame] = [df[["year", "exporter", "gdp_current"]]]
+    for group, members in group_to_iso.items():
+        member_set = {code.upper() for code in members}
+        subset = df[df["iso3_code"].isin(member_set)]
         if subset.empty:
             continue
-        group_frames.append(
+        group_totals = (
             subset.groupby("year", as_index=False)["gdp_current"]
             .sum()
-            .assign(country=group)
+            .assign(exporter=group)
         )
+        country_frames.append(group_totals)
 
-    df_groups = (
-        pd.concat(group_frames, ignore_index=True) if group_frames else pd.DataFrame()
-    )
-
-    combined = pd.concat([df.copy(), df_groups], ignore_index=True)
-    return combined.rename(columns={"country": "exporter"})
+    return pd.concat(country_frames, ignore_index=True)
 
 
-def add_share_of_gdp(df: pd.DataFrame) -> pd.DataFrame:
-    """Attach GDP totals and compute export values as a share of GDP."""
+def add_share_of_gdp(
+    df: pd.DataFrame,
+    country_iso3_to_name: Mapping[str, str],
+    group_to_iso: Mapping[str, Sequence[str]],
+) -> pd.DataFrame:
+    """Attach GDP totals and compute export/import values as a share of GDP."""
 
-    logger.info("Adding share of GDP column...")
+    logger.info("Adding share of GDP columns (exporter & importer)...")
 
-    countries = load_countries()
-    country_df = generate_country_year_df(countries, TIME_RANGE)
+    countries: set[str] = set(load_countries())
+    if "exporter_iso3" in df.columns:
+        countries.update(df["exporter_iso3"].dropna().astype(str).str.upper().tolist())
+    if "importer_iso3" in df.columns:
+        countries.update(df["importer_iso3"].dropna().astype(str).str.upper().tolist())
+
+    country_df = generate_country_year_df(sorted(countries), TIME_RANGE)
     gdp_df = load_format_weo()
 
-    merged_df = country_df.merge(gdp_df, on=["iso3_code", "year"], how="left").drop(
-        columns="iso3_code"
-    )
-    groups_df = add_group_gdp(merged_df)
+    merged_df = country_df.merge(gdp_df, on=["iso3_code", "year"], how="left")
+    groups_df = add_group_gdp(merged_df, group_to_iso, country_iso3_to_name)
 
+    # Share relative to exporter GDP
     result = df.merge(groups_df, on=["exporter", "year"], how="left")
-    share = result["value_usd_current"].div(result["gdp_current"])
-    result["pct_of_gdp"] = share.mul(100)
+    exporter_share = result["value_usd_current"].div(result["gdp_current"])
+    result["pct_of_gdp_exporter"] = exporter_share.mul(100)
     zero_or_missing = result["gdp_current"].isna() | (result["gdp_current"] == 0)
-    result.loc[zero_or_missing, "pct_of_gdp"] = pd.NA
+    result.loc[zero_or_missing, "pct_of_gdp_exporter"] = pd.NA
+    if "gdp_current" in result.columns:
+        result = result.drop(columns="gdp_current")
 
-    return result.drop(columns="gdp_current")
+    # Share relative to importer GDP
+    importer_gdp = groups_df.rename(
+        columns={
+            "exporter": "importer",
+            "gdp_current": "gdp_current_importer",
+        }
+    )
+    result = result.merge(importer_gdp, on=["importer", "year"], how="left")
+    importer_share = result["value_usd_current"].div(result["gdp_current_importer"])
+    result["pct_of_gdp_importer"] = importer_share.mul(100)
+    zero_or_missing_imp = result["gdp_current_importer"].isna() | (
+        result["gdp_current_importer"] == 0
+    )
+    result.loc[zero_or_missing_imp, "pct_of_gdp_importer"] = pd.NA
+    if "gdp_current_importer" in result.columns:
+        result = result.drop(columns="gdp_current_importer")
+
+    # Preserve legacy column for exporter share
+    result["pct_of_gdp"] = result["pct_of_gdp_exporter"]
+
+    return result
 
 
-def add_country_groups(df: pd.DataFrame, country_to_groups: dict) -> pd.DataFrame:
+def add_country_groups(
+    df: pd.DataFrame,
+    iso3_to_groups: Mapping[str, Sequence[str]],
+    group_to_iso: Mapping[str, Sequence[str]],
+) -> pd.DataFrame:
     """
     Build trade views for:
       - country→group
       - group→country
       - group→group (only between disjoint groups)
     Keeps original country→country rows.
-    Assumes df has columns: year, exporter, importer, category, value
-    country_to_groups: {country: {"groups": [group1, group2, ...]}, ...}
+
+    Args:
+        df: DataFrame with trade values in wide format (value_* columns).
+        iso3_to_groups: Mapping of ISO3 codes to the groups they belong to.
+        group_to_iso: Mapping of group names to their member ISO3 codes.
     """
 
     logger.info("Adding country groups...")
 
-    # --- prep
-    c2g = {c: list(v.get("groups", [])) for c, v in country_to_groups.items()}
     value_cols = [c for c in df.columns if c.startswith("value_")]
-    # invert to group -> set of member countries
-    g2c = {}
-    for c, gs in c2g.items():
-        for g in gs:
-            g2c.setdefault(g, set()).add(c)
+    member_sets = {
+        group: {code.upper() for code in members}
+        for group, members in group_to_iso.items()
+    }
 
     base = df.copy()
-    base["exporter_groups"] = base["exporter"].map(c2g).apply(lambda x: x or [])
-    base["importer_groups"] = base["importer"].map(c2g).apply(lambda x: x or [])
 
-    out = []
+    def _groups_for_iso3(iso3: str) -> list[str]:
+        if pd.isna(iso3):
+            return []
+        return list(iso3_to_groups.get(str(iso3), []))
+
+    base["exporter_groups"] = base["exporter_iso3"].apply(_groups_for_iso3)
+    base["importer_groups"] = base["importer_iso3"].apply(_groups_for_iso3)
+
+    outputs: list[pd.DataFrame] = []
 
     # --- country → group (exclude country ∈ group)
-    cg = base.explode("importer_groups").rename(
-        columns={"importer_groups": "imp_group"}
+    cg = (
+        base.explode("importer_groups")
+        .drop(columns=["importer"])
+        .rename(columns={"importer_groups": "importer"})
+        .dropna(subset=["importer"])
     )
-    if not cg["imp_group"].empty:
+    if not cg.empty:
         mask = ~cg.apply(
-            lambda r: r["exporter"] in g2c.get(r["imp_group"], set()), axis=1
+            lambda r: str(r["exporter_iso3"]).upper()
+            in member_sets.get(r["importer"], set()),
+            axis=1,
         )
         cg = cg[mask]
-        cg = (
-            cg.groupby(["year", "category", "exporter", "imp_group"], as_index=False)[
-                value_cols
-            ]
-            .sum()
-            .rename(columns={"imp_group": "importer"})
-        )
-        out.append(cg)
+        if not cg.empty:
+            cg = cg.groupby(
+                [
+                    "year",
+                    "category",
+                    "exporter",
+                    "exporter_iso3",
+                    "importer"
+                ],
+                as_index=False,
+            )[value_cols].sum()
+            cg["importer_iso3"] = pd.NA
+            outputs.append(cg)
 
     # --- group → country (exclude country ∈ group)
-    gc = base.explode("exporter_groups").rename(
-        columns={"exporter_groups": "exp_group"}
+    gc = (
+        base.explode("exporter_groups")
+        .drop(columns=["exporter"])
+        .rename(columns={"exporter_groups": "exporter"})
+        .dropna(subset=["exporter"])
     )
-    if not gc["exp_group"].empty:
+    if not gc.empty:
         mask = ~gc.apply(
-            lambda r: r["importer"] in g2c.get(r["exp_group"], set()), axis=1
+            lambda r: str(r["importer_iso3"]).upper()
+            in member_sets.get(r["exporter"], set()),
+            axis=1,
         )
         gc = gc[mask]
-        gc = (
-            gc.groupby(["year", "category", "exp_group", "importer"], as_index=False)[
-                value_cols
-            ]
-            .sum()
-            .rename(columns={"exp_group": "exporter"})
-        )
-        out.append(gc)
+        if not gc.empty:
+            gc = gc.groupby(
+                [
+                    "year",
+                    "category",
+                    "exporter",
+                    "importer",
+                    "importer_iso3",
+                ],
+                as_index=False,
+            )[value_cols].sum()
+            gc["exporter_iso3"] = pd.NA
+            outputs.append(gc)
 
     # --- group → group (groups must be disjoint: no overlapping members)
     gg = (
         base.explode("exporter_groups")
         .explode("importer_groups")
+        .drop(columns=["exporter", "importer"])
         .rename(
-            columns={"exporter_groups": "exp_group", "importer_groups": "imp_group"}
+            columns={
+                "exporter_groups": "exporter",
+                "importer_groups": "importer",
+            }
         )
+        .dropna(subset=["exporter", "importer"])
     )
-    if not gg[["exp_group", "imp_group"]].empty:
+    if not gg.empty:
 
-        def disjoint(row):
-            a = g2c.get(row["exp_group"], set())
-            b = g2c.get(row["imp_group"], set())
-            # exclude if any overlap
-            return a.isdisjoint(b)
+        def disjoint(row) -> bool:
+            exp_members = member_sets.get(row["exporter"], set())
+            imp_members = member_sets.get(row["importer"], set())
+            if not exp_members or not imp_members:
+                return True
+            return exp_members.isdisjoint(imp_members)
 
         gg = gg[gg.apply(disjoint, axis=1)]
-        gg = (
-            gg.groupby(["year", "category", "exp_group", "imp_group"], as_index=False)[
-                value_cols
-            ]
-            .sum()
-            .rename(columns={"exp_group": "exporter", "imp_group": "importer"})
-        )
-        out.append(gg)
+        if not gg.empty:
+            gg = gg.groupby(
+                ["year", "category", "exporter", "importer"], as_index=False
+            )[value_cols].sum()
+            gg["exporter_iso3"] = pd.NA
+            gg["importer_iso3"] = pd.NA
+            outputs.append(gg)
 
-        # --- keep original country → country
-        cc = base.groupby(["year", "category", "exporter", "importer"], as_index=False)[
-            value_cols
-        ].sum()
-        out.append(cc)
+    # --- keep original country → country
+    cc = (
+        base.drop(columns=["exporter_groups", "importer_groups"])
+        .groupby(
+            [
+                "year",
+                "category",
+                "exporter_iso3",
+                "exporter",
+                "importer_iso3",
+                "importer",
+            ],
+            as_index=False,
+        )[value_cols]
+        .sum()
+    )
+    outputs.append(cc)
 
-    result = pd.concat(out, ignore_index=True)
+    result = pd.concat(outputs, ignore_index=True)
+
+    for col in ["exporter_iso3","exporter","importer_iso3",  "importer"]:
+        if col in result.columns:
+            result[col] = result[col].astype("string")
 
     return result
+
+
+def reshape_to_country_flow(df: pd.DataFrame) -> pd.DataFrame:
+    """Duplicate rows to create explicit exports/imports per country-partner pair."""
+
+    logger.info("Reshaping trade data to country/partner/flow structure...")
+
+    value_cols = [c for c in df.columns if c.startswith("value_")]
+    base_cols = [c for c in df.columns if c not in value_cols]
+
+    # Ensure required share columns exist
+    if (
+        "pct_of_gdp_exporter" not in df.columns
+        or "pct_of_gdp_importer" not in df.columns
+    ):
+        raise KeyError("Expected pct_of_gdp_exporter and pct_of_gdp_importer columns")
+
+    exports = df[base_cols].copy()
+    exports[value_cols] = df[value_cols].to_numpy(copy=True)
+    exports["country"] = df["exporter"]
+    exports["partner"] = df["importer"]
+    exports["flow"] = "exports"
+    exports["pct_flow"] = df["pct_of_gdp_exporter"]
+
+    imports = df[base_cols].copy()
+    imports[value_cols] = df[value_cols].to_numpy(copy=True)
+    imports["country"] = df["importer"]
+    imports["partner"] = df["exporter"]
+    imports["flow"] = "imports"
+    imports["pct_flow"] = df["pct_of_gdp_importer"]
+
+    combined = pd.concat([exports, imports], ignore_index=True)
+
+    # Drop legacy/share helper columns and original exporter/importer
+    drop_cols = {
+        "exporter",
+        "importer",
+        "exporter_iso3",
+        "pct_of_gdp_exporter",
+        "pct_of_gdp_importer",
+        "pct_of_gdp",
+    }
+    combined = combined.drop(columns=[c for c in drop_cols if c in combined.columns])
+
+    combined = combined.assign(flow=combined["flow"].astype("category"))
+
+    combined["pct_of_gdp"] = combined.pop("pct_flow")
+
+    ordered_cols = [
+        "year",
+        "country",
+        "partner",
+        "flow",
+        "category",
+        *value_cols,
+        "pct_of_gdp",
+    ]
+    combined = combined[ordered_cols].sort_values(
+        ["country", "partner", "flow", "year", "category"], kind="stable"
+    )
+
+    return combined

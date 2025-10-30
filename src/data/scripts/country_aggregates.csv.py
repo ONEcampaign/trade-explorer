@@ -11,20 +11,12 @@ from src.data.config import logger, PATHS, TIME_RANGE
 
 def get_iso_codes() -> list[str]:
     """Return the ISO3 codes for the countries defined in the config file."""
-    with open(PATHS.COUNTRIES, "r") as f:
-        country_to_groups = json.load(f)
-    countries = list(country_to_groups.keys())
+    with open(PATHS.COUNTRY_GROUPS, "r", encoding="utf-8") as f:
+        group_to_iso = json.load(f)
 
-    cc = coco.CountryConverter()
-    iso_codes = cc.convert(countries, to="ISO3")
+    iso_codes = {code.upper() for members in group_to_iso.values() for code in members}
 
-    return sorted(
-        {
-            code
-            for code in iso_codes
-            if isinstance(code, str) and code.lower() != "not found"
-        }
-    )
+    return sorted(iso_codes)
 
 
 def load_filtered_weo() -> tuple[pd.DataFrame, pd.DataFrame]:

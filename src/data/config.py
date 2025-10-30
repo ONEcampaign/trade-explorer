@@ -32,7 +32,7 @@ class PATHS:
     SETTINGS = SRC / "data" / "settings"
     HS_SECTIONS = SETTINGS / "hs_sections.json"
     HS_CATEGORIES = SETTINGS / "hs_categories.json"
-    COUNTRIES = SETTINGS / "countries.json"
+    COUNTRY_GROUPS = SETTINGS / "country_groups.json"
 
     DATA = SRC / "data" / "raw_data"
     PYDEFLATE = DATA / "pydeflate"
