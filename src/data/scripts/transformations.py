@@ -1,5 +1,4 @@
 import itertools
-import json
 from collections.abc import Sequence
 from typing import Mapping
 
@@ -15,110 +14,80 @@ set_pydeflate_path(PATHS.PYDEFLATE)
 
 
 def add_currencies_and_prices(df: pd.DataFrame, id_column: str) -> pd.DataFrame:
-    """Expand trade values across the configured currencies and price bases."""
-    base_df = df.assign(currency="USD", price="current")
+    """Attach wide value columns for each configured currency/price combination.
 
-    current_frames = [
-        _convert_current_currency(base_df, currency, id_column)
-        for currency in CURRENCIES
-    ]
-
-    constant_frames = [
-        _convert_constant_currency(base_df, currency, id_column)
-        for currency in CURRENCIES
-    ]
-
-    return pd.concat(current_frames + constant_frames, ignore_index=True)
-
-
-def _convert_current_currency(
-    base_df: pd.DataFrame, currency: str, id_column: str
-) -> pd.DataFrame:
-    """Convert values into current prices for the requested currency."""
-    logger.info("Converting to %s (current prices)", currency)
-    if currency == "USD":
-        return base_df.assign(currency=currency, price="current")
-
-    converted = imf_exchange(
-        data=base_df.copy(),
-        source_currency="USA",
-        target_currency=currency,
-        id_column=id_column,
-    )
-    return converted.assign(currency=currency, price="current")
-
-
-def _convert_constant_currency(
-    base_df: pd.DataFrame, currency: str, id_column: str
-) -> pd.DataFrame:
-    """Convert values into constant prices for the requested currency."""
-    logger.info("Converting to %s (constant prices, base %s)", currency, BASE_YEAR)
-    converted = imf_gdp_deflate(
-        data=base_df.copy(),
-        base_year=BASE_YEAR,
-        source_currency="USA",
-        target_currency=currency,
-        id_column=id_column,
-    )
-    return converted.assign(currency=currency, price="constant")
-
-
-def widen_currency_price(
-    df: pd.DataFrame,
-    index_cols: tuple[str, ...],
-) -> pd.DataFrame:
-    """Pivot currency/price pairs into wide value columns.
-
-    Args:
-        df: Long-form DataFrame with columns: year, donor_code, indicator, currency, price, value.
-        index_cols: Columns to keep as the row index in the wide table.
-
-    Returns:
-        Wide DataFrame where columns are like 'USD_current_value', 'USD_constant_value', etc.
+    Instead of duplicating rows for every currency/price pair, this implementation
+    keeps the input shape and appends columns like `value_usd_current` and
+    `value_eur_constant`. This significantly reduces the transient memory
+    footprint compared with the previous long → wide pivot.
     """
-    df = df.copy()
 
-    # Pre-process values in long format (much faster than on wide data)
-    df["value"] = df["value"].round(4).astype("float32")
+    if id_column not in df.columns:
+        raise KeyError(f"'{id_column}' column not found in DataFrame")
 
-    # Check for duplicates before pivoting and aggregate if found
-    pivot_cols = list(index_cols) + ["currency", "price"]
-    logger.info("Checking for duplicates before pivot...")
-    duplicates = df[pivot_cols].duplicated()
+    logger.info("Adding currency and price columns in wide format")
 
-    if duplicates.any():
-        logger.warning(f"Found {duplicates.sum():,} duplicate rows before pivoting")
-        logger.info("Aggregating duplicates by summing values...")
-        # Aggregate duplicates by grouping and summing
-        df = (
-            df.groupby(pivot_cols, dropna=False, observed=True)["value"]
-            .sum()
-            .reset_index()
-        )
-        logger.info(f"After aggregation: {len(df):,} rows")
-    else:
-        logger.info("No duplicates detected - proceeding with pivot")
+    # Separate the numeric series so we can reuse the non-numeric columns without
+    # repeatedly copying them.
+    value_series = df["value"].astype("float64", copy=True)
+    result = df.drop(columns="value").copy()
+    result["value_usd_current"] = value_series.astype("float32")
 
-    wide = df.pivot(
-        index=list(index_cols),
-        columns=["currency", "price"],
-        values="value",
+    # Lightweight frame used for conversions; only the columns required by
+    # pydeflate are retained to minimise copying.
+    conversion_input = pd.DataFrame(
+        {
+            id_column: df[id_column].astype("string"),
+            "year": df["year"].astype("int32"),
+            "value": value_series,
+        }
     )
 
-    # Flatten MultiIndex columns -> "value_usd_current"
-    wide.columns = [
-        f"value_{cur.lower()}_{price}" for cur, price in wide.columns.to_list()
-    ]
-    wide = wide.reset_index()
+    for currency in CURRENCIES:
+        lower = currency.lower()
 
-    value_cols = sorted([c for c in wide.columns if c not in index_cols])
+        # Constant price conversion (always required, including USD).
+        constant_col = f"value_{lower}_constant"
+        logger.info(
+            "Converting to %s (constant prices, base %s)", currency, BASE_YEAR
+        )
+        constant_df = imf_gdp_deflate(
+            data=conversion_input,
+            base_year=BASE_YEAR,
+            source_currency="USA",
+            target_currency=currency,
+            id_column=id_column,
+            target_value_column=constant_col,
+        )
+        result[constant_col] = constant_df[constant_col].astype("float32")
 
-    # Drop any columns that have 0 values
-    wide = wide.loc[~(wide[value_cols] == 0).any(axis=1)]
-    # Reorder columns: index cols first, then sorted value cols
-    wide = wide[list(index_cols) + value_cols]
+        if currency == "USD":
+            continue
 
-    return wide
+        current_col = f"value_{lower}_current"
+        logger.info("Converting to %s (current prices)", currency)
+        current_df = imf_exchange(
+            data=conversion_input,
+            source_currency="USA",
+            target_currency=currency,
+            id_column=id_column,
+            target_value_column=current_col,
+        )
+        result[current_col] = current_df[current_col].astype("float32")
+
+    value_cols = sorted(c for c in result.columns if c.startswith("value_"))
+    base_cols = [c for c in result.columns if c not in value_cols]
+
+    if value_cols:
+        zero_mask = (result[value_cols] == 0).any(axis=1)
+        if zero_mask.any():
+            logger.info(
+                "Dropping %s rows with zero values across currency columns",
+                f"{zero_mask.sum():,}",
+            )
+            result = result.loc[~zero_mask]
+
+    return result[base_cols + value_cols]
 
 
 def generate_country_year_df(

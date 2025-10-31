@@ -16,7 +16,6 @@ from src.data.scripts.transformations import (
     add_country_groups,
     add_currencies_and_prices,
     add_share_of_gdp,
-    widen_currency_price,
     reshape_to_country_flow,
 )
 
@@ -196,18 +195,6 @@ def process_trade_data() -> pd.DataFrame:
     trade_df["importer"] = resolve_places(
         trade_df["importer_iso3"], from_type="iso3_code", to_type="name_short", not_found="ignore"
     ).fillna(trade_df["importer_iso3"].map(missing_map))
-
-    trade_df = widen_currency_price(
-        df=trade_df,
-        index_cols=(
-            "year",
-            "exporter",
-            "exporter_iso3",
-            "importer",
-            "importer_iso3",
-            "category",
-        ),
-    )
 
     trade_df = add_country_groups(trade_df, membership_df, group_to_iso3)
 
