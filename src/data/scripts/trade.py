@@ -27,7 +27,6 @@ def load_mappings() -> tuple[
     dict[str, str],
     dict[str, list[str]],
     dict[str, list[str]],
-    set[str],
     pd.DataFrame,
 ]:
     """Load product and country mappings required by the trade data pipeline."""
@@ -62,8 +61,6 @@ def load_mappings() -> tuple[
 
     iso3_to_groups = {iso: sorted(groups) for iso, groups in iso3_to_groups.items()}
 
-    eligible_iso3 = {iso for members in group_to_iso3.values() for iso in members}
-
     membership_rows = [
         (iso, group)
         for group, members in group_to_iso3.items()
@@ -77,7 +74,6 @@ def load_mappings() -> tuple[
         country_iso3_to_name,
         group_to_iso3,
         iso3_to_groups,
-        eligible_iso3,
         membership_df,
     )
 
@@ -85,8 +81,7 @@ def load_mappings() -> tuple[
 def filter_and_aggregate_data(
     raw_df: pd.DataFrame,
     product_code_to_section: dict[str, str],
-    country_code_to_iso3: dict[str, str],
-    eligible_iso3: set[str],
+    country_code_to_iso3: dict[str, str]
 ) -> pd.DataFrame:
     """Apply reshaping, filtering, and aggregation to a raw BACI dataframe."""
     df = raw_df.rename(
@@ -103,13 +98,6 @@ def filter_and_aggregate_data(
     df["exporter_iso3"] = df["exporter"].map(country_code_to_iso3)
     df["importer_iso3"] = df["importer"].map(country_code_to_iso3)
 
-    eligible_mask = (
-        df["exporter_iso3"].isin(eligible_iso3)
-        & df["importer_iso3"].isin(eligible_iso3)
-    )
-
-    df = df[eligible_mask]
-
     df = (
         df.dropna(subset=["value"])
         .groupby(["year", "exporter_iso3", "importer_iso3", "category"], as_index=False)
@@ -117,28 +105,20 @@ def filter_and_aggregate_data(
     )
 
     df["value"] /= 1_000  # Convert from thousands to millions
+
     return df
 
 
 def load_build_aggregated_trade(
     product_code_to_section: dict[str, str],
-    country_code_to_iso3: dict[str, str],
-    eligible_iso3: set[str],
+    country_code_to_iso3: dict[str, str]
 ) -> pd.DataFrame:
     """Load aggregated trade data from disk or build it from raw BACI files."""
     output_path: Path = PATHS.DATA / f"trade_{TIME_RANGE[0]}_{TIME_RANGE[1]}.parquet"
 
     if output_path.exists():
         logger.info("Loading aggregated BACI data from %s", output_path)
-        cached = pd.read_parquet(output_path)
-        mask = (
-            cached["exporter_iso3"].isin(eligible_iso3)
-            & cached["importer_iso3"].isin(eligible_iso3)
-        )
-        filtered_cached = cached.loc[mask].reset_index(drop=True)
-        if len(filtered_cached) != len(cached):
-            logger.info("Filtered cached BACI data to eligible ISO3 codes")
-        return filtered_cached
+        return pd.read_parquet(output_path)
 
     logger.info("Aggregating BACI data")
     frames: list[pd.DataFrame] = []
@@ -149,8 +129,7 @@ def load_build_aggregated_trade(
             filter_and_aggregate_data(
                 raw_df,
                 product_code_to_section,
-                country_code_to_iso3,
-                eligible_iso3,
+                country_code_to_iso3
             )
         )
 
@@ -178,14 +157,12 @@ def process_trade_data() -> pd.DataFrame:
         country_iso3_to_name,
         group_to_iso3,
         _iso3_to_groups,
-        eligible_iso3,
         membership_df,
     ) = load_mappings()
 
     aggregated_wide = load_build_aggregated_trade(
         product_code_to_section,
-        country_code_to_iso3,
-        eligible_iso3,
+        country_code_to_iso3
     )
 
     base_cols = ["year", "exporter_iso3", "importer_iso3"]
@@ -231,6 +208,7 @@ def process_trade_data() -> pd.DataFrame:
             "category",
         ),
     )
+
     trade_df = add_country_groups(trade_df, membership_df, group_to_iso3)
 
     trade_df = add_share_of_gdp(trade_df, country_iso3_to_name, group_to_iso3)
@@ -242,32 +220,24 @@ def process_trade_data() -> pd.DataFrame:
     return trade_df
 
 
-def generate_input_values() -> None:
+def generate_input_values(trade_df: pd.DataFrame) -> None:
     """Materialise JS-ready data describing countries, groups, and HS categories."""
 
     logger.info("Generating input values file")
 
-    (
-        _,
-        _,
-        country_iso3_to_name,
-        group_to_iso3,
-        _,
-        _,
-        _,
-    ) = load_mappings()
+    with open(PATHS.COUNTRY_GROUPS, "r") as f:
+        groups_to_iso3 = json.load(f)
 
-    with open(PATHS.HS_SECTIONS, "r", encoding="utf-8") as file:
-        hs_sections_data = json.load(file)
-
-    group_mappings = _build_group_mappings(group_to_iso3, country_iso3_to_name)
-    base_categories = sorted(hs_sections_data.keys())
-    category_names = ["All products", *base_categories]
+    time_range = [min(trade_df["year"]), max(trade_df["year"])]
+    unique_countries = sorted(trade_df["country"].unique())
+    country_groups = sorted(groups_to_iso3.keys())
+    unique_categories = sorted(trade_df["category"].unique())
 
     sections = [
-        _format_time_range_js(TIME_RANGE),
-        _format_categories_js(category_names),
-        _format_group_mappings_js(group_mappings),
+        _list_to_js(time_range, "maxTimeRange"),
+        _list_to_js(unique_countries, "countryOptions"),
+        _list_to_js(country_groups, "countryGroups"),
+        _list_to_js(unique_categories, "productCategories"),
     ]
     js_output = "\n".join(sections)
 
@@ -278,57 +248,12 @@ def generate_input_values() -> None:
     logger.info("Saving input values file to %s", path_to_save)
 
 
-def _build_group_mappings(
-    group_to_iso3: dict[str, list[str]],
-    country_iso3_to_name: dict[str, str],
-) -> dict[str, list[str]]:
-    """Create a mapping of groups to their member countries (including self-entries)."""
-    group_mappings: dict[str, set[str]] = {}
-
-    member_iso = {code.upper() for members in group_to_iso3.values() for code in members}
-
-    for iso in sorted(member_iso):
-        country_name = country_iso3_to_name.get(iso, iso)
-        group_mappings.setdefault(country_name, set()).add(country_name)
-
-    for group, members in group_to_iso3.items():
-        country_names = [country_iso3_to_name.get(code, code) for code in members]
-        group_mappings.setdefault(group, set()).update(country_names)
-
-    return {
-        key: sorted(members)
-        for key, members in sorted(group_mappings.items(), key=lambda item: item[0])
-    }
-
-
-def _format_group_mappings_js(group_mappings: dict) -> str:
-    """Format group mappings into a JavaScript export statement."""
-    lines = ["export const groupMappings = {"]
-    for group, countries in group_mappings.items():
-        countries_list = ", ".join(f'"{country}"' for country in countries)
-        lines.append(f'  "{group}": [{countries_list}],')
-    lines.append("};")
-    return "\n".join(lines)
-
-
-def _format_categories_js(categories: list) -> str:
+def _list_to_js(elements: list, var_name: str) -> str:
     """Format HS section names into a JavaScript array export."""
-    items = ",\n".join(f'  "{category}"' for category in categories)
+    items = ",\n".join(f'  "{e}"' for e in elements)
     return "\n".join(
         [
-            "export const productCategories = [",
-            items,
-            "];",
-        ]
-    )
-
-
-def _format_time_range_js(time_range: list[int]) -> str:
-    """Format TIME_RANGE into a JavaScript array export."""
-    items = ",\n".join(f"  {year}" for year in time_range)
-    return "\n".join(
-        [
-            "export const maxTimeRange = [",
+            f"export const {var_name} = [",
             items,
             "];",
         ]
@@ -341,3 +266,6 @@ if __name__ == "__main__":
     logger.info("Writing partitioned dataset...")
     write_partitioned_dataset(df, "trade", partition_cols=["country"])
     logger.info("Trade data completed")
+
+    logger.info("Writing input values...")
+    generate_input_values(df)

@@ -121,18 +121,6 @@ def widen_currency_price(
     return wide
 
 
-def load_countries() -> list[str]:
-    """Return the ISO3 codes configured across all country groups."""
-    with open(PATHS.COUNTRY_GROUPS, "r", encoding="utf-8") as f:
-        group_to_members = json.load(f)
-
-    iso3_codes = {
-        code.upper() for members in group_to_members.values() for code in members
-    }
-
-    return sorted(iso3_codes)
-
-
 def generate_country_year_df(
     countries: Sequence[str], time_range: Sequence[int]
 ) -> pd.DataFrame:
@@ -201,13 +189,9 @@ def add_share_of_gdp(
 
     logger.info("Adding share of GDP columns (exporter & importer)...")
 
-    countries: set[str] = set(load_countries())
-    if "exporter_iso3" in df.columns:
-        countries.update(df["exporter_iso3"].dropna().astype(str).str.upper().tolist())
-    if "importer_iso3" in df.columns:
-        countries.update(df["importer_iso3"].dropna().astype(str).str.upper().tolist())
+    countries = list(df["exporter_iso3"].unique().dropna())
 
-    country_df = generate_country_year_df(sorted(countries), TIME_RANGE)
+    country_df = generate_country_year_df(countries, TIME_RANGE)
     gdp_df = load_format_weo()
 
     merged_df = country_df.merge(gdp_df, on=["iso3_code", "year"], how="left")
@@ -238,9 +222,6 @@ def add_share_of_gdp(
     result.loc[zero_or_missing_imp, "pct_of_gdp_importer"] = pd.NA
     if "gdp_current_importer" in result.columns:
         result = result.drop(columns="gdp_current_importer")
-
-    # Preserve legacy column for exporter share
-    result["pct_of_gdp"] = result["pct_of_gdp_exporter"]
 
     return result
 
@@ -446,14 +427,14 @@ def reshape_to_country_flow(df: pd.DataFrame) -> pd.DataFrame:
     exports["country"] = df["exporter"]
     exports["partner"] = df["importer"]
     exports["flow"] = "exports"
-    exports["pct_flow"] = df["pct_of_gdp_exporter"]
+    exports["pct_of_gdp"] = df["pct_of_gdp_exporter"]
 
     imports = df[base_cols].copy()
     imports[value_cols] = df[value_cols].to_numpy(copy=True)
     imports["country"] = df["importer"]
     imports["partner"] = df["exporter"]
     imports["flow"] = "imports"
-    imports["pct_flow"] = df["pct_of_gdp_importer"]
+    imports["pct_of_gdp"] = df["pct_of_gdp_importer"]
 
     combined = pd.concat([exports, imports], ignore_index=True)
 
@@ -464,13 +445,10 @@ def reshape_to_country_flow(df: pd.DataFrame) -> pd.DataFrame:
         "exporter_iso3",
         "pct_of_gdp_exporter",
         "pct_of_gdp_importer",
-        "pct_of_gdp",
     }
     combined = combined.drop(columns=[c for c in drop_cols if c in combined.columns])
 
     combined = combined.assign(flow=combined["flow"].astype("category"))
-
-    combined["pct_of_gdp"] = combined.pop("pct_flow")
 
     ordered_cols = [
         "year",
